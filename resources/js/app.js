@@ -836,6 +836,48 @@ document.querySelectorAll('[data-flight-search]').forEach((searchRoot) => {
 });
 
 
+
+const nextHotelCalendarDate = (value) => {
+    const parts = String(value || '').split('-').map(Number);
+    if (parts.length !== 3 || parts.some((part) => !Number.isFinite(part))) return '';
+
+    const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+    date.setUTCDate(date.getUTCDate() + 1);
+
+    return [date.getUTCFullYear(), String(date.getUTCMonth() + 1).padStart(2, '0'), String(date.getUTCDate()).padStart(2, '0')].join('-');
+};
+
+document.querySelectorAll('[data-home-hotel-destination]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+        // Preserve normal browser behaviour for opening the fallback URL in a
+        // new tab/window. The server-rendered href already uses today/tomorrow.
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+        const hotelForm = document.querySelector('[data-public-service-panel="hotels"] [data-hotel-search]');
+        if (!hotelForm) return;
+
+        const target = new URL(link.href, window.location.origin);
+        const checkIn = hotelForm.querySelector('[data-hotel-check-in]')?.value || '';
+        const checkOut = hotelForm.querySelector('[data-hotel-check-out]')?.value || '';
+        const effectiveCheckOut = checkOut || nextHotelCalendarDate(checkIn);
+
+        if (checkIn) target.searchParams.set('check_in', checkIn);
+        if (effectiveCheckOut) target.searchParams.set('check_out', effectiveCheckOut);
+
+        ['adults', 'children', 'rooms'].forEach((field) => {
+            const value = hotelForm.querySelector(`[name="${field}"]`)?.value;
+            if (value !== undefined && value !== '') target.searchParams.set(field, value);
+        });
+
+        target.searchParams.set('destination_code', link.dataset.destinationCode || '');
+        target.searchParams.set('destination_label', link.dataset.destinationLabel || '');
+        target.searchParams.set('session_id', crypto.randomUUID?.() || `00000000-0000-4000-8000-${Date.now().toString().padStart(12, '0').slice(-12)}`);
+
+        event.preventDefault();
+        window.location.assign(target.toString());
+    });
+});
+
 document.querySelectorAll('[data-destination-tabs]').forEach((section) => {
     const tabs = [...section.querySelectorAll('[data-destination-tab]')];
     const panels = [...section.querySelectorAll('[data-destination-panel]')];

@@ -66,7 +66,25 @@ final class PublicNavigationTest extends TestCase
             ->assertSee('Santorini')
             ->assertSee('Istanbul')
             ->assertSee('London')
-            ->assertSee('Bali');
+            ->assertSee('Bali')
+            ->assertSee('data-home-hotel-destination', false)
+            ->assertSee('destination_code=JTR', false)
+            ->assertSee('destination_code=DXB', false)
+            ->assertSee('check_in='.today()->toDateString(), false)
+            ->assertSee('check_out='.today()->addDay()->toDateString(), false);
+    }
+
+    public function test_homepage_destination_cards_open_the_live_hotel_search_for_the_selected_city(): void
+    {
+        $response = $this->get(route('home'))->assertOk();
+
+        $response
+            ->assertSee('aria-label="Find hotels in Cape Town, South Africa"', false)
+            ->assertSee('destination_code=CPT', false)
+            ->assertSee('destination_label=Cape%20Town%2C%20South%20Africa', false)
+            ->assertSee('adults=2', false)
+            ->assertSee('children=0', false)
+            ->assertSee('rooms=1', false);
     }
 
     public function test_homepage_places_dynamic_flight_offers_after_explore_more_and_links_to_live_search(): void

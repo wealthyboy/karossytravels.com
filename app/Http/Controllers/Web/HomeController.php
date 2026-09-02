@@ -53,6 +53,8 @@ final class HomeController extends Controller
         return view('home', [
             'departureDate' => now()->addDays(14)->toDateString(),
             'returnDate' => now()->addDays(21)->toDateString(),
+            'hotelCheckIn' => now()->toDateString(),
+            'hotelCheckOut' => now()->addDay()->toDateString(),
             'passportCountries' => $passportCountries,
             'visaDestinations' => $visaDestinations,
             'holidayPackages' => $holidayPackages,

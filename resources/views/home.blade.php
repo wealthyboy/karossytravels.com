@@ -49,7 +49,7 @@
                 <x-flight-search-form :departure-date="$departureDate" :return-date="$returnDate" :action="route('flights.results')" />
             </div>
             <div class="public-service-panel d-none" data-public-service-panel="hotels" hidden inert>
-                <x-hotel-search-form :check-in="$departureDate" :check-out="$returnDate" :action="route('hotels.results')"><label class="hotel-bundle-option"><input class="form-check-input" type="checkbox" name="bundle_flight" value="1"><span>Add a flight to Bundle &amp; Save*</span></label></x-hotel-search-form>
+                <x-hotel-search-form :check-in="$hotelCheckIn" :check-out="$hotelCheckOut" :action="route('hotels.results')"><label class="hotel-bundle-option"><input class="form-check-input" type="checkbox" name="bundle_flight" value="1"><span>Add a flight to Bundle &amp; Save*</span></label></x-hotel-search-form>
             </div>
             <div class="public-service-panel d-none" data-public-service-panel="visas"><form action="{{ route('visas.results') }}" class="home-visa-search"><label><span>Passport country</span><select name="passport_country" required data-searchable-select data-search-placeholder="Search passport country"><option value="">Select passport country</option>@foreach($passportCountries as $country)<option>{{ $country }}</option>@endforeach</select></label><label><span>Destination</span><select name="destination" required data-searchable-select data-search-placeholder="Search destination"><option value="">Where are you travelling to?</option>@foreach($visaDestinations as $country)<option>{{ $country }}</option>@endforeach</select></label><label><span>Travellers</span><select name="travellers"><option>1</option>@foreach(range(2,10) as $count)<option>{{ $count }}</option>@endforeach</select></label><button class="btn btn-karossy">Check requirements</button></form></div>
             <div class="public-service-panel d-none" data-public-service-panel="cars"><div class="public-coming-search"><span><i class="bi bi-car-front"></i></span><div><strong>Drive with the Karossy network</strong><small>We are inviting professional drivers and vehicle owners to partner with us.</small></div><a class="btn btn-karossy" href="{{ route('cars.partners') }}">Join us</a></div></div>
@@ -65,37 +65,37 @@
         'beach' => [
             'label' => 'Beach',
             'destinations' => [
-                ['Santorini', 'Greece', 'Romantic getaway', 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=900&q=80'],
-                ['Zanzibar', 'Tanzania', 'Island rhythm', 'https://images.unsplash.com/photo-1540202404-a2f29016b523?auto=format&fit=crop&w=900&q=80'],
-                ['Dubai', 'United Arab Emirates', 'City and sun', 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=900&q=80'],
-                ['Cape Town', 'South Africa', 'Coast and culture', 'https://images.unsplash.com/photo-1580060839134-75a5edca2e99?auto=format&fit=crop&w=900&q=80'],
+                ['Santorini', 'Greece', 'Romantic getaway', 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=900&q=80', 'JTR'],
+                ['Zanzibar', 'Tanzania', 'Island rhythm', 'https://images.unsplash.com/photo-1540202404-a2f29016b523?auto=format&fit=crop&w=900&q=80', 'ZNZ'],
+                ['Dubai', 'United Arab Emirates', 'City and sun', 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=900&q=80', 'DXB'],
+                ['Cape Town', 'South Africa', 'Coast and culture', 'https://images.unsplash.com/photo-1580060839134-75a5edca2e99?auto=format&fit=crop&w=900&q=80', 'CPT'],
             ],
         ],
         'culture' => [
             'label' => 'Culture',
             'destinations' => [
-                ['Istanbul', 'Türkiye', 'Two continents, one city', 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=900&q=80'],
-                ['Marrakech', 'Morocco', 'Souks and stories', 'https://images.unsplash.com/photo-1597212618440-806262de4f6b?auto=format&fit=crop&w=900&q=80'],
-                ['Rome', 'Italy', 'History at every turn', 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=900&q=80'],
-                ['Kyoto', 'Japan', 'Temples and tradition', 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=900&q=80'],
+                ['Istanbul', 'Türkiye', 'Two continents, one city', 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=900&q=80', 'IST'],
+                ['Marrakech', 'Morocco', 'Souks and stories', 'https://images.unsplash.com/photo-1597212618440-806262de4f6b?auto=format&fit=crop&w=900&q=80', 'RAK'],
+                ['Rome', 'Italy', 'History at every turn', 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=900&q=80', 'FCO'],
+                ['Kyoto', 'Japan', 'Temples and tradition', 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=900&q=80', 'ITM'],
             ],
         ],
         'family' => [
             'label' => 'Family',
             'destinations' => [
-                ['London', 'United Kingdom', 'Big sights, easy days', 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=900&q=80'],
-                ['Singapore', 'Singapore', 'Family city adventure', 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=900&q=80'],
-                ['Dubai', 'United Arab Emirates', 'Fun for every age', 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=900&q=80'],
-                ['Barcelona', 'Spain', 'City, beach and play', 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=900&q=80'],
+                ['London', 'United Kingdom', 'Big sights, easy days', 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=900&q=80', 'LHR'],
+                ['Singapore', 'Singapore', 'Family city adventure', 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=900&q=80', 'SIN'],
+                ['Dubai', 'United Arab Emirates', 'Fun for every age', 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=900&q=80', 'DXB'],
+                ['Barcelona', 'Spain', 'City, beach and play', 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=900&q=80', 'BCN'],
             ],
         ],
         'wellness' => [
             'label' => 'Wellness & relaxation',
             'destinations' => [
-                ['Bali', 'Indonesia', 'Reset in paradise', 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=900&q=80'],
-                ['Maldives', 'Maldives', 'Barefoot luxury', 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=900&q=80'],
-                ['Phuket', 'Thailand', 'Slow days by the sea', 'https://images.unsplash.com/photo-1589394815804-964ed0be2b86?auto=format&fit=crop&w=900&q=80'],
-                ['Mauritius', 'Mauritius', 'Island calm', 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80'],
+                ['Bali', 'Indonesia', 'Reset in paradise', 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=900&q=80', 'DPS'],
+                ['Maldives', 'Maldives', 'Barefoot luxury', 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=900&q=80', 'MLE'],
+                ['Phuket', 'Thailand', 'Slow days by the sea', 'https://images.unsplash.com/photo-1589394815804-964ed0be2b86?auto=format&fit=crop&w=900&q=80', 'HKT'],
+                ['Mauritius', 'Mauritius', 'Island calm', 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=80', 'MRU'],
             ],
         ],
     ];
@@ -134,7 +134,26 @@
                 @if(!$loop->first) hidden @endif
             >
                 @foreach($mood['destinations'] as $destination)
-                    <a href="{{ route('home', ['service' => 'hotels']) }}#travel-search">
+                    @php
+                        $destinationLabel = $destination[0].', '.$destination[1];
+                        $hotelDestinationUrl = route('hotels.results', [
+                            'destination_code' => $destination[4],
+                            'destination_label' => $destinationLabel,
+                            'check_in' => $hotelCheckIn,
+                            'check_out' => $hotelCheckOut,
+                            'adults' => 2,
+                            'children' => 0,
+                            'rooms' => 1,
+                            'session_id' => (string) \Illuminate\Support\Str::uuid(),
+                        ]);
+                    @endphp
+                    <a
+                        href="{{ $hotelDestinationUrl }}"
+                        data-home-hotel-destination
+                        data-destination-code="{{ $destination[4] }}"
+                        data-destination-label="{{ $destinationLabel }}"
+                        aria-label="Find hotels in {{ $destinationLabel }}"
+                    >
                         <img src="{{ $destination[3] }}" alt="{{ $destination[0] }}" loading="lazy">
                         <span>{{ $destination[2] }}</span>
                         <strong>{{ $destination[0] }}</strong>
