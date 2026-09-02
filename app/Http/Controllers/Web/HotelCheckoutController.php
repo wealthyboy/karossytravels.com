@@ -53,6 +53,20 @@ final class HotelCheckoutController extends Controller
         $offer->loadMissing('search');
         if ($offer->expires_at->isPast()) return response()->json(['message' => 'This hotel rate has expired. Please search again.'], 410);
 
+        // Confirm that the live supplier rate can still be booked before we
+        // initialize Paystack. This prevents taking customer payment for a
+        // rate Sabre has already withdrawn or cannot secure with our agency
+        // guarantee configuration.
+        try {
+            $orders->preflight($offer->fresh());
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return response()->json([
+                'message' => $this->supplierCheckoutMessage($exception),
+            ], 422);
+        }
+
         $currency = $this->checkoutCurrency($request, $resolver);
         $amount = $rates->convertMinor($offer->fresh()->selling_total_minor, $offer->currency, $currency)['amount_minor'];
         $token = (string) $request->session()->get("hotel_checkout.{$offer->id}.token", Str::random(64));
@@ -87,13 +101,13 @@ final class HotelCheckoutController extends Controller
         ]);
         $attempt = CheckoutPaymentAttempt::where('hotel_offer_id', $offer->id)->where('reference', $data['reference'])
             ->where('session_fingerprint', $this->fingerprint($request, $offer))->firstOrFail();
-        if ($attempt->order_id && ($order = Order::find($attempt->order_id))) return $this->success($request, $order);
+        if ($attempt->order_id && $attempt->status === 'completed' && ($order = Order::find($attempt->order_id))) return $this->success($request, $order);
         $checkout = $request->session()->get("hotel_checkout.{$offer->id}");
         if (! is_array($checkout) || empty($checkout['guest'])) return response()->json(['message' => 'Your checkout session expired. Contact support with the payment reference.'], 422);
 
         try {
             $localCallback = $this->localCallbackFinalizationEnabled();
-            $webhookVerified = $attempt->status === 'paid' && is_array($attempt->gateway_response);
+            $webhookVerified = in_array($attempt->status, ['paid', 'supplier_confirmed'], true) && is_array($attempt->gateway_response);
             $verified = $webhookVerified
                 ? $attempt->gateway_response
                 : ($localCallback
@@ -151,17 +165,64 @@ final class HotelCheckoutController extends Controller
 
     private function finalize(Request $request, HotelOffer $offer, CheckoutPaymentAttempt $attempt, array $guest, HotelOrderService $orders, TravelLogger $logger, array $gatewayData, string $gateway): JsonResponse
     {
-        $order = DB::transaction(function () use ($request, $offer, $attempt, $guest, $orders, $gatewayData, $gateway): Order {
+        // A supplier booking is a remote side effect and must not run inside a
+        // database transaction. If a local write fails after Sabre returns a
+        // locator, rolling the Order back would make a retry create a second
+        // hotel reservation. Anchor the confirmed Order to the payment attempt
+        // first, then complete the local payment bookkeeping idempotently.
+        $order = $attempt->order_id ? Order::find($attempt->order_id) : null;
+
+        if (! $order) {
             $customer = $this->customer($request, $guest);
-            $order = $orders->create($offer->fresh(), $customer, specialRequests: $guest['special_requests'] ?? null, sendConfirmation: false);
-            $order->update(['currency' => $attempt->currency, 'subtotal_minor' => $attempt->amount_minor, 'fees_minor' => 0, 'total_minor' => $attempt->amount_minor]);
-            Payment::create(['order_id' => $order->id, 'gateway' => $gateway, 'gateway_reference' => $attempt->reference, 'status' => in_array($gateway, ['demo', 'paystack_callback_test'], true) ? 'simulated' : 'paid', 'currency' => $attempt->currency, 'amount_minor' => $attempt->amount_minor, 'paid_at' => now(), 'metadata' => ['channel' => data_get($gatewayData, 'channel'), 'transaction_id' => data_get($gatewayData, 'id')]]);
-            $attempt->update(['status' => 'completed', 'order_id' => $order->id]);
-            return $order;
+            $order = $orders->create(
+                $offer->fresh(),
+                $customer,
+                specialRequests: $guest['special_requests'] ?? null,
+                sendConfirmation: false,
+            );
+
+            $attempt->update([
+                'status' => 'supplier_confirmed',
+                'order_id' => $order->id,
+            ]);
+        }
+
+        DB::transaction(function () use ($order, $attempt, $gatewayData, $gateway): void {
+            $order->update([
+                'currency' => $attempt->currency,
+                'subtotal_minor' => $attempt->amount_minor,
+                'fees_minor' => 0,
+                'total_minor' => $attempt->amount_minor,
+            ]);
+
+            Payment::updateOrCreate(
+                [
+                    'order_id' => $order->id,
+                    'gateway_reference' => $attempt->reference,
+                ],
+                [
+                    'gateway' => $gateway,
+                    'status' => in_array($gateway, ['demo', 'paystack_callback_test'], true) ? 'simulated' : 'paid',
+                    'currency' => $attempt->currency,
+                    'amount_minor' => $attempt->amount_minor,
+                    'paid_at' => now(),
+                    'metadata' => [
+                        'channel' => data_get($gatewayData, 'channel'),
+                        'transaction_id' => data_get($gatewayData, 'id'),
+                    ],
+                ],
+            );
+
+            $attempt->update([
+                'status' => 'completed',
+                'order_id' => $order->id,
+            ]);
         });
+
         $request->session()->put("completed_orders.{$order->id}", true);
         $orders->sendConfirmation($order->fresh());
         $logger->record('hotel', 'payment', $gateway, ['offer_id' => $offer->id, 'reference' => $attempt->reference], ['order_id' => $order->id, 'amount_minor' => $attempt->amount_minor, 'currency' => $attempt->currency], ['session_id' => $offer->search()->value('session_id'), 'order_id' => $order->id]);
+
         return $this->success($request, $order);
     }
 
@@ -179,6 +240,29 @@ final class HotelCheckoutController extends Controller
         $customer ??= $emailOwner ?? new Customer;
         $customer->fill(['user_id' => $customer->user_id ?: $request->user()?->id, 'first_name' => $guest['first_name'], 'last_name' => $guest['last_name'], 'email' => $email, 'phone' => $guest['phone'], 'status' => 'active'])->save();
         return $customer;
+    }
+
+    private function supplierCheckoutMessage(Throwable $exception): string
+    {
+        $message = strtolower($exception->getMessage());
+
+        if (str_contains($message, 'payment-card guarantee')) {
+            return 'This room requires a supplier card guarantee that is not supported by this checkout. Please choose another rate or contact Karossy support.';
+        }
+
+        if (str_contains($message, 'agency iata')) {
+            return 'This hotel rate requires Karossy agency credentials before it can be confirmed. Please contact Karossy support.';
+        }
+
+        if (str_contains($message, 'prepayment')) {
+            return 'This room requires supplier prepayment. Please choose another pay-later or agency-guaranteed rate.';
+        }
+
+        if (str_contains($message, 'rate') && str_contains($message, 'changed')) {
+            return 'The hotel changed this rate. Please return to the hotel results and choose the latest available rate.';
+        }
+
+        return 'This hotel rate cannot be confirmed with the supplier right now. Please choose another room/rate or try again shortly.';
     }
 
     private function checkoutCurrency(Request $request, DisplayCurrencyResolver $resolver): string
