@@ -65,6 +65,25 @@ class AppServiceProvider extends ServiceProvider
     {
         RateLimiter::for('login', fn (Request $request) => Limit::perMinute(5)->by(strtolower((string) $request->input('email')).'|'.$request->ip()));
         RateLimiter::for('registration', fn (Request $request) => Limit::perMinute(3)->by($request->ip()));
+
+        // Hotel checkout preflights the live supplier rate before opening Paystack.
+        // Keep the production protection conservative, while allowing repeated
+        // end-to-end supplier testing in local/testing environments.
+        RateLimiter::for('hotel-checkout-payment', function (Request $request): Limit {
+            $offer = $request->route('offer');
+            $offerId = is_object($offer) && method_exists($offer, 'getKey')
+                ? (string) $offer->getKey()
+                : (string) $offer;
+            $actor = $request->user()?->getAuthIdentifier() ?: 'guest';
+            $maxAttempts = app()->environment(['local', 'testing']) ? 30 : 5;
+
+            return Limit::perMinute($maxAttempts)
+                ->by($actor.'|'.$request->ip().'|'.$offerId)
+                ->response(fn (Request $request, array $headers) => response()->json([
+                    'message' => 'Too many checkout attempts were made in a short time. Please wait a moment and try again.',
+                ], 429, $headers));
+        });
+
         Paginator::useBootstrapFive();
     }
 }

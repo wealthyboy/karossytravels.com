@@ -68,7 +68,7 @@ Route::get('/hotels/results', HotelResultsController::class)->middleware('thrott
 Route::post('/hotels/search', [HotelResultsController::class, 'search'])->middleware('throttle:30,1')->name('hotels.search.store');
 Route::get('/hotels/offers/{offer}/rooms', HotelRoomsController::class)->name('hotels.rooms');
 Route::get('/hotels/offers/{offer}/checkout', [HotelCheckoutController::class, 'show'])->name('hotels.checkout');
-Route::post('/hotels/offers/{offer}/checkout/payment', [HotelCheckoutController::class, 'initialize'])->middleware('throttle:5,1')->name('hotels.checkout.payment');
+Route::post('/hotels/offers/{offer}/checkout/payment', [HotelCheckoutController::class, 'initialize'])->middleware('throttle:hotel-checkout-payment')->name('hotels.checkout.payment');
 Route::post('/hotels/offers/{offer}/checkout/verify', [HotelCheckoutController::class, 'verify'])->middleware('throttle:30,1')->name('hotels.checkout.verify');
 Route::get('/hotels/checkout/complete/{order}', [HotelCheckoutController::class, 'complete'])->name('hotels.checkout.complete');
 Route::get('/flights/review/{offer}', FlightReviewController::class)->name('flights.review');
