@@ -57,7 +57,7 @@ final class HotelCheckoutController extends Controller
         // initializing Paystack. Final guarantee/payment rules are validated by
         // Sabre on the real booking request instead of being guessed locally.
         try {
-            $orders->preflight($offer->fresh());
+            $preflightResponse = $orders->preflight($offer->fresh());
         } catch (Throwable $exception) {
             report($exception);
 
@@ -69,7 +69,19 @@ final class HotelCheckoutController extends Controller
         $currency = $this->checkoutCurrency($request, $resolver);
         $amount = $rates->convertMinor($offer->fresh()->selling_total_minor, $offer->currency, $currency)['amount_minor'];
         $token = (string) $request->session()->get("hotel_checkout.{$offer->id}.token", Str::random(64));
-        $request->session()->put("hotel_checkout.{$offer->id}", ['guest' => $data, 'token' => $token]);
+        // Keep the exact supplier Price Check result that passed before payment.
+        // Re-running Price Check after Paystack succeeds can produce a different
+        // BookingKey or changed terms and leave a paid customer unconfirmed.
+        $supplierPreflight = [
+            'offer_id' => (string) $offer->id,
+            'rate_key_hash' => hash('sha256', (string) $offer->rate_key),
+            'response' => $preflightResponse,
+        ];
+        $request->session()->put("hotel_checkout.{$offer->id}", [
+            'guest' => $data,
+            'token' => $token,
+            'supplier_preflight' => $supplierPreflight,
+        ]);
         $attempt = CheckoutPaymentAttempt::create([
             'hotel_offer_id' => $offer->id, 'travel_offer_id' => null, 'user_id' => $request->user()?->id,
             'session_fingerprint' => $this->fingerprint($request, $offer), 'reference' => 'KAR-HTL-'.Str::upper(Str::random(18)),
@@ -79,7 +91,7 @@ final class HotelCheckoutController extends Controller
         if ($this->demoEnabled()) {
             $gateway = ['status' => 'success', 'amount' => $amount, 'currency' => $currency, 'reference' => $attempt->reference, 'channel' => 'local_demo'];
             $attempt->update(['status' => 'paid', 'verified_at' => now(), 'gateway_response' => $gateway]);
-            return $this->finalize($request, $offer, $attempt, $data, $orders, $logger, $gateway, 'demo');
+            return $this->finalize($request, $offer, $attempt, $data, $orders, $logger, $gateway, 'demo', $supplierPreflight);
         }
 
         $key = trim((string) config('services.paystack.public_key'));
@@ -138,7 +150,17 @@ final class HotelCheckoutController extends Controller
         }
 
         try {
-            return $this->finalize($request, $offer, $attempt, $checkout['guest'], $orders, $logger, $verified, $gateway);
+            return $this->finalize(
+                $request,
+                $offer,
+                $attempt,
+                $checkout['guest'],
+                $orders,
+                $logger,
+                $verified,
+                $gateway,
+                is_array($checkout['supplier_preflight'] ?? null) ? $checkout['supplier_preflight'] : null,
+            );
         } catch (Throwable $exception) {
             report($exception);
             $logger->record('hotel', 'booking', $gateway, ['offer_id' => $offer->id, 'reference' => $attempt->reference], [], [
@@ -148,8 +170,13 @@ final class HotelCheckoutController extends Controller
                 'error_message' => $exception->getMessage(),
             ]);
 
+            $message = 'Your payment was confirmed, but the hotel supplier did not confirm the reservation. Do not make another payment. Please contact Karossy support with your payment reference.';
+            if ($request->user()?->isAdmin() === true && trim($exception->getMessage()) !== '') {
+                $message .= ' Admin diagnostic: '.trim($exception->getMessage());
+            }
+
             return response()->json([
-                'message' => 'Your payment was confirmed, but the hotel reservation is still being completed. Please try again shortly or contact Karossy support with your payment reference.',
+                'message' => $message,
                 'payment_confirmed' => true,
                 'reference' => $attempt->reference,
             ], 503);
@@ -162,7 +189,7 @@ final class HotelCheckoutController extends Controller
         return view('hotels.checkout-complete', ['order' => $order->load('bookings.addons'), 'booking' => $order->bookings->firstOrFail()]);
     }
 
-    private function finalize(Request $request, HotelOffer $offer, CheckoutPaymentAttempt $attempt, array $guest, HotelOrderService $orders, TravelLogger $logger, array $gatewayData, string $gateway): JsonResponse
+    private function finalize(Request $request, HotelOffer $offer, CheckoutPaymentAttempt $attempt, array $guest, HotelOrderService $orders, TravelLogger $logger, array $gatewayData, string $gateway, ?array $supplierPreflight = null): JsonResponse
     {
         // A supplier booking is a remote side effect and must not run inside a
         // database transaction. If a local write fails after Sabre returns a
@@ -178,6 +205,7 @@ final class HotelCheckoutController extends Controller
                 $customer,
                 specialRequests: $guest['special_requests'] ?? null,
                 sendConfirmation: false,
+                supplierPreflight: $supplierPreflight,
             );
 
             $attempt->update([

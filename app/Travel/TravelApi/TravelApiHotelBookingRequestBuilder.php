@@ -172,6 +172,16 @@ final class TravelApiHotelBookingRequestBuilder
         if ($priceCheckResponse === []) {
             throw new RuntimeException('The hotel price check response was empty. Search again before booking.');
         }
+
+        // Sabre's CreatePassengerNameRecord 2.5 HotelBook contract requires an
+        // IATA RequestorID for GDS hotel booking. RateSource 100 is the Sabre
+        // GDS source used by the CSL hotel responses we shop. Fail before
+        // Paystack opens rather than accepting payment for a request that cannot
+        // satisfy the supplier booking contract.
+        $rateSource = trim((string) ($this->firstNestedValueForKey($priceCheckResponse, 'RateSource') ?? ''));
+        if ($rateSource === '100' && $this->iataNumber() === '') {
+            throw new RuntimeException("Sabre GDS hotel booking requires Karossy's agency IATA RequestorID. Configure TRAVEL_API_IATA_NUMBER before accepting payment for this rate.");
+        }
     }
 
     /**
@@ -334,16 +344,19 @@ final class TravelApiHotelBookingRequestBuilder
         $street = trim((string) ($this->configuration['agency_street'] ?? 'Karossy Travels'));
         $city = trim((string) ($this->configuration['agency_city'] ?? 'Lagos'));
 
-        if ($iataNumber === '' && $pcc === '') {
+        // POS itself is optional in the CPNR HotelBook schema, but when it
+        // is sent its Source requires RequestorID. Never send a PCC-only POS
+        // block because that produces a structurally invalid supplier request.
+        if ($iataNumber === '') {
             return null;
         }
 
         $source = array_filter([
-            'RequestorID' => $iataNumber !== '' ? [
+            'RequestorID' => [
                 'Type' => 5,
                 'Id' => $iataNumber,
                 'IdContext' => 'IATA',
-            ] : null,
+            ],
             'AgencyAddress' => [
                 'AddressLine1' => $street !== '' ? $street : 'Karossy Travels',
                 'CityName' => ['content' => $city !== '' ? $city : 'Lagos'],

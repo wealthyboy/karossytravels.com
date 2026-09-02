@@ -93,7 +93,7 @@ final class TravelApiHotelBookingRequestBuilderTest extends TestCase
         );
     }
 
-    public function test_gds_rate_without_iata_is_allowed_to_reach_sabre(): void
+    public function test_gds_rate_without_iata_is_rejected_before_customer_payment(): void
     {
         $builder = new TravelApiHotelBookingRequestBuilder([
             'hotel_price_check_path' => '/v5/hotel/pricecheck',
@@ -102,14 +102,25 @@ final class TravelApiHotelBookingRequestBuilderTest extends TestCase
         $response = $this->priceCheckResponse();
         data_set($response, 'HotelPriceCheckRS.PriceCheckInfo.HotelRateInfo.RateSource', 100);
 
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('IATA RequestorID');
+
+        $builder->assertBookable($response);
+    }
+
+    public function test_non_gds_booking_without_iata_omits_optional_pos_instead_of_sending_invalid_pos(): void
+    {
+        $builder = new TravelApiHotelBookingRequestBuilder([
+            'hotel_price_check_path' => '/v5/hotel/pricecheck',
+            'pcc' => 'ABCD',
+        ]);
+        $response = $this->priceCheckResponse();
+        data_set($response, 'HotelPriceCheckRS.PriceCheckInfo.HotelRateInfo.RateSource', 200);
+
         $builder->assertBookable($response);
         $payload = $builder->booking($this->offer(), $this->customer(), 'BOOK-123', $response);
 
-        $this->assertSame('BOOK-123', data_get($payload, 'CreatePassengerNameRecordRQ.HotelBook.BookingInfo.BookingKey'));
-        $this->assertArrayNotHasKey(
-            'PaymentInformation',
-            data_get($payload, 'CreatePassengerNameRecordRQ.HotelBook'),
-        );
+        $this->assertArrayNotHasKey('POS', data_get($payload, 'CreatePassengerNameRecordRQ.HotelBook'));
     }
 
     private function builder(): TravelApiHotelBookingRequestBuilder

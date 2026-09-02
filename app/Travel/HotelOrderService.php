@@ -49,7 +49,7 @@ final class HotelOrderService
         return $this->priceCheck($offer);
     }
 
-    public function create(HotelOffer $offer, Customer $customer, Collection|array $addons = [], array $manualMarkup = [], ?string $specialRequests = null, bool $sendConfirmation = true): Order
+    public function create(HotelOffer $offer, Customer $customer, Collection|array $addons = [], array $manualMarkup = [], ?string $specialRequests = null, bool $sendConfirmation = true, ?array $supplierPreflight = null): Order
     {
         $offer->loadMissing('search');
         $this->assertOfferUsable($offer);
@@ -91,9 +91,13 @@ final class HotelOrderService
                     ],
                 ];
             } else {
-                // Sabre CSL requires a fresh Hotel Price Check before booking.
-                // The price check turns the shopping RateKey into a BookingKey.
-                $priceCheckResponse = $this->priceCheck($offer);
+                // Website checkout performs Hotel Price Check before Paystack is
+                // opened. Reuse that exact BookingKey after payment so we do not
+                // re-price a customer after their money has already been taken.
+                // Admin/direct bookings, or an invalid/missing preflight context,
+                // still perform a fresh supplier Price Check here.
+                $priceCheckResponse = $this->preflightResponse($offer, $supplierPreflight)
+                    ?? $this->priceCheck($offer);
                 $bookingKey = $this->bookingKey($priceCheckResponse);
 
                 $payload = $this->requestBuilder->booking(
@@ -450,6 +454,37 @@ final class HotelOrderService
             'offer_id' => $offer->id,
             'duration_ms' => $this->durationMs($startedAt),
         ]);
+
+        return $response;
+    }
+
+    /**
+     * Return the server-side pre-payment Price Check response only when it is
+     * bound to this exact HotelOffer and RateKey.
+     *
+     * @param array<string, mixed>|null $preflight
+     * @return array<string, mixed>|null
+     */
+    private function preflightResponse(HotelOffer $offer, ?array $preflight): ?array
+    {
+        if (! is_array($preflight)) {
+            return null;
+        }
+
+        if ((string) ($preflight['offer_id'] ?? '') !== (string) $offer->id) {
+            return null;
+        }
+
+        $expectedHash = hash('sha256', (string) $offer->rate_key);
+        $providedHash = (string) ($preflight['rate_key_hash'] ?? '');
+        if ($providedHash === '' || ! hash_equals($expectedHash, $providedHash)) {
+            return null;
+        }
+
+        $response = $preflight['response'] ?? null;
+        if (! is_array($response) || $this->bookingKey($response) === '') {
+            return null;
+        }
 
         return $response;
     }
