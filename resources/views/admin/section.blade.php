@@ -115,16 +115,13 @@
         </div>
     </div>
 @elseif(isset($analytics))
-    @php
-        $analyticsMoney = fn (int $minor) => '₦'.number_format($minor / 100, 2);
-    @endphp
     <div class="row g-3 mb-4">
         @foreach([
-            ['Revenue', $analyticsMoney($analytics['revenue_minor']), 'bi-cash-stack'],
+            ['Revenue', '₦'.number_format(((int) ($analytics['revenue_minor'] ?? 0)) / 100, 2), 'bi-cash-stack'],
             ['Bookings', number_format($analytics['bookings']), 'bi-receipt'],
             ['Search conversion', number_format($analytics['conversion'], 1).'%', 'bi-funnel'],
             ['Tickets issued', number_format($analytics['tickets_issued']), 'bi-ticket-perforated'],
-            ['Average booking value', $analyticsMoney($analytics['average_booking_minor']), 'bi-calculator'],
+            ['Average booking value', '₦'.number_format(((int) ($analytics['average_booking_minor'] ?? 0)) / 100, 2), 'bi-calculator'],
             ['Failed API calls', number_format($analytics['failed_api_calls']), 'bi-exclamation-triangle'],
             ['Average API response', number_format($analytics['average_api_ms']).' ms', 'bi-speedometer'],
             ['Searches', number_format($analytics['searches']), 'bi-search'],
