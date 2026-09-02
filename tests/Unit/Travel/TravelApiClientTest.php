@@ -78,6 +78,31 @@ final class TravelApiClientTest extends TestCase
             && $request['password'] === 'test-password');
     }
 
+    public function test_it_retries_transient_token_failures_before_succeeding(): void
+    {
+        Cache::flush();
+        Http::fake([
+            'https://travel-api.test/v2/auth/token' => Http::sequence()
+                ->push(['message' => 'temporarily unavailable'], 500)
+                ->push(['message' => 'temporarily unavailable'], 503)
+                ->push(['access_token' => 'recovered-token', 'expires_in' => 900], 200),
+        ]);
+
+        $client = new TravelApiClient([
+            'environment' => 'cert', 'auth_scheme' => 'epr_v2',
+            'cert_url' => 'https://travel-api.test',
+            'production_url' => 'https://travel-api.test',
+            'user_id' => '847195', 'password' => 'test-password',
+            'pcc' => 'WD4H', 'domain' => 'AA', 'timeout' => 10,
+            'token_timeout' => 30, 'token_connect_timeout' => 10,
+            'token_attempts' => 3, 'token_retry_delay_ms' => 0,
+            'token_path' => '/v2/auth/token',
+        ]);
+
+        $this->assertSame('recovered-token', $client->accessToken());
+        Http::assertSentCount(3);
+    }
+
     public function test_it_can_force_refresh_the_cached_token(): void
     {
         Cache::flush();

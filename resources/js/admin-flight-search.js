@@ -438,7 +438,7 @@ if (page) {
             }
             (page.querySelector('.public-flight-results-header') || results).scrollIntoView({ behavior: 'smooth', block: 'start' });
         } catch (error) {
-            message.innerHTML = `<div><strong>Temporary network issue</strong><span>We could not connect to the airline network. Please check your connection and try again shortly.</span></div><button type="button" class="btn btn-sm btn-outline-danger" data-retry-flight-search><i class="bi bi-arrow-clockwise"></i> Try again</button>`;
+            message.innerHTML = `<div><strong>Airline service temporarily unavailable</strong><span>We could not reach the airline service. Please try again shortly.</span></div><button type="button" class="btn btn-sm btn-outline-danger" data-retry-flight-search><i class="bi bi-arrow-clockwise"></i> Try again</button>`;
             message.className = 'flight-search-message alert alert-danger mt-3';
             message.querySelector('[data-retry-flight-search]')?.addEventListener('click', () => {
                 if (publicSearchModalElement) Modal.getOrCreateInstance(publicSearchModalElement).show();

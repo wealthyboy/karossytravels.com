@@ -19,7 +19,7 @@ final class FlightSearchController extends Controller
             report($exception);
 
             return response()->json([
-                'message' => 'We are having trouble connecting to the airline network. Please check your connection and try again shortly.',
+                'message' => 'The airline service is temporarily unavailable. Please try again shortly.',
                 'meta' => [
                     'api_version' => 'v1',
                     'request_id' => $request->attributes->get('request_id'),

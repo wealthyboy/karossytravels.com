@@ -95,7 +95,7 @@ final class FlightSearchTest extends TestCase
         ]);
 
         $response->assertStatus(503)
-            ->assertJsonPath('message', 'We are having trouble connecting to the airline network. Please check your connection and try again shortly.')
+            ->assertJsonPath('message', 'The airline service is temporarily unavailable. Please try again shortly.')
             ->assertJsonMissing(['private-supplier.example'])
             ->assertJsonMissing(['cURL error 28']);
     }

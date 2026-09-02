@@ -2,6 +2,7 @@
 
 namespace App\Travel\TravelApi;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -233,7 +234,9 @@ final class TravelApiClient
             return $cached;
         }
 
-        return Cache::lock($cacheKey.'.lock', 10)->block(5, function () use ($cacheKey): string {
+        $lockSeconds = max(30, ($this->tokenTimeout() * $this->tokenAttempts()) + 10);
+
+        return Cache::lock($cacheKey.'.lock', $lockSeconds)->block(5, function () use ($cacheKey): string {
             $cachedInsideLock = Cache::get($cacheKey);
 
             if (is_string($cachedInsideLock) && $cachedInsideLock !== '') {
@@ -269,18 +272,11 @@ final class TravelApiClient
         $clientSecret = (string) $this->configuration['client_secret'];
         $credential = base64_encode(base64_encode($clientId).':'.base64_encode($clientSecret));
 
-        return Http::baseUrl($this->baseUrl())
-            ->asForm()
-            ->acceptJson()
-            ->timeout((int) $this->configuration['timeout'])
-            ->withHeaders(['Authorization' => 'Basic '.$credential])
-            ->post((string) $this->configuration['token_path'], [
-                'grant_type' => 'password',
-                'username' => $this->configuration['user_id'].'-'.$this->configuration['pcc'].'-AA',
-                'password' => (string) $this->configuration['password'],
-            ])
-            ->throw()
-            ->json();
+        return $this->requestToken($credential, [
+            'grant_type' => 'password',
+            'username' => $this->configuration['user_id'].'-'.$this->configuration['pcc'].'-AA',
+            'password' => (string) $this->configuration['password'],
+        ]);
     }
 
     /** @return array<string, mixed> */
@@ -291,16 +287,9 @@ final class TravelApiClient
             base64_encode($userId).':'.base64_encode((string) $this->configuration['password'])
         );
 
-        return Http::baseUrl($this->baseUrl())
-            ->asForm()
-            ->acceptJson()
-            ->timeout((int) $this->configuration['timeout'])
-            ->withHeaders(['Authorization' => 'Basic '.$credential])
-            ->post((string) $this->configuration['token_path'], [
-                'grant_type' => 'client_credentials',
-            ])
-            ->throw()
-            ->json();
+        return $this->requestToken($credential, [
+            'grant_type' => 'client_credentials',
+        ]);
     }
 
     /** @return array<string, mixed> */
@@ -311,16 +300,91 @@ final class TravelApiClient
             .':'.base64_encode((string) $this->configuration['client_secret'])
         );
 
-        return Http::baseUrl($this->baseUrl())
-            ->asForm()
-            ->acceptJson()
-            ->timeout((int) $this->configuration['timeout'])
-            ->withHeaders(['Authorization' => 'Basic '.$credential])
-            ->post((string) $this->configuration['token_path'], [
-                'grant_type' => 'client_credentials',
-            ])
-            ->throw()
-            ->json();
+        return $this->requestToken($credential, [
+            'grant_type' => 'client_credentials',
+        ]);
+    }
+
+    /** @param array<string, mixed> $form
+     *  @return array<string, mixed>
+     */
+    private function requestToken(string $credential, array $form): array
+    {
+        $attempts = $this->tokenAttempts();
+        $timeout = $this->tokenTimeout();
+        $connectTimeout = min($timeout, max(1, (int) ($this->configuration['token_connect_timeout'] ?? 10)));
+        $retryDelayMs = max(0, (int) ($this->configuration['token_retry_delay_ms'] ?? 750));
+
+        for ($attempt = 1; $attempt <= $attempts; $attempt++) {
+            try {
+                $response = Http::baseUrl($this->baseUrl())
+                    ->asForm()
+                    ->acceptJson()
+                    ->connectTimeout($connectTimeout)
+                    ->timeout($timeout)
+                    ->withHeaders(['Authorization' => 'Basic '.$credential])
+                    ->post((string) $this->configuration['token_path'], $form);
+            } catch (ConnectionException $exception) {
+                if ($attempt >= $attempts) {
+                    throw $exception;
+                }
+
+                $this->logTokenRetry($attempt, $attempts, null, $exception->getMessage());
+                $this->waitBeforeTokenRetry($retryDelayMs);
+                continue;
+            }
+
+            if ($response->successful()) {
+                $json = $response->json();
+
+                if (! is_array($json)) {
+                    throw new RuntimeException('The travel system returned an invalid authentication response.');
+                }
+
+                return $json;
+            }
+
+            // Retry only failures that are likely transient. Authentication and
+            // validation failures (4xx other than 429) should surface immediately.
+            $retryable = $response->status() === 429 || $response->serverError();
+
+            if (! $retryable || $attempt >= $attempts) {
+                $response->throw();
+            }
+
+            $this->logTokenRetry($attempt, $attempts, $response->status(), null);
+            $this->waitBeforeTokenRetry($retryDelayMs);
+        }
+
+        throw new RuntimeException('The travel system authentication request could not be completed.');
+    }
+
+    private function tokenTimeout(): int
+    {
+        return max(5, (int) ($this->configuration['token_timeout'] ?? 30));
+    }
+
+    private function tokenAttempts(): int
+    {
+        return max(1, (int) ($this->configuration['token_attempts'] ?? 3));
+    }
+
+    private function waitBeforeTokenRetry(int $retryDelayMs): void
+    {
+        if ($retryDelayMs > 0) {
+            usleep($retryDelayMs * 1000);
+        }
+    }
+
+    private function logTokenRetry(int $attempt, int $attempts, ?int $status, ?string $error): void
+    {
+        Log::warning('Travel API authentication request failed; retrying.', [
+            'attempt' => $attempt,
+            'max_attempts' => $attempts,
+            'status' => $status,
+            'error' => $error,
+            'request_id' => request()->attributes->get('request_id'),
+        ]);
     }
 
     private function authenticatedRequest(): PendingRequest

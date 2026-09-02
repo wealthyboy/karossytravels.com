@@ -28,6 +28,11 @@ return [
             'organization' => env('TRAVEL_API_ORGANIZATION'),
             'domain' => env('TRAVEL_API_DOMAIN'),
             'timeout' => (int) env('TRAVEL_API_TIMEOUT', 30),
+            'token_timeout' => (int) env('TRAVEL_API_TOKEN_TIMEOUT', 30),
+            'token_connect_timeout' => (int) env('TRAVEL_API_TOKEN_CONNECT_TIMEOUT', 10),
+            // 3 total attempts = the first request plus 2 transient-failure retries.
+            'token_attempts' => (int) env('TRAVEL_API_TOKEN_ATTEMPTS', 3),
+            'token_retry_delay_ms' => (int) env('TRAVEL_API_TOKEN_RETRY_DELAY_MS', 750),
             'token_path' => env('TRAVEL_API_TOKEN_PATH', '/v2/auth/token'),
             'flight_shop_path' => env('TRAVEL_API_FLIGHT_SHOP_PATH', '/v5/offers/shop'),
             'flight_revalidate_path' => env('TRAVEL_API_FLIGHT_REVALIDATE_PATH', '/v5/shop/flights/revalidate'),
