@@ -10,8 +10,11 @@ use App\Models\HotelSearch;
 use App\Models\Order;
 use App\Models\Ticket;
 use App\Models\TravelLog;
+use App\Travel\TravelApi\TravelApiClient;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Throwable;
 
 final class SectionController extends Controller
 {
@@ -104,17 +107,14 @@ final class SectionController extends Controller
         );
     }
 
-    public function sabreProvider(): View
+    public function sabreProvider(TravelApiClient $travelApi): View
     {
-        $configuration = config('services.travel.travel_api', []);
-        $authScheme = (string) ($configuration['auth_scheme'] ?? '');
-        $credentialsConfigured = $authScheme === 'epr_v2'
-            ? filled($configuration['user_id'] ?? null)
-                && filled($configuration['password'] ?? null)
-                && filled($configuration['pcc'] ?? null)
-            : filled($configuration['client_id'] ?? null)
-                && filled($configuration['client_secret'] ?? null);
-
+        $configuration = (array) config('services.travel.travel_api', []);
+        $travelApiStatus = $travelApi->status();
+        $authScheme = (string) ($configuration['auth_scheme'] ?? 'oauth_client');
+        $tokenPath = (string) ($configuration['token_path'] ?? '/v2/auth/token');
+        $baseUrl = rtrim((string) ($travelApiStatus['base_url'] ?? ''), '/');
+        $tokenEndpoint = $baseUrl !== '' ? $baseUrl.'/'.ltrim($tokenPath, '/') : $tokenPath;
         $recentLogs = TravelLog::query()->where('created_at', '>=', now()->subDay());
 
         return $this->section(
@@ -123,12 +123,45 @@ final class SectionController extends Controller
             data: ['providerStatus' => [
                 'environment' => str((string) ($configuration['environment'] ?? 'cert'))->headline()->toString(),
                 'enabled' => config('services.travel.provider') !== 'fake',
-                'credentials_configured' => $credentialsConfigured || filled($configuration['access_token'] ?? null),
+                'credentials_configured' => (bool) ($travelApiStatus['configured'] ?? false),
                 'successful_calls' => (clone $recentLogs)->where('status', 'success')->count(),
                 'failed_calls' => (clone $recentLogs)->where('status', 'failed')->count(),
                 'last_activity' => TravelLog::query()->latest()->value('created_at'),
+                'auth_scheme' => str($authScheme)->replace('_', ' ')->headline()->toString(),
+                'access_token' => $travelApi->currentAccessToken(),
+                'token_cached' => (bool) ($travelApiStatus['token_cached'] ?? false),
+                'token_expires_at' => $travelApiStatus['token_expires_at'] ?? null,
+                'token_endpoint' => $tokenEndpoint,
+                'base_url' => $baseUrl,
             ]],
         );
+    }
+
+    public function testSabreProvider(TravelApiClient $travelApi): RedirectResponse
+    {
+        $startedAt = microtime(true);
+
+        try {
+            $travelApi->authenticate(true);
+            $durationMs = (int) round((microtime(true) - $startedAt) * 1000);
+
+            return redirect()->route('admin.providers.sabre')->with('providerConnectionTest', [
+                'status' => 'success',
+                'duration_ms' => $durationMs,
+                'message' => 'Sabre authentication succeeded. Karossy received a fresh access token from the supplier token endpoint.',
+            ]);
+        } catch (Throwable $exception) {
+            $durationMs = (int) round((microtime(true) - $startedAt) * 1000);
+            report($exception);
+
+            return redirect()->route('admin.providers.sabre')->with('providerConnectionTest', [
+                'status' => 'failed',
+                'duration_ms' => $durationMs,
+                'message' => $exception->getMessage() !== ''
+                    ? $exception->getMessage()
+                    : 'Sabre authentication failed without an error message. Review the application log for the underlying exception.',
+            ]);
+        }
     }
 
     public function workspace(Request $request, string $section, string $page): View

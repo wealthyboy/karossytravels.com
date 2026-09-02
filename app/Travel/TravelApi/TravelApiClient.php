@@ -5,6 +5,7 @@ namespace App\Travel\TravelApi;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -45,17 +46,60 @@ final class TravelApiClient
     /** @return array{ready:bool,expires_at:?string} */
     public function authenticate(bool $force = false): array
     {
-        if ($force) {
+        $previousToken = null;
+        $previousMetadata = null;
+
+        if ($force && ($this->configuration['auth_scheme'] ?? null) !== 'bearer_token') {
+            // Keep a still-valid token available if the diagnostic refresh itself
+            // cannot reach the supplier. A connection test must not take the
+            // live application offline by destroying a usable cached token.
+            $previousToken = Cache::get($this->tokenCacheKey());
+            $previousMetadata = Cache::get($this->tokenMetadataCacheKey());
+
             Cache::forget($this->tokenCacheKey());
             Cache::forget($this->tokenMetadataCacheKey());
         }
 
-        $this->accessToken();
+        try {
+            $this->accessToken();
+        } catch (\Throwable $exception) {
+            if (is_string($previousToken) && $previousToken !== '') {
+                $expiresAt = is_array($previousMetadata) ? ($previousMetadata['expires_at'] ?? null) : null;
+                $restoreUntil = $expiresAt ? Carbon::parse($expiresAt) : now()->addMinutes(5);
+
+                if ($restoreUntil->isFuture()) {
+                    Cache::put($this->tokenCacheKey(), $previousToken, $restoreUntil);
+                    if (is_array($previousMetadata)) {
+                        Cache::put($this->tokenMetadataCacheKey(), $previousMetadata, $restoreUntil);
+                    }
+                }
+            }
+
+            throw $exception;
+        }
 
         return [
             'ready' => true,
             'expires_at' => Cache::get($this->tokenMetadataCacheKey())['expires_at'] ?? null,
         ];
+    }
+
+    /**
+     * Return the token already available to Karossy without making a network
+     * request. This is intentionally used only by the protected admin supplier
+     * diagnostics page.
+     */
+    public function currentAccessToken(): ?string
+    {
+        if (($this->configuration['auth_scheme'] ?? null) === 'bearer_token') {
+            $configured = (string) ($this->configuration['access_token'] ?? '');
+
+            return $configured !== '' ? $configured : null;
+        }
+
+        $cached = Cache::get($this->tokenCacheKey());
+
+        return is_string($cached) && $cached !== '' ? $cached : null;
     }
 
     /** @param array<string, mixed> $payload */
