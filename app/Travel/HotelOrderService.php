@@ -388,8 +388,8 @@ final class HotelOrderService
             ], [
                 'booking_key_received' => true,
                 'price_changed' => true,
-                'price_difference' => data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.PriceDifference'),
-                'currency' => data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.CurrencyCode'),
+                'price_difference' => data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.ConvertedPriceDifference', data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.PriceDifference')),
+                'currency' => data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.ConvertedCurrencyCode', data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.CurrencyCode')),
             ], [
                 'status' => 'failed',
                 'session_id' => $offer->search->session_id,
@@ -425,7 +425,7 @@ final class HotelOrderService
         ], [
             'booking_key_received' => true,
             'price_changed' => false,
-            'currency' => data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.CurrencyCode'),
+            'currency' => data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.ConvertedCurrencyCode', data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.CurrencyCode')),
         ], [
             'session_id' => $offer->search->session_id,
             'offer_id' => $offer->id,
@@ -455,7 +455,15 @@ final class HotelOrderService
     /** @param array<string, mixed> $response */
     private function priceChanged(array $response): bool
     {
-        $value = data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.PriceChange', data_get($response, 'PriceCheckInfo.PriceChange', false));
+        $value = data_get(
+            $response,
+            'HotelPriceCheckRS.PriceCheckInfo.ConvertedPriceChange',
+            data_get(
+                $response,
+                'HotelPriceCheckRS.PriceCheckInfo.PriceChange',
+                data_get($response, 'PriceCheckInfo.ConvertedPriceChange', data_get($response, 'PriceCheckInfo.PriceChange', false)),
+            ),
+        );
 
         if (is_bool($value)) {
             return $value;
@@ -535,7 +543,7 @@ final class HotelOrderService
         }
 
         foreach ($data as $key => $value) {
-            if (is_string($value) && in_array(strtolower((string) $key), ['content', 'message', 'shorttext', 'errormessage'], true)) {
+            if (is_string($value) && in_array(strtolower((string) $key), ['content', 'message', 'shorttext', 'errormessage', 'value'], true)) {
                 if (trim($value) !== '') {
                     $messages[] = trim($value);
                 }
@@ -579,8 +587,8 @@ final class HotelOrderService
 
         return array_filter([
             'price_changed' => $this->priceChanged($response),
-            'price_difference' => data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.PriceDifference'),
-            'currency' => data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.CurrencyCode'),
+            'price_difference' => data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.ConvertedPriceDifference', data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.PriceDifference')),
+            'currency' => data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.ConvertedCurrencyCode', data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.CurrencyCode')),
             'booking_key_received' => $this->bookingKey($response) !== '',
         ], fn (mixed $value): bool => $value !== null);
     }

@@ -153,10 +153,10 @@ final class TravelApiClientTest extends TestCase
         Http::assertSent(fn ($request): bool => $request->url() === 'https://travel-api.test/v1/trip/orders/create');
     }
 
-    public function test_hotel_price_check_maps_the_legacy_path_and_sends_sabre_application_headers(): void
+    public function test_hotel_price_check_maps_old_paths_to_v5_and_sends_sabre_application_headers(): void
     {
         Http::fake([
-            'https://travel-api.test/v2.1.0/hotel/pricecheck' => Http::response([
+            'https://travel-api.test/v5/hotel/pricecheck' => Http::response([
                 'HotelPriceCheckRS' => [
                     'PriceCheckInfo' => ['BookingKey' => 'BOOK-123'],
                 ],
@@ -171,22 +171,28 @@ final class TravelApiClientTest extends TestCase
             'production_url' => 'https://travel-api.test',
             'timeout' => 30,
             'application_id' => 'KAROSSY-APP',
-            'hotel_price_check_path' => '/v5/hotelpricecheck',
+            // Compatibility check for a value shipped by the previous patch.
+            'hotel_price_check_path' => '/v2.1.0/hotel/pricecheck',
         ]);
 
         $response = $client->priceCheckHotel([
             'HotelPriceCheckRQ' => [
-                'version' => '2.1.0',
-                'RateInfoRef' => ['RateKey' => 'RATE-123'],
+                'POS' => ['Source' => ['PseudoCityCode' => 'ABCD']],
+                'RateInfoRef' => [
+                    'RateKey' => 'RATE-123',
+                    'Rooms' => ['Room' => [['Index' => 1, 'Adults' => 1, 'Children' => 0]]],
+                    'StayDateTimeRange' => ['StartDate' => '2026-09-10', 'EndDate' => '2026-09-11'],
+                ],
             ],
         ]);
 
         $this->assertSame('BOOK-123', data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.BookingKey'));
         Http::assertSent(function ($request): bool {
-            return $request->url() === 'https://travel-api.test/v2.1.0/hotel/pricecheck'
+            return $request->url() === 'https://travel-api.test/v5/hotel/pricecheck'
                 && ($request->header('Authorization')[0] ?? null) === 'Bearer test-token'
                 && ($request->header('Application-ID')[0] ?? null) === 'KAROSSY-APP'
                 && filled($request->header('Conversation-ID')[0] ?? null)
+                && data_get($request->data(), 'HotelPriceCheckRQ.POS.Source.PseudoCityCode') === 'ABCD'
                 && data_get($request->data(), 'HotelPriceCheckRQ.RateInfoRef.RateKey') === 'RATE-123';
         });
     }

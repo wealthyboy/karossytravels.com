@@ -14,26 +14,55 @@ final class TravelApiHotelBookingRequestBuilder
     /** @return array<string, mixed> */
     public function priceCheck(HotelOffer $offer): array
     {
-        $path = trim((string) ($this->configuration['hotel_price_check_path'] ?? ''));
+        $offer->loadMissing('search');
+        $search = $offer->search;
 
-        // The previous Karossy patch used /v5/hotelpricecheck. Sabre's CSL
-        // Hotel Price Check workflow uses a versioned /hotel/pricecheck path
-        // and a HotelPriceCheckRQ envelope. Treat our old path as the
-        // documented v2.1.0 contract so an existing local .env override does
-        // not keep generating an invalid request after this update.
-        if ($path === '/v5/hotelpricecheck') {
-            $version = '2.1.0';
-        } elseif (preg_match('#/v([0-9]+(?:\.[0-9]+){1,2})/hotel/pricecheck(?:$|\?)#', $path, $match) === 1) {
-            $version = $match[1];
-        } else {
-            $version = '2.1.0';
+        if ($search === null) {
+            throw new RuntimeException('The hotel offer is missing its search context. Search again before checkout.');
         }
+
+        $rateKey = trim((string) $offer->rate_key);
+        if ($rateKey === '') {
+            throw new RuntimeException('This hotel offer does not contain the supplier RateKey required for price check. Search again.');
+        }
+
+        $pcc = strtoupper(trim((string) ($this->configuration['pcc'] ?? '')));
+        if ($pcc === '') {
+            throw new RuntimeException('The Sabre pseudo city code is not configured for hotel price check.');
+        }
+
+        $rooms = max(1, (int) $search->rooms);
+        $adults = max(1, (int) $search->adults);
+        $children = max(0, (int) $search->children);
+
+        // Hotel Price Check must retain the stay and occupancy context that
+        // produced the v5 RateKey. Keep the room distribution aligned with
+        // the existing GetHotelAvailRQ builder so Sabre validates the same
+        // product the customer selected.
+        $roomPayload = collect(range(1, $rooms))->map(function (int $index) use ($adults, $children, $rooms): array {
+            return [
+                'Index' => $index,
+                'Adults' => max(1, intdiv($adults, $rooms) + ($index <= ($adults % $rooms) ? 1 : 0)),
+                'Children' => $children,
+            ];
+        })->all();
 
         return [
             'HotelPriceCheckRQ' => [
-                'version' => $version,
+                'POS' => [
+                    'Source' => [
+                        'PseudoCityCode' => $pcc,
+                    ],
+                ],
                 'RateInfoRef' => [
-                    'RateKey' => (string) $offer->rate_key,
+                    'RateKey' => $rateKey,
+                    'Rooms' => [
+                        'Room' => $roomPayload,
+                    ],
+                    'StayDateTimeRange' => [
+                        'StartDate' => $search->check_in?->format('Y-m-d'),
+                        'EndDate' => $search->check_out?->format('Y-m-d'),
+                    ],
                 ],
             ],
         ];

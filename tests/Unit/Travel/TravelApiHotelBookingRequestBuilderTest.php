@@ -11,32 +11,23 @@ use Tests\TestCase;
 
 final class TravelApiHotelBookingRequestBuilderTest extends TestCase
 {
-    public function test_documented_price_check_wraps_the_offer_rate_key(): void
+    public function test_v5_price_check_preserves_rate_stay_and_occupancy_context(): void
     {
         $builder = new TravelApiHotelBookingRequestBuilder([
-            'hotel_price_check_path' => '/v2.1.0/hotel/pricecheck',
+            'hotel_price_check_path' => '/v5/hotel/pricecheck',
+            'pcc' => 'ABCD',
         ]);
 
         $payload = $builder->priceCheck($this->offer());
 
-        $this->assertSame([
-            'HotelPriceCheckRQ' => [
-                'version' => '2.1.0',
-                'RateInfoRef' => ['RateKey' => 'RATE-123'],
-            ],
-        ], $payload);
-    }
-
-    public function test_legacy_v5_price_check_setting_uses_the_documented_contract(): void
-    {
-        $builder = new TravelApiHotelBookingRequestBuilder([
-            'hotel_price_check_path' => '/v5/hotelpricecheck',
-        ]);
-
-        $payload = $builder->priceCheck($this->offer());
-
-        $this->assertSame('2.1.0', data_get($payload, 'HotelPriceCheckRQ.version'));
+        $this->assertSame('ABCD', data_get($payload, 'HotelPriceCheckRQ.POS.Source.PseudoCityCode'));
         $this->assertSame('RATE-123', data_get($payload, 'HotelPriceCheckRQ.RateInfoRef.RateKey'));
+        $this->assertSame('2026-09-10', data_get($payload, 'HotelPriceCheckRQ.RateInfoRef.StayDateTimeRange.StartDate'));
+        $this->assertSame('2026-09-11', data_get($payload, 'HotelPriceCheckRQ.RateInfoRef.StayDateTimeRange.EndDate'));
+        $this->assertSame(1, data_get($payload, 'HotelPriceCheckRQ.RateInfoRef.Rooms.Room.0.Index'));
+        $this->assertSame(1, data_get($payload, 'HotelPriceCheckRQ.RateInfoRef.Rooms.Room.0.Adults'));
+        $this->assertSame(0, data_get($payload, 'HotelPriceCheckRQ.RateInfoRef.Rooms.Room.0.Children'));
+        $this->assertArrayNotHasKey('version', data_get($payload, 'HotelPriceCheckRQ'));
     }
 
     public function test_pay_later_booking_omits_payment_information(): void
@@ -103,7 +94,7 @@ final class TravelApiHotelBookingRequestBuilderTest extends TestCase
     public function test_gds_rate_requires_an_iata_number(): void
     {
         $builder = new TravelApiHotelBookingRequestBuilder([
-            'hotel_price_check_path' => '/v2.1.0/hotel/pricecheck',
+            'hotel_price_check_path' => '/v5/hotel/pricecheck',
             'pcc' => 'ABCD',
         ]);
         $response = $this->priceCheckResponse();
@@ -118,7 +109,7 @@ final class TravelApiHotelBookingRequestBuilderTest extends TestCase
     private function builder(): TravelApiHotelBookingRequestBuilder
     {
         return new TravelApiHotelBookingRequestBuilder([
-            'hotel_price_check_path' => '/v2.1.0/hotel/pricecheck',
+            'hotel_price_check_path' => '/v5/hotel/pricecheck',
             'iata_number' => '12345678',
             'pcc' => 'ABCD',
             'agency_name' => 'Karossy Travels',
@@ -135,6 +126,8 @@ final class TravelApiHotelBookingRequestBuilderTest extends TestCase
             'rooms' => 1,
             'adults' => 1,
             'children' => 0,
+            'check_in' => '2026-09-10',
+            'check_out' => '2026-09-11',
         ]);
 
         $offer = new HotelOffer([

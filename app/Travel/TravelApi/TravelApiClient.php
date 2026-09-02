@@ -259,11 +259,12 @@ final class TravelApiClient
     {
         $path = trim((string) ($this->configuration['hotel_price_check_path'] ?? ''));
 
-        // Compatibility with the incorrect path shipped by an earlier Karossy
-        // patch. This also protects installations that copied that value into
-        // .env before the corrected default was deployed.
-        if ($path === '/v5/hotelpricecheck' || $path === '') {
-            $path = '/v2.1.0/hotel/pricecheck';
+        // Karossy shops hotels with Sabre CSL v5. Price Check must use the
+        // matching v5 contract as well. Normalize both paths used by earlier
+        // patches so an old local .env override cannot keep checkout on the
+        // incompatible request contract.
+        if (in_array($path, ['', '/v5/hotelpricecheck', '/v2.1.0/hotel/pricecheck'], true)) {
+            $path = '/v5/hotel/pricecheck';
         }
 
         return $this->post($path, $payload);

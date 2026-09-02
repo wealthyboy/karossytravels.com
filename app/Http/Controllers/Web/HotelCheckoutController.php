@@ -63,7 +63,7 @@ final class HotelCheckoutController extends Controller
             report($exception);
 
             return response()->json([
-                'message' => $this->supplierCheckoutMessage($exception),
+                'message' => $this->supplierCheckoutMessage($exception, $request->user()?->isAdmin() === true),
             ], 422);
         }
 
@@ -242,27 +242,30 @@ final class HotelCheckoutController extends Controller
         return $customer;
     }
 
-    private function supplierCheckoutMessage(Throwable $exception): string
+    private function supplierCheckoutMessage(Throwable $exception, bool $includeDiagnostic = false): string
     {
-        $message = strtolower($exception->getMessage());
+        $rawMessage = trim($exception->getMessage());
+        $message = strtolower($rawMessage);
 
         if (str_contains($message, 'payment-card guarantee')) {
-            return 'This room requires a supplier card guarantee that is not supported by this checkout. Please choose another rate or contact Karossy support.';
+            $customerMessage = 'This room requires a supplier card guarantee that is not supported by this checkout. Please choose another rate or contact Karossy support.';
+        } elseif (str_contains($message, 'agency iata')) {
+            $customerMessage = 'This hotel rate requires Karossy agency credentials before it can be confirmed. Please contact Karossy support.';
+        } elseif (str_contains($message, 'prepayment')) {
+            $customerMessage = 'This room requires supplier prepayment. Please choose another pay-later or agency-guaranteed rate.';
+        } elseif (str_contains($message, 'rate') && str_contains($message, 'changed')) {
+            $customerMessage = 'The hotel changed this rate. Please return to the hotel results and choose the latest available rate.';
+        } elseif ((str_contains($message, 'check-in') || str_contains($message, 'check in')) && (str_contains($message, 'invalid') || str_contains($message, 'past') || str_contains($message, 'date'))) {
+            $customerMessage = 'This check-in date is no longer valid for the hotel. Please search again with a later check-in date.';
+        } else {
+            $customerMessage = 'This hotel rate cannot be confirmed with the supplier right now. Please choose another room/rate or try again shortly.';
         }
 
-        if (str_contains($message, 'agency iata')) {
-            return 'This hotel rate requires Karossy agency credentials before it can be confirmed. Please contact Karossy support.';
+        if ($includeDiagnostic && $rawMessage !== '') {
+            return $customerMessage.' Admin diagnostic: '.$rawMessage;
         }
 
-        if (str_contains($message, 'prepayment')) {
-            return 'This room requires supplier prepayment. Please choose another pay-later or agency-guaranteed rate.';
-        }
-
-        if (str_contains($message, 'rate') && str_contains($message, 'changed')) {
-            return 'The hotel changed this rate. Please return to the hotel results and choose the latest available rate.';
-        }
-
-        return 'This hotel rate cannot be confirmed with the supplier right now. Please choose another room/rate or try again shortly.';
+        return $customerMessage;
     }
 
     private function checkoutCurrency(Request $request, DisplayCurrencyResolver $resolver): string
