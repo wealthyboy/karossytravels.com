@@ -43,9 +43,17 @@ final class FlightSearchService
             $providerOffers = $this->provider->search($criteria);
         } catch (Throwable $exception) {
             $durationMs = (int) ((hrtime(true) - $startedAt) / 1_000_000);
+            $errorMessage = trim($exception->getMessage());
+            if ($errorMessage === '') {
+                $previousMessage = trim((string) $exception->getPrevious()?->getMessage());
+                $errorMessage = $previousMessage !== ''
+                    ? $exception::class.' — '.$previousMessage
+                    : $exception::class.' was thrown without an error message.';
+            }
+
             $this->travelLogger->record('flight', 'search', $this->provider->name(), $criteria, [], [
                 'status' => 'failed', 'session_id' => $criteria['session_id'] ?? null,
-                'duration_ms' => $durationMs, 'error_message' => $exception->getMessage(),
+                'duration_ms' => $durationMs, 'error_message' => $errorMessage,
             ]);
             throw $exception;
         }

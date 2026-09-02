@@ -2,6 +2,7 @@
 
 namespace App\Travel\TravelApi;
 
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Cache;
@@ -236,33 +237,49 @@ final class TravelApiClient
 
         $lockSeconds = max(30, ($this->tokenTimeout() * $this->tokenAttempts()) + 10);
 
-        return Cache::lock($cacheKey.'.lock', $lockSeconds)->block(5, function () use ($cacheKey): string {
-            $cachedInsideLock = Cache::get($cacheKey);
+        try {
+            return Cache::lock($cacheKey.'.lock', $lockSeconds)->block(5, function () use ($cacheKey): string {
+                $cachedInsideLock = Cache::get($cacheKey);
 
-            if (is_string($cachedInsideLock) && $cachedInsideLock !== '') {
-                return $cachedInsideLock;
+                if (is_string($cachedInsideLock) && $cachedInsideLock !== '') {
+                    return $cachedInsideLock;
+                }
+
+                $response = match ($this->configuration['auth_scheme'] ?? 'oauth_client') {
+                    'password_grant' => $this->requestPasswordGrantToken(),
+                    'epr_v2' => $this->requestEprV2Token(),
+                    default => $this->requestClientCredentialsToken(),
+                };
+
+                $token = $response['access_token'] ?? null;
+
+                if (! is_string($token) || $token === '') {
+                    throw new RuntimeException('The travel system did not return an access token.');
+                }
+
+                $expiresIn = max(60, (int) ($response['expires_in'] ?? 3600) - 60);
+                Cache::put($cacheKey, $token, now()->addSeconds($expiresIn));
+                Cache::put($this->tokenMetadataCacheKey(), [
+                    'expires_at' => now()->addSeconds($expiresIn)->toIso8601String(),
+                ], now()->addSeconds($expiresIn));
+
+                return $token;
+            });
+        } catch (LockTimeoutException $exception) {
+            // A parallel flight search may already be refreshing the token.
+            // Re-check the cache once before surfacing a descriptive error.
+            $cachedAfterWait = Cache::get($cacheKey);
+
+            if (is_string($cachedAfterWait) && $cachedAfterWait !== '') {
+                return $cachedAfterWait;
             }
 
-            $response = match ($this->configuration['auth_scheme'] ?? 'oauth_client') {
-                'password_grant' => $this->requestPasswordGrantToken(),
-                'epr_v2' => $this->requestEprV2Token(),
-                default => $this->requestClientCredentialsToken(),
-            };
-
-            $token = $response['access_token'] ?? null;
-
-            if (! is_string($token) || $token === '') {
-                throw new RuntimeException('The travel system did not return an access token.');
-            }
-
-            $expiresIn = max(60, (int) ($response['expires_in'] ?? 3600) - 60);
-            Cache::put($cacheKey, $token, now()->addSeconds($expiresIn));
-            Cache::put($this->tokenMetadataCacheKey(), [
-                'expires_at' => now()->addSeconds($expiresIn)->toIso8601String(),
-            ], now()->addSeconds($expiresIn));
-
-            return $token;
-        });
+            throw new RuntimeException(
+                'Travel API authentication is still in progress: another token request held the authentication lock for more than 5 seconds.',
+                0,
+                $exception,
+            );
+        }
     }
 
     /** @return array<string, mixed> */
