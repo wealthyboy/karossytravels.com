@@ -117,10 +117,10 @@ final class SectionController extends Controller
         $tokenEndpoint = $baseUrl !== '' ? $baseUrl.'/'.ltrim($tokenPath, '/') : $tokenPath;
         $recentLogs = TravelLog::query()->where('created_at', '>=', now()->subDay());
 
-        return $this->section(
-            'Travel supplier',
-            'Monitor the airline and hotel supplier connection used by Karossy operations.',
-            data: ['providerStatus' => [
+        return view('admin.providers.sabre', [
+            'title' => 'Travel supplier',
+            'description' => 'Monitor the airline and hotel supplier connection used by Karossy operations.',
+            'providerStatus' => [
                 'environment' => str((string) ($configuration['environment'] ?? 'cert'))->headline()->toString(),
                 'enabled' => config('services.travel.provider') !== 'fake',
                 'credentials_configured' => (bool) ($travelApiStatus['configured'] ?? false),
@@ -133,8 +133,9 @@ final class SectionController extends Controller
                 'token_expires_at' => $travelApiStatus['token_expires_at'] ?? null,
                 'token_endpoint' => $tokenEndpoint,
                 'base_url' => $baseUrl,
-            ]],
-        );
+            ],
+            'providerTest' => session('providerConnectionTest'),
+        ]);
     }
 
     public function testSabreProvider(TravelApiClient $travelApi): RedirectResponse
