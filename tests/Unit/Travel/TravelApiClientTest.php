@@ -153,6 +153,44 @@ final class TravelApiClientTest extends TestCase
         Http::assertSent(fn ($request): bool => $request->url() === 'https://travel-api.test/v1/trip/orders/create');
     }
 
+    public function test_hotel_price_check_maps_the_legacy_path_and_sends_sabre_application_headers(): void
+    {
+        Http::fake([
+            'https://travel-api.test/v2.1.0/hotel/pricecheck' => Http::response([
+                'HotelPriceCheckRS' => [
+                    'PriceCheckInfo' => ['BookingKey' => 'BOOK-123'],
+                ],
+            ]),
+        ]);
+
+        $client = new TravelApiClient([
+            'environment' => 'cert',
+            'auth_scheme' => 'bearer_token',
+            'access_token' => 'test-token',
+            'cert_url' => 'https://travel-api.test',
+            'production_url' => 'https://travel-api.test',
+            'timeout' => 30,
+            'application_id' => 'KAROSSY-APP',
+            'hotel_price_check_path' => '/v5/hotelpricecheck',
+        ]);
+
+        $response = $client->priceCheckHotel([
+            'HotelPriceCheckRQ' => [
+                'version' => '2.1.0',
+                'RateInfoRef' => ['RateKey' => 'RATE-123'],
+            ],
+        ]);
+
+        $this->assertSame('BOOK-123', data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.BookingKey'));
+        Http::assertSent(function ($request): bool {
+            return $request->url() === 'https://travel-api.test/v2.1.0/hotel/pricecheck'
+                && ($request->header('Authorization')[0] ?? null) === 'Bearer test-token'
+                && ($request->header('Application-ID')[0] ?? null) === 'KAROSSY-APP'
+                && filled($request->header('Conversation-ID')[0] ?? null)
+                && data_get($request->data(), 'HotelPriceCheckRQ.RateInfoRef.RateKey') === 'RATE-123';
+        });
+    }
+
     public function test_it_reports_an_empty_provider_response_without_a_php_type_error(): void
     {
         Http::fake(['https://travel-api.test/*' => Http::response('', 200)]);

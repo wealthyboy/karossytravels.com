@@ -14,21 +14,29 @@ final class TravelApiHotelBookingRequestBuilder
     /** @return array<string, mixed> */
     public function priceCheck(HotelOffer $offer): array
     {
-        $rateInfoRef = ['RateKey' => (string) $offer->rate_key];
-        $path = (string) ($this->configuration['hotel_price_check_path'] ?? '');
+        $path = trim((string) ($this->configuration['hotel_price_check_path'] ?? ''));
 
-        // Hotel Price Check v5 accepts RateInfoRef directly. Keep support for a
-        // configured v4 endpoint as well so environment overrides remain safe.
-        if (str_contains($path, '/v4.0.0/')) {
-            return [
-                'HotelPriceCheckRQ' => [
-                    'version' => '4.0.0',
-                    'RateInfoRef' => $rateInfoRef,
-                ],
-            ];
+        // The previous Karossy patch used /v5/hotelpricecheck. Sabre's CSL
+        // Hotel Price Check workflow uses a versioned /hotel/pricecheck path
+        // and a HotelPriceCheckRQ envelope. Treat our old path as the
+        // documented v2.1.0 contract so an existing local .env override does
+        // not keep generating an invalid request after this update.
+        if ($path === '/v5/hotelpricecheck') {
+            $version = '2.1.0';
+        } elseif (preg_match('#/v([0-9]+(?:\.[0-9]+){1,2})/hotel/pricecheck(?:$|\?)#', $path, $match) === 1) {
+            $version = $match[1];
+        } else {
+            $version = '2.1.0';
         }
 
-        return ['RateInfoRef' => $rateInfoRef];
+        return [
+            'HotelPriceCheckRQ' => [
+                'version' => $version,
+                'RateInfoRef' => [
+                    'RateKey' => (string) $offer->rate_key,
+                ],
+            ],
+        ];
     }
 
     /**

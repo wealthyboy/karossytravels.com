@@ -257,7 +257,16 @@ final class TravelApiClient
      */
     public function priceCheckHotel(array $payload): array
     {
-        return $this->post((string) $this->configuration['hotel_price_check_path'], $payload);
+        $path = trim((string) ($this->configuration['hotel_price_check_path'] ?? ''));
+
+        // Compatibility with the incorrect path shipped by an earlier Karossy
+        // patch. This also protects installations that copied that value into
+        // .env before the corrected default was deployed.
+        if ($path === '/v5/hotelpricecheck' || $path === '') {
+            $path = '/v2.1.0/hotel/pricecheck';
+        }
+
+        return $this->post($path, $payload);
     }
 
     /** @param array<string, mixed> $payload
@@ -470,13 +479,24 @@ final class TravelApiClient
         // return a controlled JSON response instead of an HTML fatal-error page.
         $timeout = min(15, max(5, (int) $this->configuration['timeout']));
 
+        $requestId = (string) request()->attributes->get('request_id', (string) str()->uuid());
+        $headers = [
+            'X-Request-ID' => $requestId,
+            'Conversation-ID' => $requestId,
+        ];
+
+        $applicationId = trim((string) ($this->configuration['application_id'] ?? ''));
+        if ($applicationId !== '') {
+            $headers['Application-ID'] = $applicationId;
+        }
+
         return Http::baseUrl($this->baseUrl())
             ->acceptJson()
             ->asJson()
             ->connectTimeout(min(5, $timeout))
             ->timeout($timeout)
             ->retry(2, 250, throw: false)
-            ->withHeaders(['X-Request-ID' => request()->attributes->get('request_id', (string) str()->uuid())])
+            ->withHeaders($headers)
             ->withToken($this->accessToken());
     }
 

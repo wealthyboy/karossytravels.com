@@ -11,7 +11,23 @@ use Tests\TestCase;
 
 final class TravelApiHotelBookingRequestBuilderTest extends TestCase
 {
-    public function test_v5_price_check_uses_the_offer_rate_key(): void
+    public function test_documented_price_check_wraps_the_offer_rate_key(): void
+    {
+        $builder = new TravelApiHotelBookingRequestBuilder([
+            'hotel_price_check_path' => '/v2.1.0/hotel/pricecheck',
+        ]);
+
+        $payload = $builder->priceCheck($this->offer());
+
+        $this->assertSame([
+            'HotelPriceCheckRQ' => [
+                'version' => '2.1.0',
+                'RateInfoRef' => ['RateKey' => 'RATE-123'],
+            ],
+        ], $payload);
+    }
+
+    public function test_legacy_v5_price_check_setting_uses_the_documented_contract(): void
     {
         $builder = new TravelApiHotelBookingRequestBuilder([
             'hotel_price_check_path' => '/v5/hotelpricecheck',
@@ -19,9 +35,8 @@ final class TravelApiHotelBookingRequestBuilderTest extends TestCase
 
         $payload = $builder->priceCheck($this->offer());
 
-        $this->assertSame([
-            'RateInfoRef' => ['RateKey' => 'RATE-123'],
-        ], $payload);
+        $this->assertSame('2.1.0', data_get($payload, 'HotelPriceCheckRQ.version'));
+        $this->assertSame('RATE-123', data_get($payload, 'HotelPriceCheckRQ.RateInfoRef.RateKey'));
     }
 
     public function test_pay_later_booking_omits_payment_information(): void
@@ -88,7 +103,7 @@ final class TravelApiHotelBookingRequestBuilderTest extends TestCase
     public function test_gds_rate_requires_an_iata_number(): void
     {
         $builder = new TravelApiHotelBookingRequestBuilder([
-            'hotel_price_check_path' => '/v5/hotelpricecheck',
+            'hotel_price_check_path' => '/v2.1.0/hotel/pricecheck',
             'pcc' => 'ABCD',
         ]);
         $response = $this->priceCheckResponse();
@@ -103,7 +118,7 @@ final class TravelApiHotelBookingRequestBuilderTest extends TestCase
     private function builder(): TravelApiHotelBookingRequestBuilder
     {
         return new TravelApiHotelBookingRequestBuilder([
-            'hotel_price_check_path' => '/v5/hotelpricecheck',
+            'hotel_price_check_path' => '/v2.1.0/hotel/pricecheck',
             'iata_number' => '12345678',
             'pcc' => 'ABCD',
             'agency_name' => 'Karossy Travels',

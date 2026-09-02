@@ -44,7 +44,7 @@ return [
             'agency_state'        => env('TRAVEL_API_AGENCY_STATE', 'Lagos'),
             'hotel_avail_path' => env('TRAVEL_API_HOTEL_AVAIL_PATH', '/v5/get/hotelavail'),
             'hotel_details_path' => env('TRAVEL_API_HOTEL_DETAILS_PATH', '/v5/get/hoteldetails'),
-            'hotel_price_check_path' => env('TRAVEL_API_HOTEL_PRICE_CHECK_PATH', '/v5/hotelpricecheck'),
+            'hotel_price_check_path' => env('TRAVEL_API_HOTEL_PRICE_CHECK_PATH', '/v2.1.0/hotel/pricecheck'),
             'hotel_booking_path' => env('TRAVEL_API_HOTEL_BOOKING_PATH', '/v2.5.0/passenger/records?mode=create'),
             'iata_number' => env('TRAVEL_API_IATA_NUMBER', env('TRAVEL_API_AGENCY_NUMBER')),
             'agency_name' => env('TRAVEL_API_AGENCY_NAME', env('APP_NAME', 'Karossy Travels')),
