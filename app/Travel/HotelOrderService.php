@@ -31,8 +31,9 @@ final class HotelOrderService
     ) {}
 
     /**
-     * Re-check the live hotel rate and make sure Karossy can satisfy the
-     * supplier's guarantee/payment requirements before taking payment.
+     * Re-check the live hotel rate and obtain the supplier BookingKey before
+     * checkout continues. Final guarantee/payment validation belongs to Sabre
+     * when the real hotel booking request is submitted.
      *
      * @return array<string, mixed>
      */
@@ -111,6 +112,7 @@ final class HotelOrderService
                         'offer_id' => $offer->id,
                         'customer_id' => $customer->id,
                         'booking_key_present' => $bookingKey !== '',
+                        'supplier_request' => $this->safeSupplierPayload($payload),
                     ], [], [
                         'status' => 'failed',
                         'session_id' => $offer->search->session_id,
@@ -125,8 +127,10 @@ final class HotelOrderService
                     $this->travelLogger->record('hotel', 'booking', $offer->provider, [
                         'offer_id' => $offer->id,
                         'customer_id' => $customer->id,
+                        'supplier_request' => $this->safeSupplierPayload($payload),
                     ], [
                         'application_status' => data_get($providerResponse, 'CreatePassengerNameRecordRS.ApplicationResults.status'),
+                        'supplier_response' => $this->safeSupplierPayload($providerResponse),
                     ], [
                         'status' => 'failed',
                         'session_id' => $offer->search->session_id,
@@ -145,9 +149,11 @@ final class HotelOrderService
                     $this->travelLogger->record('hotel', 'booking', $offer->provider, [
                         'offer_id' => $offer->id,
                         'customer_id' => $customer->id,
+                        'supplier_request' => $this->safeSupplierPayload($payload),
                     ], [
                         'provider_response_received' => true,
                         'locator_found' => false,
+                        'supplier_response' => $this->safeSupplierPayload($providerResponse),
                     ], [
                         'status' => 'failed',
                         'session_id' => $offer->search->session_id,
@@ -162,10 +168,12 @@ final class HotelOrderService
                     'offer_id' => $offer->id,
                     'customer_id' => $customer->id,
                     'booking_key_present' => true,
+                    'supplier_request' => $this->safeSupplierPayload($payload),
                 ], [
                     'provider_locator' => $locator,
                     'hotel_confirmation' => $hotelConfirmation,
                     'application_status' => data_get($providerResponse, 'CreatePassengerNameRecordRS.ApplicationResults.status'),
+                    'supplier_response' => $this->safeSupplierPayload($providerResponse),
                 ], [
                     'session_id' => $offer->search->session_id,
                     'offer_id' => $offer->id,
@@ -333,6 +341,7 @@ final class HotelOrderService
             $this->travelLogger->record('hotel', 'price_check', $offer->provider, [
                 'offer_id' => $offer->id,
                 'rate_key_present' => filled($offer->rate_key),
+                'supplier_request' => $this->safeSupplierPayload($payload),
             ], [], [
                 'status' => 'failed',
                 'session_id' => $offer->search->session_id,
@@ -347,8 +356,10 @@ final class HotelOrderService
             $this->travelLogger->record('hotel', 'price_check', $offer->provider, [
                 'offer_id' => $offer->id,
                 'rate_key_present' => true,
+                'supplier_request' => $this->safeSupplierPayload($payload),
             ], [
                 'application_status' => data_get($response, 'HotelPriceCheckRS.ApplicationResults.status'),
+                'supplier_response' => $this->safeSupplierPayload($response),
             ], [
                 'status' => 'failed',
                 'session_id' => $offer->search->session_id,
@@ -367,9 +378,11 @@ final class HotelOrderService
             $this->travelLogger->record('hotel', 'price_check', $offer->provider, [
                 'offer_id' => $offer->id,
                 'rate_key_present' => true,
+                'supplier_request' => $this->safeSupplierPayload($payload),
             ], [
                 'booking_key_received' => false,
                 'price_changed' => $priceChanged,
+                'supplier_response' => $this->safeSupplierPayload($response),
             ], [
                 'status' => 'failed',
                 'session_id' => $offer->search->session_id,
@@ -385,11 +398,13 @@ final class HotelOrderService
             $this->travelLogger->record('hotel', 'price_check', $offer->provider, [
                 'offer_id' => $offer->id,
                 'rate_key_present' => true,
+                'supplier_request' => $this->safeSupplierPayload($payload),
             ], [
                 'booking_key_received' => true,
                 'price_changed' => true,
                 'price_difference' => data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.ConvertedPriceDifference', data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.PriceDifference')),
                 'currency' => data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.ConvertedCurrencyCode', data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.CurrencyCode')),
+                'supplier_response' => $this->safeSupplierPayload($response),
             ], [
                 'status' => 'failed',
                 'session_id' => $offer->search->session_id,
@@ -406,9 +421,11 @@ final class HotelOrderService
             $this->travelLogger->record('hotel', 'price_check', $offer->provider, [
                 'offer_id' => $offer->id,
                 'rate_key_present' => true,
+                'supplier_request' => $this->safeSupplierPayload($payload),
             ], [
                 'booking_key_received' => true,
                 'price_changed' => false,
+                'supplier_response' => $this->safeSupplierPayload($response),
             ], [
                 'status' => 'failed',
                 'session_id' => $offer->search->session_id,
@@ -422,10 +439,12 @@ final class HotelOrderService
         $this->travelLogger->record('hotel', 'price_check', $offer->provider, [
             'offer_id' => $offer->id,
             'rate_key_present' => true,
+            'supplier_request' => $this->safeSupplierPayload($payload),
         ], [
             'booking_key_received' => true,
             'price_changed' => false,
             'currency' => data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.ConvertedCurrencyCode', data_get($response, 'HotelPriceCheckRS.PriceCheckInfo.CurrencyCode')),
+            'supplier_response' => $this->safeSupplierPayload($response),
         ], [
             'session_id' => $offer->search->session_id,
             'offer_id' => $offer->id,
@@ -601,6 +620,38 @@ final class HotelOrderService
             'provider_locator' => $this->locator($response),
             'hotel_confirmation' => $this->hotelConfirmation($response),
         ], fn (mixed $value): bool => $value !== null && $value !== '');
+    }
+
+    /** @param array<string, mixed> $payload @return array<string, mixed> */
+    private function safeSupplierPayload(array $payload): array
+    {
+        $sensitive = [
+            'password', 'token', 'access_token', 'client_secret', 'authorization',
+            'cardnumber', 'card_number', 'securitycode', 'security_code', 'cvv',
+            'passportnumber', 'passport_number',
+            'givenname', 'surname', 'firstname', 'lastname', 'email',
+            'phone', 'mobile', 'contactnumber',
+        ];
+
+        $redact = function (mixed $value) use (&$redact, $sensitive): mixed {
+            if (! is_array($value)) {
+                return $value;
+            }
+
+            $safe = [];
+            foreach ($value as $key => $item) {
+                if (in_array(strtolower((string) $key), $sensitive, true)) {
+                    $safe[$key] = '[REDACTED]';
+                    continue;
+                }
+
+                $safe[$key] = is_array($item) ? $redact($item) : $item;
+            }
+
+            return $safe;
+        };
+
+        return $redact($payload);
     }
 
     private function durationMs(float $startedAt): int

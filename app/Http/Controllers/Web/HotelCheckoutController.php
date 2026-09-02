@@ -53,10 +53,9 @@ final class HotelCheckoutController extends Controller
         $offer->loadMissing('search');
         if ($offer->expires_at->isPast()) return response()->json(['message' => 'This hotel rate has expired. Please search again.'], 410);
 
-        // Confirm that the live supplier rate can still be booked before we
-        // initialize Paystack. This prevents taking customer payment for a
-        // rate Sabre has already withdrawn or cannot secure with our agency
-        // guarantee configuration.
+        // Re-check the live supplier rate and obtain a fresh BookingKey before
+        // initializing Paystack. Final guarantee/payment rules are validated by
+        // Sabre on the real booking request instead of being guessed locally.
         try {
             $orders->preflight($offer->fresh());
         } catch (Throwable $exception) {

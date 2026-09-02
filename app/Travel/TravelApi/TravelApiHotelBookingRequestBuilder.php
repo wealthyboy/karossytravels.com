@@ -160,24 +160,18 @@ final class TravelApiHotelBookingRequestBuilder
     }
 
     /**
-     * Validate that Karossy has a supplier-supported way to secure this rate
-     * before the customer is charged or an admin attempts the booking.
+     * Price Check already proves that Sabre can resolve the selected RateKey
+     * into a BookingKey. Do not infer extra agency/payment requirements here.
+     * The supplier is the source of truth for the final booking contract and
+     * will return an authoritative error if a guarantee/FOP is required.
      *
      * @param array<string, mixed> $priceCheckResponse
      */
     public function assertBookable(array $priceCheckResponse): void
     {
-        // Sabre's hotel booking schema requires an IATA RequestorID for GDS
-        // hotel content (RateSource 100). Fail before booking rather than send
-        // an incomplete request that can never produce a confirmed locator.
-        $rateSource = trim((string) ($this->firstNestedValueForKey($priceCheckResponse, 'RateSource') ?? ''));
-        $iataNumber = $this->iataNumber();
-
-        if ($rateSource === '100' && $iataNumber === '') {
-            throw new RuntimeException('Karossy needs its agency IATA number configured before this GDS hotel rate can be confirmed.');
+        if ($priceCheckResponse === []) {
+            throw new RuntimeException('The hotel price check response was empty. Search again before booking.');
         }
-
-        $this->paymentInformation($priceCheckResponse);
     }
 
     /**
@@ -252,15 +246,17 @@ final class TravelApiHotelBookingRequestBuilder
             return null;
         }
 
-        if (str_contains($rawType, 'PREPAY')) {
-            throw new RuntimeException('This hotel rate requires supplier prepayment. Choose a pay-later or agency-guaranteed rate for this checkout.');
-        }
-
         $paymentType = str_contains($rawType, 'DEP') ? 'DEPOSIT' : 'GUARANTEE';
         $accepted = $this->acceptedGuarantees($guarantee);
         $iataNumber = $this->iataNumber();
 
-        if ($paymentType === 'GUARANTEE' && $iataNumber !== '' && ($accepted === [] || $this->accepts($accepted, 19, 'IATA'))) {
+        // Only add a form of payment when Karossy actually has the required
+        // agency data and the price-check response clearly advertises support
+        // for that form. Never fabricate an IATA number or card details.
+        if (! str_contains($rawType, 'PREPAY')
+            && $paymentType === 'GUARANTEE'
+            && $iataNumber !== ''
+            && ($accepted === [] || $this->accepts($accepted, 19, 'IATA'))) {
             return [
                 'Type' => 'GUARANTEE',
                 'FormOfPayment' => [
@@ -269,7 +265,7 @@ final class TravelApiHotelBookingRequestBuilder
             ];
         }
 
-        if ($this->accepts($accepted, 18, 'AGENCY')) {
+        if (! str_contains($rawType, 'PREPAY') && $this->accepts($accepted, 18, 'AGENCY')) {
             return [
                 'Type' => $paymentType,
                 'FormOfPayment' => [
@@ -281,11 +277,11 @@ final class TravelApiHotelBookingRequestBuilder
             ];
         }
 
-        if ($this->accepts($accepted, 5, 'CREDIT')) {
-            throw new RuntimeException('This hotel rate requires a payment-card guarantee from the supplier. Choose a pay-later or agency-guaranteed rate before booking.');
-        }
-
-        throw new RuntimeException('This hotel rate requires a supplier form of payment that is not configured for Karossy. Choose another rate or configure an accepted agency guarantee.');
+        // For card-only, prepay, or otherwise unrecognised guarantee rules,
+        // omit PaymentInformation and let Sabre validate the final booking.
+        // This avoids Karossy inventing supplier requirements before Sabre has
+        // actually evaluated the BookingKey.
+        return null;
     }
 
     /** @return array<int, array<string, mixed>> */

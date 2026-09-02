@@ -6,7 +6,6 @@ use App\Models\Customer;
 use App\Models\HotelOffer;
 use App\Models\HotelSearch;
 use App\Travel\TravelApi\TravelApiHotelBookingRequestBuilder;
-use RuntimeException;
 use Tests\TestCase;
 
 final class TravelApiHotelBookingRequestBuilderTest extends TestCase
@@ -72,7 +71,7 @@ final class TravelApiHotelBookingRequestBuilderTest extends TestCase
         );
     }
 
-    public function test_credit_card_only_guarantee_fails_instead_of_inventing_card_data(): void
+    public function test_credit_card_only_guarantee_is_not_guessed_or_blocked_locally(): void
     {
         $builder = $this->builder();
         $response = $this->priceCheckResponse([
@@ -85,13 +84,16 @@ final class TravelApiHotelBookingRequestBuilderTest extends TestCase
             ],
         ]);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('payment-card guarantee');
-
         $builder->assertBookable($response);
+        $payload = $builder->booking($this->offer(), $this->customer(), 'BOOK-123', $response);
+
+        $this->assertArrayNotHasKey(
+            'PaymentInformation',
+            data_get($payload, 'CreatePassengerNameRecordRQ.HotelBook'),
+        );
     }
 
-    public function test_gds_rate_requires_an_iata_number(): void
+    public function test_gds_rate_without_iata_is_allowed_to_reach_sabre(): void
     {
         $builder = new TravelApiHotelBookingRequestBuilder([
             'hotel_price_check_path' => '/v5/hotel/pricecheck',
@@ -100,10 +102,14 @@ final class TravelApiHotelBookingRequestBuilderTest extends TestCase
         $response = $this->priceCheckResponse();
         data_set($response, 'HotelPriceCheckRS.PriceCheckInfo.HotelRateInfo.RateSource', 100);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('agency IATA');
-
         $builder->assertBookable($response);
+        $payload = $builder->booking($this->offer(), $this->customer(), 'BOOK-123', $response);
+
+        $this->assertSame('BOOK-123', data_get($payload, 'CreatePassengerNameRecordRQ.HotelBook.BookingInfo.BookingKey'));
+        $this->assertArrayNotHasKey(
+            'PaymentInformation',
+            data_get($payload, 'CreatePassengerNameRecordRQ.HotelBook'),
+        );
     }
 
     private function builder(): TravelApiHotelBookingRequestBuilder
