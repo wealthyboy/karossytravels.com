@@ -1,6 +1,9 @@
 @props(['departureDate', 'returnDate', 'action' => null, 'submitLabel' => 'Search flights', 'criteria' => [], 'showResults' => true])
 
 <section class="flight-search-shell" data-flight-search>
+    @if(!empty($criteria['segments']))
+        <script type="application/json" data-initial-multi-city-segments>@json($criteria['segments'])</script>
+    @endif
     <div class="flight-trip-tabs" role="group" aria-label="Trip type">
         <input class="btn-check trip-type-input" type="radio" name="trip_type_ui" id="trip-round" value="round_trip" @checked(($criteria['trip_type'] ?? 'round_trip') === 'round_trip')>
         <label for="trip-round">Round trip</label>
@@ -46,7 +49,7 @@
             <button type="button" class="multi-city-add" data-add-flight-segment><i class="bi bi-plus-lg"></i> Add another flight</button>
         </div>
         <div class="flight-search-footer mt-2">
-            <button class="btn btn-karossy flight-search-submit" type="submit"><span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span><span>{{ $submitLabel }}</span></button>
+            <button class="btn btn-karossy flight-search-submit" type="submit" @if($action) formaction="{{ $action }}" formmethod="GET" @endif><span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span><span>{{ $submitLabel }}</span></button>
         </div>
     </form>
 </section>
@@ -67,5 +70,5 @@
 
 @if($showResults)
 <div class="flight-search-message d-none" role="alert"></div>
-<section class="flight-results mt-4 d-none" aria-live="polite"><div class="d-flex justify-content-between align-items-end mb-3"><div><h2 class="h5 mb-1">Available flights</h2><p class="small text-secondary mb-0"><span data-result-count>0</span> offer(s) returned</p></div><small class="text-secondary">Prices include Karossy pricing rules</small></div><div class="flight-result-list"></div></section>
+<section class="flight-results mt-4 d-none" aria-live="polite"><div class="d-flex justify-content-between align-items-end mb-3"><div><h2 class="h5 mb-1">Available flights</h2><p class="small text-secondary mb-0"><span data-result-count>0</span> offer(s) returned</p></div><small class="text-secondary">Taxes and fees included</small></div><div class="flight-result-list"></div></section>
 @endif

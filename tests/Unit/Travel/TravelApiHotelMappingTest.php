@@ -34,4 +34,26 @@ final class TravelApiHotelMappingTest extends TestCase
         $this->assertTrue($offer['breakfast_included']);
         $this->assertTrue($offer['refundable']);
     }
+
+    public function test_it_preserves_every_room_rate_returned_for_a_property(): void
+    {
+        $response = ['GetHotelAvailRS' => ['HotelAvailInfos' => ['HotelAvailInfo' => [[
+            'HotelInfo' => ['HotelCode' => '100', 'HotelName' => 'Karossy Hotel'],
+            'HotelRateInfo' => ['Rooms' => ['Room' => [
+                ['RoomType' => 'King Room', 'RatePlans' => ['RatePlan' => [
+                    ['RatePlanName' => 'Room only', 'RateKey' => 'king-room', 'ConvertedRateInfo' => ['ApproxTotalPrice' => '400.00', 'AverageNightlyRate' => '200.00', 'CurrencyCode' => 'USD']],
+                    ['RatePlanName' => 'Breakfast', 'RateKey' => 'king-breakfast', 'ConvertedRateInfo' => ['ApproxTotalPrice' => '450.00', 'AverageNightlyRate' => '225.00', 'CurrencyCode' => 'USD']],
+                ]]],
+                ['RoomType' => 'Twin Room', 'RatePlans' => ['RatePlan' => [[
+                    'RatePlanName' => 'Flexible', 'RateKey' => 'twin-flexible', 'ConvertedRateInfo' => ['ApproxTotalPrice' => '500.00', 'AverageNightlyRate' => '250.00', 'CurrencyCode' => 'USD'],
+                ]]]],
+            ]]],
+        ]]]]];
+
+        $offers = (new TravelApiHotelAvailMapper)->map($response);
+
+        $this->assertCount(3, $offers);
+        $this->assertSame(['king-room', 'king-breakfast', 'twin-flexible'], array_column($offers, 'rate_key'));
+        $this->assertSame(['King Room', 'King Room', 'Twin Room'], array_column($offers, 'room_name'));
+    }
 }

@@ -7,12 +7,25 @@ use App\Http\Requests\FlightSearchRequest;
 use App\Http\Responses\ApiResponse;
 use App\Travel\FlightSearchService;
 use Illuminate\Http\JsonResponse;
+use Throwable;
 
 final class FlightSearchController extends Controller
 {
     public function __invoke(FlightSearchRequest $request, FlightSearchService $service): JsonResponse
     {
-        $result = $service->search($request->validated());
+        try {
+            $result = $service->search($request->validated());
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return response()->json([
+                'message' => 'We are having trouble connecting to the airline network. Please check your connection and try again shortly.',
+                'meta' => [
+                    'api_version' => 'v1',
+                    'request_id' => $request->attributes->get('request_id'),
+                ],
+            ], 503);
+        }
 
         return ApiResponse::success(
             $request,

@@ -45,7 +45,7 @@ final class AdminPermissionTest extends TestCase
         $this->actingAs($user)
             ->get('/admin/providers/sabre')
             ->assertOk()
-            ->assertSee('Sabre')
+            ->assertSee('Travel supplier')
             ->assertSee('API Logs')
             ->assertDontSee('access_token');
     }

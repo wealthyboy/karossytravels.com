@@ -1,0 +1,221 @@
+{
+  "errorHandlingPolicy": [
+    "HALT_ON_ERROR"
+  ],
+  "targetPcc": "AAA",
+  "receivedFrom": "Create Booking",
+  "asynchronousUpdateWaitTime": 3000,
+  "profiles": [
+    {
+      "profileName": "TESTPROFILE",
+      "profileTypeCode": "TVL",
+      "uniqueId": "ABC123",
+      "domainId": "G7HE",
+      "filterId": "112676753"
+    }
+  ],
+  "agency": {
+    "address": {
+      "street": "1230 Ellen Ave, apt 10",
+      "city": "Dallas",
+      "stateProvince": "TX",
+      "postalCode": "75063",
+      "countryCode": "US",
+      "name": "John Smith",
+      "freeText": "John Smith\n1230 Ellen Ave, Apt 10\nDallas, TX 75063\nUS\n"
+    },
+    "contactInfo": {
+      "emails": [
+        "travel@sabre.com"
+      ],
+      "phones": [
+        "+1-555-123-4567"
+      ],
+      "includePhoneLabel": false
+    },
+    "ticketingPolicy": "TODAY",
+    "futureTicketingPolicy": {
+      "ticketingPcc": "G7RE",
+      "queueNumber": "55",
+      "ticketingDate": "2024-07-09",
+      "ticketingTime": "11:00",
+      "comment": "TICKET BEFORE TUES"
+    },
+    "ticketingTimeLimitPolicy": {
+      "airlineCode": "AA",
+      "ticketingDate": "2024-07-09",
+      "ticketingTime": "11:00"
+    },
+    "agencyCustomerNumber": "1234567"
+  },
+  "flightOffer": {
+    "offerId": "dx369rfr7jt8dnd2i0-1",
+    "selectedOfferItems": [
+      "dx369rfr7jt8dnd2i0-1-1"
+    ],
+    "seatOffers": [
+      {
+        "number": "13A",
+        "travelerIndex": 1,
+        "seatOfferId": "dx369rfr7jt8dnd2i0-1"
+      }
+    ]
+  },
+  "flightDetails": {
+    "flights": [
+      {
+        "flightNumber": 123,
+        "airlineCode": "AA",
+        "fromAirportCode": "DFW",
+        "toAirportCode": "HNL",
+        "departureDate": "2024-07-09",
+        "departureTime": "09:15",
+        "bookingClass": "Y",
+        "isMarriageGroup": false,
+        "flightStatusCode": "NN",
+        "confirmationId": "NIEBNY",
+        "arrivalDate": "2024-07-09",
+        "arrivalTime": "12:28",
+        "source": "ATPCO",
+        "seats": [
+          {
+            "number": "13A",
+            "travelerIndex": 1,
+            "areaPreferences": [
+              "AISLE"
+            ]
+          }
+        ],
+        "changeOfGaugeSeats": [
+          {
+            "number": "13A",
+            "travelerIndex": 1
+          }
+        ]
+      }
+    ],
+    "flightPricing": [
+      {
+        "priceComparisons": [
+          {
+            "desiredAmount": "100.00",
+            "comparisonType": "INCREASE_BY_AMOUNT",
+            "amount": "30.00",
+            "percent": "10.00"
+          }
+        ],
+        "qualifiers": {
+          "commissionAmount": "30.00",
+          "commissionPercentage": "10.00",
+          "endorsements": {
+            "description": "REF AGY ONLY",
+            "useOverride": true
+          },
+          "excludeFareFocusFares": false,
+          "travelerIndices": [
+            1
+          ],
+          "tourCode": "TEST1212",
+          "tourCodeOverrides": "REPLACE_WITH_BT",
+          "validatingAirlineCode": "AA",
+          "accountCode": {
+            "forceAccountCodes": false,
+            "accountCodes": [
+              "ABC123"
+            ]
+          },
+          "adjustedSellingLevel": {
+            "returnBreakdown": false,
+            "ignore": false,
+            "markUpAmount": "30.00",
+            "markDownAmount": "30.00"
+          },
+          "flightIndices": [
+            1
+          ],
+          "baggageAllowance": [
+            {
+              "totalWeightInKilograms": 23,
+              "baggagePieces": 1,
+              "flightIndices": [
+                1
+              ]
+            }
+          ],
+          "rebookLowestFares": false,
+          "brandedFares": [
+            {
+              "brandCode": "CP",
+              "flightIndices": [
+                1
+              ]
+            }
+          ],
+          "breakFareFlightIndices": [
+            1
+          ],
+          "cabinCode": "YB",
+          "commissionContractNames": [
+            "WHOLESALERCONTRACT01"
+          ],
+          "corporateFare": {
+            "forceCorporateId": false,
+            "corporateIds": [
+              "ABC12"
+            ]
+          },
+          "currencyPricing": "PLN",
+          "exchangePenalties": {
+              "restrictionType": "CHANGEABLE",
+              "applicability": "BEFORE_DEPARTURE",
+              "penaltyAmount": {
+                "amount": "100"
+              }
+            },
+          "excludeBasicEconomyFares": [
+            "O"
+          ],
+          "exemptTaxes": [
+            "UB"
+          ],
+          "useExcursionFare": false,
+          "forceConnectionFlightIndices": [
+            1
+          ],
+          "forceStopoverFlightIndices": [
+            1
+          ],
+          "hemisphereCode": 1,
+          "journeyCode": 1,
+          "considerMultiTicket": false,
+          "useNetFare": false,
+          "netRemit": {
+            "netRemitCode": "ABCD123",
+            "commercialAgreementReferenceCode": "DEF456",
+            "cashValue": {
+              "amount": "100.00",
+              "currencyCode": "USD"
+            },
+            "creditValue": {
+              "amount": "100.00",
+              "currencyCode": "USD"
+            }
+          },
+          "priceWithTaxes": false,
+          "overrideTaxes": [
+            {
+              "taxCode": "XY",
+              "amount": "100.00"
+            }
+          ],
+          "passengerStatus": "RESIDENT",
+          "passengerStatusCountryCode": "US",
+          "payment": {
+            "primaryFormOfPayment": 1,
+            "secondaryFormOfPayment": 2,
+            "amountOnSecondFormOfPayment": "100.00"
+          },
+          "usePrivateFare": false,
+          "usePublicFare": false,
+          "retailerRule": {
+{

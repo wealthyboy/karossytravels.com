@@ -64,7 +64,9 @@ final class ExchangeRateService
         $manual = $settings->filter(fn (CurrencySetting $setting) => $setting->manual_rate !== null)
             ->map(fn (CurrencySetting $setting) => (float) $setting->manual_rate)->all();
 
-        return ['USD' => 1.0, ...$this->fetchLiveUsdRates(), ...$manual];
+        $fallback = array_map('floatval', (array) config('travel.currency.fallback_usd_rates', []));
+
+        return ['USD' => 1.0, ...$fallback, ...$this->fetchLiveUsdRates(), ...$manual];
     }
 
     /** @return array<string, float> */

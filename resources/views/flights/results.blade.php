@@ -4,8 +4,11 @@
 
 @section('content')
 @php
-    $origin = $criteria['origin'];
-    $destination = $criteria['destination'];
+    $segments = $criteria['segments'] ?? [];
+    $origin = $criteria['origin'] ?? data_get($segments, '0.origin', '');
+    $destination = $criteria['destination'] ?? data_get($segments, (count($segments) - 1).'.destination', '');
+    $departureDate = $criteria['departure_date'] ?? data_get($segments, '0.departure_date');
+    $returnDate = $criteria['return_date'] ?? data_get($segments, (count($segments) - 1).'.departure_date', $departureDate);
 @endphp
 
 <section class="results-search-strip">
@@ -17,29 +20,35 @@
             <div class="results-summary-divider"></div>
             <div>
                 <small>Travel dates</small>
-                <strong>{{ \Carbon\Carbon::parse($criteria['departure_date'])->format('M j') }}@if($criteria['return_date'] ?? null) – {{ \Carbon\Carbon::parse($criteria['return_date'])->format('M j') }}@endif</strong>
+                <strong>{{ \Carbon\Carbon::parse($departureDate)->format('M j') }}@if($returnDate && $returnDate !== $departureDate) – {{ \Carbon\Carbon::parse($returnDate)->format('M j') }}@endif</strong>
             </div>
             <div><small>Travellers</small><strong>{{ $criteria['adults'] }} {{ str('adult')->plural($criteria['adults']) }} · {{ str($criteria['cabin'])->replace('_', ' ')->headline() }}</strong></div>
             <button type="button" class="btn btn-outline-dark" data-bs-toggle="collapse" data-bs-target="#inlineFlightSearch" aria-expanded="false" aria-controls="inlineFlightSearch"><i class="bi bi-pencil"></i> Edit search</button>
         </div>
         <div class="collapse results-inline-search" id="inlineFlightSearch">
-            <x-flight-search-form :departure-date="$criteria['departure_date']" :return-date="$criteria['return_date'] ?? $criteria['departure_date']" :criteria="$criteria" :show-results="false" submit-label="Update search" />
+            <x-flight-search-form :departure-date="$departureDate" :return-date="$returnDate" :criteria="$criteria" :show-results="false" submit-label="Update search" />
         </div>
     </div>
 </section>
 
 <section class="flight-results-page public-live-flight-results">
-    <div class="container-fluid public-flight-results-container"
+    <div class="container public-flight-results-container"
          data-public-flight-results-page
          data-search-url="{{ route('flights.search.store') }}"
+         data-charter-contact="{{ config('travel.support.email') }}"
          data-review-url-template="{{ route('flights.review', ['offer' => '__OFFER__']) }}"
          data-revalidate-url-template="{{ route('flights.offers.revalidate', ['offer' => '__OFFER__']) }}">
         <script type="application/json" data-flight-search-criteria>@json($criteria)</script>
 
-        <div class="public-results-heading">
-            <span class="public-eyebrow">Choose your flight</span>
-            <h1>{{ $origin }} to {{ $destination }}</h1>
-            <p>Searching live airline availability · Prices include taxes and configured Karossy markup</p>
+        @if(session('warning'))<div class="alert alert-warning mb-3"><i class="bi bi-clock-history me-2"></i>{{ session('warning') }}</div>@endif
+
+        <div class="public-flight-results-header">
+            <div class="public-results-heading">
+                <span class="public-eyebrow">Choose your flight</span>
+                <h1>{{ $origin }} to {{ $destination }}</h1>
+                <p>Searching live airline availability · Taxes and fees included</p>
+            </div>
+            <div class="public-flight-results-overview" data-flight-results-overview></div>
         </div>
 
         <div class="flight-search-message d-none" role="alert"></div>

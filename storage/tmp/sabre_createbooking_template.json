@@ -1,0 +1,106 @@
+{
+  "agency": {
+    "ticketingPolicy": "<TICKETING_POLICY>"
+  },
+  "contactInfo": {
+    "emails": [
+      "<AGENCY_EMAIL>"
+    ],
+    "phones": [
+      "<AGENCY_PHONE>"
+    ]
+  },
+  "travelers": [
+    {
+      "id": "<TRAVELER_ID>",
+      "surname": "<SURNAME>",
+      "givenName": "<GIVEN_NAME>",
+      "passengerCode": "<PASSENGER_CODE>",
+      "birthDate": "<BIRTH_DATE>",
+      "nameReferenceCode": "",
+      "phones": [
+        {
+          "number": "<TRAVELER_PHONE>"
+        }
+      ],
+      "emails": [
+        "<TRAVELER_EMAIL>"
+      ],
+      "specialServices": [
+        {
+          "code": "CTCM",
+          "message": "<TRAVELER_PHONE>"
+        },
+        {
+          "code": "CTCE",
+          "message": "<TRAVELER_EMAIL>"
+        }
+      ],
+      "identityDocuments": [
+        {
+          "documentNumber": "<DOCUMENT_NUMBER>",
+          "documentType": "PASSPORT",
+          "expiryDate": "<DOCUMENT_EXPIRY>",
+          "issuingCountryCode": "<ISSUING_COUNTRY>",
+          "residenceCountryCode": "<RESIDENCE_COUNTRY>",
+          "birthDate": "<BIRTH_DATE>",
+          "gender": "<GENDER>",
+          "givenName": "<GIVEN_NAME>",
+          "surname": "<SURNAME>"
+        }
+      ]
+    }
+  ],
+  "flightDetails": {
+    "haltOnFlightStatusCodes": [
+      "NO",
+      "UC",
+      "US",
+      "UN",
+      "UU",
+      "LL",
+      "HL"
+    ],
+    "flights": [
+      {
+        "flightNumber": "<FLIGHT_NUMBER>",
+        "airlineCode": "<AIRLINE_CODE>",
+        "fromAirportCode": "<FROM_AIRPORT>",
+        "toAirportCode": "<TO_AIRPORT>",
+        "departureDate": "<DEPARTURE_DATE>",
+        "departureTime": "<DEPARTURE_TIME>",
+        "bookingClass": "<BOOKING_CLASS>",
+        "isMarriageGroup": false,
+        "flightStatusCode": "NN"
+      }
+    ],
+    "flightPricing": [
+      {
+        "qualifiers": {
+          "travelerIndices": [
+            1
+          ],
+          "passengersPricing": [
+            {
+              "passengerCode": "<PASSENGER_CODE>",
+              "numberOfpassengers": 1
+            }
+          ],
+          "specificFares": [
+            {
+              "fareBasisCode": "<FARE_BASIS>",
+              "flightIndices": [
+                "1"
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "asynchronousUpdateWaitTime": 3000,
+  "receivedFrom": "SabreAPIsTools",
+  "errorHandlingPolicy": [
+    "HALT_ON_ERROR"
+  ]
+}

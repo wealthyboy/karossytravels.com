@@ -8,6 +8,7 @@
     $money = fn (int $minor) => $symbol.number_format($minor / 100, 2);
 @endphp
 <section class="booking-page" data-flight-checkout-page data-demo-payment="{{ $demoPaymentEnabled ? 'true' : 'false' }}"><div class="container public-container">
+    <a href="{{ route('flights.review', $offer) }}" class="checkout-mobile-back checkout-mobile-back-top d-lg-none"><i class="bi bi-arrow-left"></i> Back</a>
     @include('checkout._progress', ['step' => 1])
     <div class="booking-heading"><span class="public-eyebrow">Complete your booking</span><h1>Traveller details and payment</h1><p>Enter every name exactly as it appears on the passport, review the total and pay securely on this page.</p></div>
 
@@ -19,44 +20,61 @@
     @if($errors->any())<div class="alert alert-danger" data-validation-summary><strong>Please check the traveller details.</strong><ul class="mb-0 mt-2">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     <div class="alert alert-danger d-none" data-booking-error role="alert"></div>
 
-    <form action="{{ route('checkout.travellers.store', $offer) }}" data-payment-url="{{ route('checkout.payment.initialize', $offer) }}" data-verify-url="{{ route('checkout.payment.verify', $offer) }}" method="POST" class="row g-4" novalidate data-checkout-travellers-form>
+    <form action="{{ route('checkout.travellers.store', $offer) }}" data-payment-url="{{ route('checkout.payment.initialize', $offer) }}" data-verify-url="{{ route('checkout.payment.verify', $offer) }}" method="POST" class="checkout-travellers-layout" novalidate data-checkout-travellers-form>
         @csrf
-        <div class="col-lg-8">
+        <div class="checkout-travellers-main">
             @foreach($types as $index => $type)
                 @php($typeLabel = $type === 'ADT' ? 'Adult' : ($type === 'CNN' ? 'Child' : 'Infant'))
-                <div class="booking-card traveller-card @if(!$loop->first) mt-4 @endif">
-                    <div class="booking-card-title"><div><span class="traveller-number">{{ $index + 1 }}</span><div><h2>{{ $typeLabel }} traveller</h2><p>{{ $loop->first ? 'Primary passenger' : 'Passenger '.($index + 1) }}</p></div></div></div>
+                <div class="booking-card traveller-card @if(!$loop->first) mt-1 @endif">
+                    <div class="booking-card-title"><div><span class="traveller-number">{{ $index + 1 }}</span><div><h2>{{ $typeLabel }} traveller</h2><p>{{ $loop->first ? 'Primary passenger' : 'Passenger '.($index + 1) }}</p></div></div><div class="passport-scanner" data-passport-scanner><input class="visually-hidden" type="file" accept="image/*" capture="environment" data-passport-image><button class="btn btn-outline-dark passport-scan-button" type="button" data-scan-passport><i class="bi bi-passport"></i><span>Scan passport</span><span class="spinner-border spinner-border-sm d-none"></span></button><small class="passport-scan-status" data-passport-scan-status>Processed privately on this device</small></div></div>
                     <input type="hidden" name="travellers[{{ $index }}][type]" value="{{ $type }}">
                     <div class="row g-3">
                         <div class="col-md-3"><label class="form-label">Title</label><select name="travellers[{{ $index }}][title]" class="form-select @error("travellers.$index.title") is-invalid @enderror">@foreach(['Mr','Mrs','Ms','Miss','Dr'] as $title)<option value="{{ $title }}" @selected(old("travellers.$index.title", $index === 0 ? $customer?->title : null) === $title)>{{ $title }}</option>@endforeach</select></div>
                         <div class="col-md-4"><label class="form-label">First name</label><input name="travellers[{{ $index }}][first_name]" value="{{ old("travellers.$index.first_name", $index === 0 ? $customer?->first_name : null) }}" class="form-control @error("travellers.$index.first_name") is-invalid @enderror" autocomplete="given-name" placeholder="As on passport"></div>
                         <div class="col-md-5"><label class="form-label">Last name</label><input name="travellers[{{ $index }}][last_name]" value="{{ old("travellers.$index.last_name", $index === 0 ? $customer?->last_name : null) }}" class="form-control @error("travellers.$index.last_name") is-invalid @enderror" autocomplete="family-name" placeholder="As on passport"></div>
-                        <div class="col-md-4"><label class="form-label">Date of birth</label><input name="travellers[{{ $index }}][date_of_birth]" value="{{ old("travellers.$index.date_of_birth", $index === 0 ? $customer?->date_of_birth?->toDateString() : null) }}" class="form-control @error("travellers.$index.date_of_birth") is-invalid @enderror" type="date" max="{{ now()->subDay()->toDateString() }}"></div>
+                        <div class="col-md-4"><label class="form-label">Date of birth</label><input name="travellers[{{ $index }}][date_of_birth]" value="{{ old("travellers.$index.date_of_birth", $index === 0 ? $customer?->date_of_birth?->toDateString() : null) }}" class="form-control @error("travellers.$index.date_of_birth") is-invalid @enderror" type="text" inputmode="numeric" autocomplete="bday" placeholder="dd/mm/yyyy" data-checkout-date-of-birth data-traveller-type="{{ $type }}" data-max-date="{{ $type === 'ADT' ? now()->subYears(18)->toDateString() : now()->subDay()->toDateString() }}"></div>
                         <div class="col-md-4"><label class="form-label">Gender</label><select name="travellers[{{ $index }}][gender]" class="form-select @error("travellers.$index.gender") is-invalid @enderror"><option value="">Select</option>@foreach(['male'=>'Male','female'=>'Female','unspecified'=>'Unspecified'] as $value=>$label)<option value="{{ $value }}" @selected(old("travellers.$index.gender", $index === 0 ? $customer?->gender : null) === $value)>{{ $label }}</option>@endforeach</select></div>
                         <div class="col-md-4"><label class="form-label">Nationality code</label><input name="travellers[{{ $index }}][nationality]" value="{{ old("travellers.$index.nationality", $index === 0 ? ($customer?->nationality ?: 'NG') : 'NG') }}" class="form-control text-uppercase @error("travellers.$index.nationality") is-invalid @enderror" maxlength="2" placeholder="NG"></div>
                         <div class="col-md-4"><label class="form-label">Passport number</label><input name="travellers[{{ $index }}][passport_number]" value="{{ old("travellers.$index.passport_number", $index === 0 ? $customer?->passport_number : null) }}" class="form-control text-uppercase @error("travellers.$index.passport_number") is-invalid @enderror" autocomplete="off" placeholder="A00000000"></div>
                         <div class="col-md-4"><label class="form-label">Issuing country code</label><input name="travellers[{{ $index }}][passport_country]" value="{{ old("travellers.$index.passport_country", $index === 0 ? ($customer?->passport_country ?: 'NG') : 'NG') }}" class="form-control text-uppercase @error("travellers.$index.passport_country") is-invalid @enderror" maxlength="2" placeholder="NG"></div>
-                        <div class="col-md-4"><label class="form-label">Passport expiry</label><input name="travellers[{{ $index }}][passport_expiry]" value="{{ old("travellers.$index.passport_expiry", $index === 0 ? $customer?->passport_expires_at?->toDateString() : null) }}" class="form-control @error("travellers.$index.passport_expiry") is-invalid @enderror" type="date" min="{{ now()->addDay()->toDateString() }}"></div>
+                        <div class="col-md-4"><label class="form-label">Passport expiry</label><input name="travellers[{{ $index }}][passport_expiry]" value="{{ old("travellers.$index.passport_expiry", $index === 0 ? $customer?->passport_expires_at?->toDateString() : null) }}" class="form-control @error("travellers.$index.passport_expiry") is-invalid @enderror" type="text" inputmode="numeric" placeholder="dd/mm/yyyy" data-checkout-passport-expiry></div>
                     </div>
                 </div>
             @endforeach
 
-            <div class="booking-card mt-4">
+            <div class="booking-card mt-1">
                 <div class="booking-card-title"><div><span class="traveller-number"><i class="bi bi-envelope"></i></span><div><h2>Contact details</h2><p>The confirmation and any schedule changes will be sent here.</p></div></div></div>
-                <div class="row g-3">
+                <div class="row g-2">
                     <div class="col-md-6"><label class="form-label">Email address</label><input name="contact[email]" type="email" class="form-control @error('contact.email') is-invalid @enderror" value="{{ old('contact.email', $customer?->email ?: auth()->user()?->email) }}" autocomplete="email">@error('contact.email')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
-                    <div class="col-md-6"><label class="form-label">Mobile number</label><input name="contact[phone]" value="{{ old('contact.phone', $customer?->phone) }}" class="form-control @error('contact.phone') is-invalid @enderror" autocomplete="tel" placeholder="+234 800 000 0000">@error('contact.phone')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+                    <div class="col-md-6"><label class="form-label">Mobile number</label><x-phone-input name="contact[phone]" code-name="contact[phone_code]" :value="$customer?->phone" class="@error('contact.phone') is-invalid @enderror" />@error('contact.phone')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror</div>
                 </div>
                 <label class="form-check mt-3"><input name="notifications" value="1" class="form-check-input" type="checkbox" @checked(old('notifications', true))><span class="form-check-label">Send schedule changes and ticket updates to this contact.</span></label>
             </div>
 
             @include('checkout._options')
 
-            <div class="checkout-actions"><a href="{{ route('flights.review', $offer) }}" class="btn btn-outline-dark"><i class="bi bi-arrow-left"></i> Back</a><button class="btn btn-karossy checkout-pay-button" type="submit" data-open-booking-payment data-base-total="{{ $total['amount_minor'] }}" data-currency-symbol="{{ $symbol }}"><span data-submit-label>Pay <b data-confirm-total>{{ $money($total['amount_minor']) }}</b></span><span class="spinner-border spinner-border-sm d-none" data-submit-spinner></span> <i class="bi bi-arrow-right"></i></button></div>
         </div>
-        <aside class="col-lg-4">@include('checkout._summary')</aside>
+        <aside class="checkout-travellers-summary">@include('checkout._summary')</aside>
+        <div class="checkout-actions"><a href="{{ route('flights.review', $offer) }}" class="btn btn-outline-dark checkout-desktop-back d-none d-lg-inline-flex"><i class="bi bi-arrow-left"></i> Back</a><button class="btn btn-karossy checkout-pay-button" type="submit" data-open-booking-payment data-base-total="{{ $total['amount_minor'] }}" data-currency-symbol="{{ $symbol }}"><span data-submit-label>Pay <b data-confirm-total>{{ $money($total['amount_minor']) }}</b></span><span class="spinner-border spinner-border-sm d-none" data-submit-spinner></span> <i class="bi bi-arrow-right"></i></button></div>
     </form>
 </div></section>
+
+<section class="booking-finalization-screen" data-booking-finalization-screen hidden aria-live="polite" aria-busy="true">
+    <div class="booking-finalization-card">
+        <span class="booking-finalization-icon" aria-hidden="true"><i class="bi bi-airplane"></i></span>
+        <span class="public-eyebrow">Payment successful</span>
+        <h2 data-finalization-title>Finishing your booking</h2>
+        <p data-finalization-copy>Your payment is confirmed. We are now securing your reservation and creating your booking reference.</p>
+        <div class="booking-finalization-progress" role="progressbar" aria-label="Booking completion progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="12" data-finalization-progress>
+            <span data-finalization-progress-bar style="width: 12%"></span>
+        </div>
+        <div class="booking-finalization-status">
+            <strong data-finalization-status>Confirming your payment</strong>
+            <span data-finalization-percent>12%</span>
+        </div>
+        <small data-finalization-note>Please keep this page open. This normally takes only a moment.</small>
+    </div>
+</section>
 
 <div class="modal fade flight-revalidation-modal" id="publicBookingConfirmationModal" tabindex="-1" aria-labelledby="publicBookingProgressTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body text-center"><div data-booking-progress><span class="revalidation-icon"><i class="bi bi-shield-check"></i></span><h2 id="publicBookingProgressTitle" data-payment-progress-title>Checking the live fare</h2><p data-payment-progress-copy>Validating the latest price and availability. Please do not close this page.</p><div class="revalidation-progress" aria-hidden="true"><span></span></div><small data-payment-progress-note>Secure payment will open as soon as the exact total is confirmed.</small></div></div></div></div></div>
 
@@ -131,6 +149,9 @@
     const clientErrors = form => {
         const errors = {};
         const today = new Date().toISOString().slice(0, 10);
+        const adultCutoff = new Date();
+        adultCutoff.setFullYear(adultCutoff.getFullYear() - 18);
+        const adultCutoffValue = `${adultCutoff.getFullYear()}-${String(adultCutoff.getMonth() + 1).padStart(2, '0')}-${String(adultCutoff.getDate()).padStart(2, '0')}`;
         const namePattern = /^[\p{L}][\p{L}\p{M}'’\-]*(?: [\p{L}][\p{L}\p{M}'’\-]*)*$/u;
         [...form.querySelectorAll('.traveller-card')].forEach((card, index) => {
             const value = field => String(form.elements.namedItem(`travellers[${index}][${field}]`)?.value || '').trim();
@@ -141,6 +162,7 @@
                 if (!value(field)) errors[`travellers.${index}.${field}`] = ['This field is required.'];
             });
             if (!value('date_of_birth') || value('date_of_birth') >= today) errors[`travellers.${index}.date_of_birth`] = ['Enter a valid date of birth before today.'];
+            else if (value('type') === 'ADT' && value('date_of_birth') > adultCutoffValue) errors[`travellers.${index}.date_of_birth`] = ['Adult travellers must be at least 18 years old on the booking date.'];
             if (!value('passport_expiry') || value('passport_expiry') <= today) errors[`travellers.${index}.passport_expiry`] = ['Passport expiry must be after today.'];
         });
         const email = String(form.elements.namedItem('contact[email]')?.value || '').trim();
@@ -159,12 +181,71 @@
     const progressTitle = document.querySelector('[data-payment-progress-title]');
     const progressCopy = document.querySelector('[data-payment-progress-copy]');
     const progressNote = document.querySelector('[data-payment-progress-note]');
+    const finalizationScreen = document.querySelector('[data-booking-finalization-screen]');
+    const finalizationTitle = finalizationScreen?.querySelector('[data-finalization-title]');
+    const finalizationCopy = finalizationScreen?.querySelector('[data-finalization-copy]');
+    const finalizationStatus = finalizationScreen?.querySelector('[data-finalization-status]');
+    const finalizationPercent = finalizationScreen?.querySelector('[data-finalization-percent]');
+    const finalizationNote = finalizationScreen?.querySelector('[data-finalization-note]');
+    const finalizationProgress = finalizationScreen?.querySelector('[data-finalization-progress]');
+    const finalizationProgressBar = finalizationScreen?.querySelector('[data-finalization-progress-bar]');
+    let finalizationTimer = null;
+    let finalizationValue = 12;
     const addonInputs = [...(checkoutForm?.querySelectorAll('[data-addon-price]') || [])];
     const money = value => `${payButton?.dataset.currencySymbol || ''}${(value / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const setProgress = (title, copy, note) => {
         if (progressTitle) progressTitle.textContent = title;
         if (progressCopy) progressCopy.textContent = copy;
         if (progressNote) progressNote.textContent = note;
+    };
+    const setFinalizationProgress = (value, status, copy = null) => {
+        finalizationValue = Math.max(finalizationValue, Math.min(100, Math.round(value)));
+        if (finalizationProgressBar) finalizationProgressBar.style.width = `${finalizationValue}%`;
+        if (finalizationProgress) finalizationProgress.setAttribute('aria-valuenow', String(finalizationValue));
+        if (finalizationPercent) finalizationPercent.textContent = `${finalizationValue}%`;
+        if (status && finalizationStatus) finalizationStatus.textContent = status;
+        if (copy && finalizationCopy) finalizationCopy.textContent = copy;
+    };
+    const beginFinalization = reference => {
+        paymentModal?.hide();
+        finalizationValue = 12;
+        const checkoutPage = document.querySelector('[data-flight-checkout-page]');
+        if (checkoutPage) {
+            checkoutPage.hidden = true;
+            checkoutPage.setAttribute('aria-hidden', 'true');
+            checkoutPage.setAttribute('inert', '');
+        }
+        document.body.classList.add('booking-is-finalizing');
+        if (finalizationScreen) {
+            finalizationScreen.hidden = false;
+            window.requestAnimationFrame(() => finalizationScreen.classList.add('is-visible'));
+        }
+        if (finalizationTitle) finalizationTitle.textContent = 'Finishing your booking';
+        if (finalizationNote) finalizationNote.textContent = `Please keep this page open. Payment reference: ${reference}.`;
+        setFinalizationProgress(18, 'Payment received', 'Your payment is confirmed. We are now securing your reservation and creating your booking reference.');
+        window.clearInterval(finalizationTimer);
+        finalizationTimer = window.setInterval(() => {
+            const increment = finalizationValue < 55 ? 4 : (finalizationValue < 78 ? 2 : 1);
+            if (finalizationValue < 92) setFinalizationProgress(finalizationValue + increment, finalizationStatus?.textContent || 'Finishing your booking');
+        }, 900);
+    };
+    const endFinalization = () => {
+        window.clearInterval(finalizationTimer);
+        finalizationTimer = null;
+        document.body.classList.remove('booking-is-finalizing');
+        if (finalizationScreen) {
+            finalizationScreen.classList.remove('is-visible');
+            finalizationScreen.hidden = true;
+        }
+    };
+    const restoreCheckout = () => {
+        const checkoutPage = document.querySelector('[data-flight-checkout-page]');
+        if (checkoutPage) {
+            checkoutPage.hidden = false;
+            checkoutPage.removeAttribute('aria-hidden');
+            checkoutPage.removeAttribute('inert');
+        }
+        endFinalization();
     };
     const updateTotal = () => {
         const addons = addonInputs.filter(input => input.checked).reduce((sum, input) => sum + Number(input.dataset.addonPrice || 0), 0);
@@ -211,34 +292,44 @@
         const confirmation = template.content.firstElementChild;
         const checkoutPage = document.querySelector('[data-flight-checkout-page]');
         if (!confirmation || !checkoutPage) throw new Error('The booking was created, but its confirmation could not be displayed. Open My bookings to view it.');
-        modalElement?.addEventListener('hidden.bs.modal', () => modalElement.remove(), { once: true });
         paymentModal?.hide();
-        checkoutPage.replaceWith(confirmation);
-        bindCopyReference(confirmation);
-        if (body.redirect) window.history.replaceState({ bookingConfirmed: true }, '', body.redirect);
-        document.title = 'Booking confirmed · Karossy Travels';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const revealConfirmation = () => {
+            checkoutPage.replaceWith(confirmation);
+            bindCopyReference(confirmation);
+            endFinalization();
+            if (body.redirect) window.history.replaceState({ bookingConfirmed: true }, '', body.redirect);
+            document.title = 'Booking confirmed · Karossy Travels';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+        if (finalizationScreen && !finalizationScreen.hidden) {
+            setFinalizationProgress(100, 'Booking confirmed', 'Your reservation is complete. We are opening your booking confirmation now.');
+            if (finalizationTitle) finalizationTitle.textContent = 'Your booking is ready';
+            if (finalizationNote) finalizationNote.textContent = 'Your confirmation and receipt have been sent to your email address.';
+            window.setTimeout(revealConfirmation, 650);
+            return;
+        }
+        revealConfirmation();
     };
-    const waitForVerifiedPayment = async reference => {
+    const waitForVerifiedPayment = async (reference, transactionId = null) => {
         for (let attempt = 0; attempt < 60; attempt += 1) {
             if (attempt) await new Promise(resolve => window.setTimeout(resolve, 5000));
-            const { response, body } = await post(checkoutForm.dataset.verifyUrl, { reference });
+            const { response, body } = await post(checkoutForm.dataset.verifyUrl, { reference, transaction_id: transactionId });
             if (response.status === 202 && body.pending) {
-                progressCopy.textContent = 'Waiting for secure payment confirmation…';
+                setFinalizationProgress(35, 'Confirming your payment', 'We are waiting for the secure payment confirmation. You do not need to pay again.');
                 continue;
             }
             if (!response.ok) throw new Error(Object.values(body.errors || {}).flat()[0] || body.message || 'Payment could not be verified.');
+            setFinalizationProgress(86, 'Creating your booking reference', 'Your payment is confirmed and the reservation is being completed now.');
             return body;
         }
         throw new Error(`Payment is taking longer than expected. Keep your reference ${reference} and contact Karossy support if you were charged.`);
     };
-    const finishPaidBooking = async reference => {
-        setProgress('Finishing things up', 'Payment received. We are saving your booking and requesting the airline confirmation now.', `Please keep this page open. Your payment reference is ${reference}.`);
-        paymentModal?.show();
+    const finishPaidBooking = async (reference, transactionId = null) => {
+        beginFinalization(reference);
         try {
-            showConfirmation(await waitForVerifiedPayment(reference));
+            showConfirmation(await waitForVerifiedPayment(reference, transactionId));
         } catch (error) {
-            paymentModal?.hide();
+            restoreCheckout();
             payButton.disabled = false;
             errorBox.textContent = error.message;
             errorBox.classList.remove('d-none');
@@ -259,7 +350,10 @@
             lastName: body.last_name,
             phone: body.phone,
             metadata: body.metadata,
-            onSuccess: transaction => finishPaidBooking(transaction.reference || body.reference),
+            onSuccess: transaction => finishPaidBooking(
+                transaction.reference || transaction.trxref || body.reference,
+                transaction.transaction || transaction.trans || null,
+            ),
             onCancel: () => {
                 payButton.disabled = false;
                 errorBox.textContent = 'Payment was not completed. You can try again when you are ready.';

@@ -13,14 +13,20 @@ final class FlightSearchRequest extends FormRequest
         return true;
     }
 
+    protected function getRedirectUrl(): string
+    {
+        return route('home', ['service' => 'flights']).'#travel-search';
+    }
+
     /** @return array<string, mixed> */
     public function rules(): array
     {
         return [
-            'origin' => ['required', 'string', 'size:3', 'regex:/^[A-Za-z]{3}$/'],
-            'destination' => ['required', 'string', 'size:3', 'regex:/^[A-Za-z]{3}$/'],
-            'departure_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'origin' => [Rule::excludeIf(fn (): bool => $this->input('trip_type') === 'multi_city'), 'required', 'string', 'size:3', 'regex:/^[A-Za-z]{3}$/'],
+            'destination' => [Rule::excludeIf(fn (): bool => $this->input('trip_type') === 'multi_city'), 'required', 'string', 'size:3', 'regex:/^[A-Za-z]{3}$/'],
+            'departure_date' => [Rule::excludeIf(fn (): bool => $this->input('trip_type') === 'multi_city'), 'required', 'date_format:Y-m-d', 'after_or_equal:today'],
             'return_date' => [
+                Rule::excludeIf(fn (): bool => $this->input('trip_type') === 'multi_city'),
                 'nullable',
                 'date_format:Y-m-d',
                 'after_or_equal:departure_date',

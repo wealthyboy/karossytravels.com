@@ -7,7 +7,7 @@
     $airlineCode = data_get($booking->travelOffer, 'fare_summary.validating_airline') ?: data_get($segments, '0.marketing_airline', 'AIR');
     $addonTotal = (int) data_get($booking->details, 'pricing.addons_minor', 0);
     $operatorAdjustment = (int) data_get($booking->details, 'pricing.operator_markup_minor', 0);
-    $money = fn (int $minor) => $order->currency.' '.number_format($minor / 100, 2);
+    $money = fn (int $minor) => \App\Support\CurrencyMetadata::format($minor, $order->currency);
     $ticketed = $booking->tickets->isNotEmpty();
 @endphp
 <section class="booking-page checkout-complete-page" data-booking-confirmation aria-live="polite">

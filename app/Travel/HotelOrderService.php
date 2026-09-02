@@ -26,7 +26,7 @@ final class HotelOrderService
         private readonly TravelLogger $travelLogger,
     ) {}
 
-    public function create(HotelOffer $offer, Customer $customer, Collection|array $addons = [], array $manualMarkup = [], ?string $specialRequests = null): Order
+    public function create(HotelOffer $offer, Customer $customer, Collection|array $addons = [], array $manualMarkup = [], ?string $specialRequests = null, bool $sendConfirmation = true): Order
     {
         $offer->loadMissing('search');
         if ($offer->expires_at->isPast()) throw new RuntimeException('This hotel rate has expired. Search again.');
@@ -76,11 +76,18 @@ final class HotelOrderService
         $booking = $order->bookings->first();
         AnalyticsEvent::create(['event' => 'hotel_booking_created', 'service' => 'hotels', 'funnel_step' => 'booking_created', 'session_id' => $offer->search->session_id, 'source' => $offer->provider, 'properties' => ['order_id' => $order->id, 'channel' => $order->channel, 'status' => $status], 'occurred_at' => now()]);
         $this->travelLogger->record('hotel', 'booking', $offer->provider, ['offer_id' => $offer->id, 'customer_id' => $customer->id, 'addon_ids' => $addons->pluck('id')->all()], ['order_id' => $order->id, 'status' => $status, 'provider_locator' => $locator], ['session_id' => $offer->search->session_id, 'order_id' => $order->id]);
-        if (filter_var($customer->email, FILTER_VALIDATE_EMAIL)) {
-            try { Mail::to($customer->email)->send(new BookingConfirmation($order, $booking)); }
-            catch (\Throwable $exception) { Log::error('Failed to send hotel booking email.', ['order_id' => $order->id, 'error' => $exception->getMessage()]); }
-        }
+        if ($sendConfirmation) $this->sendConfirmation($order);
         return $order;
+    }
+
+    public function sendConfirmation(Order $order): void
+    {
+        $order->loadMissing(['bookings.addons']);
+        $booking = $order->bookings->first();
+        $email = data_get($order->customer, 'email');
+        if (! $booking || ! filter_var($email, FILTER_VALIDATE_EMAIL)) return;
+        try { Mail::to($email)->send(new BookingConfirmation($order, $booking)); }
+        catch (\Throwable $exception) { Log::error('Failed to send hotel booking email.', ['order_id' => $order->id, 'error' => $exception->getMessage()]); }
     }
 
     private function source(): string

@@ -55,6 +55,19 @@ final class PricingAndCurrencyTest extends TestCase
         $this->assertSame(15250000, $converted['amount_minor']);
     }
 
+    public function test_configured_fallback_rate_keeps_naira_conversion_available_when_live_rates_fail(): void
+    {
+        Cache::forget('travel:exchange-rates:USD');
+        Http::fake([config('travel.currency.rates_url') => Http::response([], 503)]);
+        CurrencySetting::where('code', 'NGN')->update(['manual_rate' => null]);
+        config()->set('travel.currency.fallback_usd_rates.NGN', 1600);
+
+        $converted = app(ExchangeRateService::class)->convertMinor(10000, 'USD', 'NGN');
+
+        $this->assertSame('NGN', $converted['currency']);
+        $this->assertSame(16000000, $converted['amount_minor']);
+    }
+
     public function test_country_header_selects_naira_in_nigeria_and_usd_elsewhere(): void
     {
         $this->withHeader('CF-IPCountry', 'NG')->get('/')->assertOk()->assertSee('NGN');
@@ -142,7 +155,7 @@ final class PricingAndCurrencyTest extends TestCase
             ->assertRedirect('/')
             ->assertSessionHas('display_currency', 'GBP');
 
-        $this->get(route('hotels.results', [
+        $criteria = [
             'destination_code' => 'LOS',
             'destination_label' => 'Lagos, Nigeria',
             'check_in' => now()->addDays(14)->toDateString(),
@@ -151,9 +164,14 @@ final class PricingAndCurrencyTest extends TestCase
             'children' => 0,
             'rooms' => 1,
             'session_id' => (string) Str::uuid(),
-        ]))->assertOk()
-            ->assertSee('GBP selected for your location')
-            ->assertSee('£336.00');
+        ];
+
+        $this->get(route('hotels.results', $criteria))->assertOk()
+            ->assertSee('Searching live hotel availability');
+
+        $response = $this->postJson(route('hotels.search.store'), $criteria)->assertOk();
+        $this->assertStringContainsString('GBP selected for your location', $response->json('data.html'));
+        $this->assertStringContainsString('£336.00', $response->json('data.html'));
     }
 
     public function test_authorized_admin_can_update_pricing_and_currency_settings(): void

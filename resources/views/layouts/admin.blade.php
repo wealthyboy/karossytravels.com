@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body>
+<body class="admin-site">
 <div class="container-fluid px-0">
     <div class="row g-0">
         <aside class="col-12 col-lg-2 app-sidebar p-3 p-xl-4">

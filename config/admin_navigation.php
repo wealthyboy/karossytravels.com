@@ -4,6 +4,7 @@ return [
     ['label' => 'Dashboard', 'slug' => 'dashboard', 'icon' => 'bi-speedometer2', 'permission' => 'dashboard.view', 'route' => 'admin.dashboard'],
     ['label' => 'Flights', 'slug' => 'flights', 'icon' => 'bi-airplane-fill', 'permission' => 'bookings.view', 'items' => [
         ['label' => 'Search Flights', 'slug' => 'search', 'route' => 'admin.flights.search', 'active' => 'admin.flights.*'],
+        ['label' => 'Homepage Offers', 'slug' => 'homepage-offers', 'route' => 'admin.flight-offers.index', 'active' => 'admin.flight-offers.*', 'permission' => 'offers.manage'],
         ['label' => 'Fare Rules', 'slug' => 'fare-rules', 'route' => 'admin.fair-rules.index', 'active' => 'admin.fair-rules.*', 'permission' => 'bookings.manage'],
         ['label' => 'Add-ons', 'slug' => 'addons', 'route' => 'admin.addons.index', 'active' => 'admin.addons.*', 'route_parameters' => ['type' => 'flight'], 'permission' => 'offers.manage'],
         ['label' => 'Operational Logs', 'slug' => 'logs', 'route' => 'admin.travel-logs.index', 'active' => 'admin.travel-logs.*', 'route_parameters' => ['product' => 'flight'], 'permission' => 'integrations.view'],
@@ -15,12 +16,13 @@ return [
     ]],
     ['label' => 'Visas', 'slug' => 'visas', 'icon' => 'bi-ticket-perforated-fill', 'permission' => 'services.view', 'items' => [
         ['label' => 'Visa Services', 'slug' => 'services', 'route' => 'admin.visas.index', 'active' => 'admin.visas.*'],
-        ['label' => 'Applications', 'slug' => 'applications'],
-        ['label' => 'Requirements', 'slug' => 'requirements'],
+        ['label' => 'Applications', 'slug' => 'applications', 'route' => 'admin.visa-applications.index', 'active' => 'admin.visa-applications.*'],
+        ['label' => 'Operational Logs', 'slug' => 'logs', 'route' => 'admin.travel-logs.index', 'route_parameters' => ['product' => 'visa'], 'permission' => 'integrations.view'],
     ]],
     ['label' => 'Car Hire', 'slug' => 'car-hire', 'icon' => 'bi-car-front-fill', 'permission' => 'services.view', 'items' => [
-        ['label' => 'Vehicles', 'slug' => 'vehicles'], ['label' => 'Reservations', 'slug' => 'reservations'], ['label' => 'Suppliers', 'slug' => 'suppliers'],
+        ['label' => 'Partner enquiries', 'slug' => 'partners', 'route' => 'admin.partner-enquiries.index', 'active' => 'admin.partner-enquiries.*'], ['label' => 'Operational Logs', 'slug' => 'logs', 'route' => 'admin.travel-logs.index', 'route_parameters' => ['product' => 'car'], 'permission' => 'integrations.view'],
     ]],
+    ['label' => 'Holiday Packages', 'slug' => 'holidays', 'icon' => 'bi-sun-fill', 'permission' => 'services.manage', 'route' => 'admin.holidays.index', 'active' => 'admin.holidays.*'],
     ['label' => 'Customers', 'slug' => 'customers', 'icon' => 'bi-people-fill', 'permission' => 'customers.view', 'route' => 'admin.customers.index', 'active' => 'admin.customers.*'],
     ['label' => 'Bookings', 'slug' => 'bookings', 'icon' => 'bi-receipt-cutoff', 'permission' => 'bookings.view', 'description' => 'A unified view of every booking.', 'items' => [
         ['label' => 'All Bookings', 'slug' => 'all', 'route' => 'admin.bookings.index'],
@@ -44,7 +46,7 @@ return [
         ['label' => 'Event Stream', 'slug' => 'events', 'route' => 'admin.analytics.events.index', 'active' => 'admin.analytics.events.*'],
     ]],
     ['label' => 'Providers', 'slug' => 'providers', 'icon' => 'bi-globe2', 'permission' => 'integrations.view', 'items' => [
-        ['label' => 'Sabre', 'slug' => 'sabre', 'route' => 'admin.providers.sabre', 'active' => 'admin.providers.*'],
+        ['label' => 'Travel supplier', 'slug' => 'sabre', 'route' => 'admin.providers.sabre', 'active' => 'admin.providers.*'],
         ['label' => 'API Logs', 'slug' => 'api-logs', 'route' => 'admin.travel-logs.index', 'active' => 'admin.travel-logs.*', 'route_parameters' => ['product' => 'all']],
     ]],
     ['label' => 'Pricing', 'slug' => 'pricing', 'icon' => 'bi-cash-coin', 'permission' => 'offers.manage', 'items' => [

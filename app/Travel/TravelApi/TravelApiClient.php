@@ -325,10 +325,15 @@ final class TravelApiClient
 
     private function authenticatedRequest(): PendingRequest
     {
+        // Keep provider failures inside PHP's request budget so controllers can
+        // return a controlled JSON response instead of an HTML fatal-error page.
+        $timeout = min(15, max(5, (int) $this->configuration['timeout']));
+
         return Http::baseUrl($this->baseUrl())
             ->acceptJson()
             ->asJson()
-            ->timeout((int) $this->configuration['timeout'])
+            ->connectTimeout(min(5, $timeout))
+            ->timeout($timeout)
             ->retry(2, 250, throw: false)
             ->withHeaders(['X-Request-ID' => request()->attributes->get('request_id', (string) str()->uuid())])
             ->withToken($this->accessToken());

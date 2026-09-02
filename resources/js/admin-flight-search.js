@@ -21,6 +21,18 @@ if (page) {
     let criteria = {};
     let summaries = [];
     let filtersBound = false;
+    const publicSearchModal = publicSearchModalElement ? Modal.getOrCreateInstance(publicSearchModalElement) : null;
+
+    const closePublicSearchModal = async startedAt => {
+        if (!publicSearchModalElement || !publicSearchModal) return;
+
+        // Very fast empty/error responses can finish while Bootstrap is still
+        // completing the opening transition. Give every outcome the same short
+        // display window, then dismiss the exact instance that was opened.
+        const remaining = Math.max(0, 650 - (Date.now() - startedAt));
+        if (remaining) await new Promise(resolve => window.setTimeout(resolve, remaining));
+        publicSearchModal.hide();
+    };
 
     const airlineNames = {
         AF: 'Air France', AT: 'Royal Air Maroc', BA: 'British Airways', DL: 'Delta Air Lines',
@@ -424,12 +436,8 @@ if (page) {
                 const headingCopy = page.querySelector('.public-results-heading p');
                 if (headingCopy) headingCopy.textContent = `${summaries.length} live ${summaries.length === 1 ? 'itinerary' : 'itineraries'} · ${offers.length} ${offers.length === 1 ? 'fare' : 'fares'} · Taxes and fees included`;
             }
-            const minimumModalTime = Math.max(0, 650 - (Date.now() - startedAt));
-            if (minimumModalTime) await new Promise(resolve => window.setTimeout(resolve, minimumModalTime));
-            if (publicSearchModalElement) Modal.getInstance(publicSearchModalElement)?.hide();
             (page.querySelector('.public-flight-results-header') || results).scrollIntoView({ behavior: 'smooth', block: 'start' });
         } catch (error) {
-            if (publicSearchModalElement) Modal.getInstance(publicSearchModalElement)?.hide();
             message.innerHTML = `<div><strong>Temporary network issue</strong><span>We could not connect to the airline network. Please check your connection and try again shortly.</span></div><button type="button" class="btn btn-sm btn-outline-danger" data-retry-flight-search><i class="bi bi-arrow-clockwise"></i> Try again</button>`;
             message.className = 'flight-search-message alert alert-danger mt-3';
             message.querySelector('[data-retry-flight-search]')?.addEventListener('click', () => {
@@ -438,6 +446,7 @@ if (page) {
             }, { once: true });
         } finally {
             if (statusTimer) window.clearInterval(statusTimer);
+            await closePublicSearchModal(startedAt);
             if (submit) {
                 submit.disabled = false;
                 submit.querySelector('.spinner-border')?.classList.add('d-none');
@@ -469,8 +478,7 @@ if (page) {
     }
     if (isPublicResults) {
         criteria = JSON.parse(page.querySelector('[data-flight-search-criteria]')?.textContent || '{}');
-        const modal = Modal.getOrCreateInstance(publicSearchModalElement);
         publicSearchModalElement.addEventListener('shown.bs.modal', () => performSearch(criteria), { once: true });
-        window.requestAnimationFrame(() => window.requestAnimationFrame(() => modal.show()));
+        window.requestAnimationFrame(() => window.requestAnimationFrame(() => publicSearchModal.show()));
     }
 }

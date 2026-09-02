@@ -20,6 +20,36 @@ final class FrontendBookingFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_multi_city_search_opens_the_flight_results_page(): void
+    {
+        $departure = now()->addWeek()->toDateString();
+        $secondDeparture = now()->addWeeks(2)->toDateString();
+
+        $this->get(route('flights.results', [
+            'trip_type' => 'multi_city',
+            'segments' => [
+                ['origin' => 'LOS', 'destination' => 'LHR', 'departure_date' => $departure],
+                ['origin' => 'LHR', 'destination' => 'DXB', 'departure_date' => $secondDeparture],
+            ],
+            'cabin' => 'economy',
+            'adults' => 1,
+            'children' => 0,
+            'infants' => 0,
+            'currency' => 'NGN',
+            'session_id' => (string) Str::uuid(),
+        ]))
+            ->assertOk()
+            ->assertSee('Choose your flight')
+            ->assertSee('Multi-city');
+    }
+
+    public function test_invalid_flight_search_returns_to_the_flights_tab(): void
+    {
+        $this->from(route('home', ['service' => 'hotels']))
+            ->get(route('flights.results', ['trip_type' => 'multi_city']))
+            ->assertRedirect(route('home', ['service' => 'flights']).'#travel-search');
+    }
+
     public function test_customer_can_create_a_live_provider_booking_and_see_the_pnr(): void
     {
         Mail::fake();
@@ -79,6 +109,9 @@ final class FrontendBookingFlowTest extends TestCase
         $this->get(route('checkout.travellers', $offer))
             ->assertOk()
             ->assertSee('Traveller details and payment')
+            ->assertSee('Finishing your booking')
+            ->assertSee('data-booking-finalization-screen', false)
+            ->assertSee('data-finalization-progress', false)
             ->assertSee('Passport number')
             ->assertSee('Kenya Airways changes')
             ->assertSee('Karossy service rule')
@@ -206,6 +239,57 @@ final class FrontendBookingFlowTest extends TestCase
         Mail::assertSent(BookingConfirmation::class, fn (BookingConfirmation $mail): bool => $mail->hasTo('ada.guest@example.com'));
     }
 
+    public function test_local_paystack_callback_finishes_booking_when_webhooks_cannot_reach_localhost(): void
+    {
+        Mail::fake();
+        config([
+            'app.env' => 'local',
+            'services.paystack.public_key' => 'pk_test_checkout',
+            'services.paystack.secret_key' => null,
+            'travel.checkout.demo_payment_enabled' => false,
+            'travel.checkout.local_callback_finalization' => true,
+        ]);
+        $offer = $this->createOfferForGuestRedirect();
+
+        $this->postJson(route('checkout.travellers.store', $offer), [
+            'travellers' => [[
+                'type' => 'ADT', 'title' => 'Ms', 'first_name' => 'Ada', 'last_name' => 'Okafor',
+                'date_of_birth' => '1992-05-14', 'gender' => 'female', 'nationality' => 'NG',
+                'passport_number' => 'B12345678', 'passport_country' => 'NG',
+                'passport_expiry' => now()->addYears(2)->toDateString(),
+            ]],
+            'contact' => ['email' => 'ada.callback@example.com', 'phone' => '+234 801 234 5678'],
+            'notifications' => 1,
+        ])->assertOk();
+
+        $initialize = $this->postJson(route('checkout.payment.initialize', $offer), ['terms' => 1])
+            ->assertOk()
+            ->assertJsonPath('public_key', 'pk_test_checkout');
+
+        $response = $this->postJson(route('checkout.payment.verify', $offer), [
+            'reference' => $initialize->json('reference'),
+            'transaction_id' => '123456789',
+        ])->assertCreated()
+            ->assertJsonPath('message', 'Your flight was confirmed by the airline.')
+            ->assertJsonStructure(['pnr', 'reference', 'confirmation_html', 'redirect']);
+
+        $order = Order::query()->firstOrFail();
+        $this->assertDatabaseHas('payments', [
+            'order_id' => $order->id,
+            'gateway' => 'paystack_callback_test',
+            'status' => 'simulated',
+        ]);
+        $this->assertDatabaseHas('travel_logs', [
+            'product_type' => 'flight',
+            'stage' => 'payment',
+            'provider' => 'paystack_test_callback',
+            'status' => 'success',
+            'order_id' => $order->id,
+        ]);
+        Mail::assertSent(BookingConfirmation::class, fn (BookingConfirmation $mail): bool => $mail->hasTo('ada.callback@example.com'));
+        $this->assertStringContainsString('Your flight is booked', $response->json('confirmation_html'));
+    }
+
     public function test_signed_paystack_webhook_records_the_exact_successful_payment_attempt(): void
     {
         config([
@@ -287,6 +371,25 @@ final class FrontendBookingFlowTest extends TestCase
             ])
             ->assertRedirect(route('checkout.travellers', $offer))
             ->assertSessionHasErrors('travellers.0.last_name');
+
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('bookings', 0);
+    }
+
+    public function test_adult_traveller_must_be_at_least_eighteen_at_checkout(): void
+    {
+        $offer = $this->createOfferForGuestRedirect();
+
+        $this->postJson(route('checkout.travellers.store', $offer), [
+            'travellers' => [[
+                'type' => 'ADT', 'title' => 'Mr', 'first_name' => 'Young', 'last_name' => 'Traveller',
+                'date_of_birth' => now()->subYears(18)->addDay()->toDateString(),
+                'gender' => 'male', 'nationality' => 'NG', 'passport_number' => 'A12345678',
+                'passport_country' => 'NG', 'passport_expiry' => now()->addYears(2)->toDateString(),
+            ]],
+            'contact' => ['email' => 'young@example.com', 'phone_code' => '+234', 'phone' => '8000000000'],
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('travellers.0.date_of_birth');
 
         $this->assertDatabaseCount('orders', 0);
         $this->assertDatabaseCount('bookings', 0);

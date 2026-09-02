@@ -16,12 +16,13 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(RolePermissionSeeder::class);
+        $this->call(KarossyContentSeeder::class);
 
         // User::factory(10)->create();
 
-        User::factory()->create([
+        User::query()->updateOrCreate(['email' => 'test@example.com'], [
             'name' => 'Test User',
-            'email' => 'test@example.com',
+            'password' => bcrypt('password'),
         ]);
     }
 }

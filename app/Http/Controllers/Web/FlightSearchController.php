@@ -8,6 +8,7 @@ use App\Http\Responses\ApiResponse;
 use App\Travel\FlightSearchService;
 use App\Travel\Pricing\DisplayCurrencyResolver;
 use Illuminate\Http\JsonResponse;
+use Throwable;
 
 final class FlightSearchController extends Controller
 {
@@ -18,7 +19,19 @@ final class FlightSearchController extends Controller
     ): JsonResponse {
         $criteria = $request->validated();
         $criteria['currency'] = $currencyResolver->resolve($request);
-        $result = $service->search($criteria);
+        try {
+            $result = $service->search($criteria);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return response()->json([
+                'message' => 'We are having trouble connecting to the airline network. Please check your connection and try again shortly.',
+                'meta' => [
+                    'api_version' => 'v1',
+                    'request_id' => $request->attributes->get('request_id'),
+                ],
+            ], 503);
+        }
 
         return ApiResponse::success(
             $request,

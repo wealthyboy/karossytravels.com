@@ -1,5 +1,5 @@
 @if($addons->isNotEmpty())
-<div class="booking-card mt-4">
+<div class="booking-card mt-1">
     <div class="booking-card-title"><div><span class="booking-card-icon"><i class="bi bi-bag-plus"></i></span><div><h2>Add services to your trip</h2><p>Optional services are included only when selected.</p></div></div></div>
     <div class="checkout-addon-grid">
         @foreach($addons as $addon)
@@ -15,7 +15,7 @@
 </div>
 @endif
 
-<div class="booking-card mt-4">
+<div class="booking-card mt-1">
     <div class="booking-card-title"><div><span class="booking-card-icon"><i class="bi bi-file-earmark-check"></i></span><div><h2>Booking conditions</h2><p>{{ $airlineCode ?: 'Airline' }} fare conditions and Karossy service rules.</p></div></div></div>
     @forelse($fareRules as $rule)
         <details class="checkout-rule"><summary><span>{{ $rule->is_karossey_rule ? 'Karossy' : $rule->airline_code }}</span><strong>{{ $rule->title }}</strong><i class="bi bi-chevron-down"></i></summary><div>{!! nl2br(e($rule->content)) !!}</div></details>

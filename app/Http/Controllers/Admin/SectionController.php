@@ -118,7 +118,7 @@ final class SectionController extends Controller
         $recentLogs = TravelLog::query()->where('created_at', '>=', now()->subDay());
 
         return $this->section(
-            'Sabre',
+            'Travel supplier',
             'Monitor the airline and hotel supplier connection used by Karossy operations.',
             data: ['providerStatus' => [
                 'environment' => str((string) ($configuration['environment'] ?? 'cert'))->headline()->toString(),

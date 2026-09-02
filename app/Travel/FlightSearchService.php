@@ -25,6 +25,19 @@ final class FlightSearchService
      */
     public function search(array $criteria): array
     {
+        if (($criteria['trip_type'] ?? null) === 'multi_city') {
+            $segments = array_values($criteria['segments'] ?? []);
+            $firstSegment = $segments[0] ?? [];
+            $lastSegment = $segments[count($segments) - 1] ?? [];
+
+            // The database and analytics use these columns as a searchable
+            // summary, while the complete itinerary remains in `segments`.
+            $criteria['origin'] = $firstSegment['origin'] ?? '';
+            $criteria['destination'] = $lastSegment['destination'] ?? '';
+            $criteria['departure_date'] = $firstSegment['departure_date'] ?? null;
+            $criteria['return_date'] = null;
+        }
+
         $startedAt = hrtime(true);
         try {
             $providerOffers = $this->provider->search($criteria);

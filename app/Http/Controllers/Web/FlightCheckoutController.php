@@ -226,7 +226,7 @@ final class FlightCheckoutController extends Controller
                 'error_message' => $exception->getMessage(),
             ]);
 
-            return response()->json(['message' => $exception->getMessage() ?: 'Payment could not be started. Please retry or contact Karossy support.'], 422);
+            return response()->json(['message' => 'Payment could not be started right now. Please try again shortly or contact Karossy support.'], 422);
         }
 
         return response()->json([
@@ -251,7 +251,10 @@ final class FlightCheckoutController extends Controller
         ExchangeRateService $rates,
         TravelLogger $travelLogger,
     ): JsonResponse {
-        $validated = $request->validate(['reference' => ['required', 'string', 'max:100']]);
+        $validated = $request->validate([
+            'reference' => ['required', 'string', 'max:100'],
+            'transaction_id' => ['nullable', 'string', 'max:100'],
+        ]);
         $attempt = CheckoutPaymentAttempt::query()
             ->where('travel_offer_id', $offer->id)
             ->where('reference', $validated['reference'])
@@ -269,7 +272,18 @@ final class FlightCheckoutController extends Controller
         }
 
         try {
-            $verified = $paystack->verify($attempt->reference);
+            $localCallback = $this->localCallbackFinalizationEnabled();
+            $verified = $localCallback
+                ? [
+                    'status' => 'success',
+                    'amount' => $attempt->amount_minor,
+                    'currency' => $attempt->currency,
+                    'reference' => $attempt->reference,
+                    'channel' => 'paystack_test_callback',
+                    'id' => $validated['transaction_id'] ?? null,
+                    'local_callback' => true,
+                ]
+                : $paystack->verify($attempt->reference);
             if (data_get($verified, 'status') !== 'success') {
                 return response()->json(['message' => 'Waiting for payment confirmation.', 'pending' => true], 202);
             }
@@ -281,7 +295,8 @@ final class FlightCheckoutController extends Controller
             }
 
             $attempt->update(['status' => 'paid', 'verified_at' => now(), 'gateway_response' => $verified]);
-            $order = $this->finalizePaidOrder($request, $offer, $attempt, $checkout, $orders, $rates, $travelLogger, $verified, 'paystack');
+            $gateway = $localCallback ? 'paystack_callback_test' : 'paystack';
+            $order = $this->finalizePaidOrder($request, $offer, $attempt, $checkout, $orders, $rates, $travelLogger, $verified, $gateway);
         } catch (Throwable $exception) {
             report($exception);
 
@@ -295,7 +310,7 @@ final class FlightCheckoutController extends Controller
                 'error_message' => $exception->getMessage(),
             ]);
 
-            return response()->json(['message' => $exception->getMessage() ?: 'Payment could not be verified. Please contact Karossy support.'], 422);
+            return response()->json(['message' => 'Payment could not be verified right now. Please try again shortly or contact Karossy support.'], 422);
         }
 
         return $this->success($request, $order);
@@ -327,7 +342,7 @@ final class FlightCheckoutController extends Controller
             'order_id' => $order->id,
             'gateway' => $gateway,
             'gateway_reference' => $attempt->reference,
-            'status' => $gateway === 'demo' ? 'simulated' : 'paid',
+            'status' => in_array($gateway, ['demo', 'paystack_callback_test'], true) ? 'simulated' : 'paid',
             'currency' => $attempt->currency,
             'amount_minor' => $attempt->amount_minor,
             'paid_at' => now(),
@@ -337,7 +352,11 @@ final class FlightCheckoutController extends Controller
         $request->session()->put("flight_checkout.{$offer->id}.order_id", $order->id);
         $request->session()->put("completed_orders.{$order->id}", true);
         $orders->sendConfirmation($order->fresh());
-        $travelLogger->record('flight', 'payment', $gateway === 'demo' ? 'local_demo' : 'paystack', [
+        $travelLogger->record('flight', 'payment', match ($gateway) {
+            'demo' => 'local_demo',
+            'paystack_callback_test' => 'paystack_test_callback',
+            default => 'paystack',
+        }, [
             'offer_id' => $offer->id,
             'reference' => $attempt->reference,
         ], [
@@ -480,5 +499,13 @@ final class FlightCheckoutController extends Controller
     {
         return app()->environment(['local', 'testing'])
             && (bool) config('travel.checkout.demo_payment_enabled', false);
+    }
+
+    private function localCallbackFinalizationEnabled(): bool
+    {
+        return app()->environment(['local', 'testing'])
+            && (bool) config('travel.checkout.local_callback_finalization', false)
+            && str_starts_with(trim((string) config('services.paystack.public_key')), 'pk_test_')
+            && trim((string) config('services.paystack.secret_key')) === '';
     }
 }

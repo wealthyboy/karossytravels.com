@@ -26,6 +26,11 @@ final class CheckoutPaymentAttempt extends Model
         return $this->belongsTo(TravelOffer::class, 'travel_offer_id');
     }
 
+    public function hotelOffer(): BelongsTo
+    {
+        return $this->belongsTo(HotelOffer::class);
+    }
+
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);

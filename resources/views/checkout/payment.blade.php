@@ -28,7 +28,7 @@
             </div>
 
             @if($addons->isNotEmpty())
-            <div class="booking-card mt-4">
+            <div class="booking-card mt-1">
                 <div class="booking-card-title"><div><span class="booking-card-icon"><i class="bi bi-bag-plus"></i></span><div><h2>Make the trip easier</h2><p>Optional services are added to this booking only when selected.</p></div></div></div>
                 <div class="checkout-addon-grid">
                 @foreach($addons as $addon)
@@ -46,7 +46,7 @@
             </div>
             @endif
 
-            <div class="booking-card mt-4">
+            <div class="booking-card mt-1">
                 <div class="booking-card-title"><div><span class="booking-card-icon"><i class="bi bi-file-earmark-check"></i></span><div><h2>Rules that apply to this booking</h2><p>{{ $airlineCode ?: 'Airline' }} conditions and Karossy service rules.</p></div></div></div>
                 @forelse($fareRules as $rule)
                     <details class="checkout-rule" @if($loop->first) open @endif><summary><span>{{ $rule->is_karossey_rule ? 'Karossy' : $rule->airline_code }}</span><strong>{{ $rule->title }}</strong><i class="bi bi-chevron-down"></i></summary><div>{!! nl2br(e($rule->content)) !!}</div></details>
@@ -55,7 +55,7 @@
                 @endforelse
             </div>
 
-            <div class="booking-card mt-4">
+            <div class="booking-card mt-1">
                 <h2 class="section-title mt-0">Contact and booking conditions</h2>
                 <p class="checkout-contact"><i class="bi bi-envelope"></i> Confirmation will be sent to <strong>{{ data_get($checkout, 'contact.email') }}</strong></p>
                 <label class="form-check"><input class="form-check-input" name="terms" value="1" type="checkbox"><span class="form-check-label">I confirm the traveller information is correct and accept the airline rules shown above, Karossy rules, cancellation policy and terms of service.</span></label>

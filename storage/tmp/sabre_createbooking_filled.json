@@ -1,0 +1,106 @@
+{
+  "agency": {
+    "ticketingPolicy": "TODAY"
+  },
+  "contactInfo": {
+    "emails": [
+      "agency@travel.ltd"
+    ],
+    "phones": [
+      "6543210000"
+    ]
+  },
+  "travelers": [
+    {
+      "id": "Passenger1",
+      "surname": "Jones",
+      "givenName": "Ricky",
+      "passengerCode": "ADT",
+      "birthDate": "1960-02-08",
+      "nameReferenceCode": "",
+      "phones": [
+        {
+          "number": "6512345678"
+        }
+      ],
+      "emails": [
+        "traveler@personal.com"
+      ],
+      "specialServices": [
+        {
+          "code": "CTCM",
+          "message": "6512345678"
+        },
+        {
+          "code": "CTCE",
+          "message": "traveler//personal.com"
+        }
+      ],
+      "identityDocuments": [
+        {
+          "documentNumber": "YG20770658",
+          "documentType": "PASSPORT",
+          "expiryDate": "2030-04-20",
+          "issuingCountryCode": "SG",
+          "residenceCountryCode": "SG",
+          "birthDate": "1960-02-08",
+          "gender": "MALE",
+          "givenName": "Ricky",
+          "surname": "Jones"
+        }
+      ]
+    }
+  ],
+  "flightDetails": {
+    "haltOnFlightStatusCodes": [
+      "NO",
+      "UC",
+      "US",
+      "UN",
+      "UU",
+      "LL",
+      "HL"
+    ],
+    "flights": [
+      {
+        "flightNumber": "730",
+        "airlineCode": "PR",
+        "fromAirportCode": "MNL",
+        "toAirportCode": "BKK",
+        "departureDate": "2026-09-04",
+        "departureTime": "09:40",
+        "bookingClass": "T",
+        "isMarriageGroup": false,
+        "flightStatusCode": "NN"
+      }
+    ],
+    "flightPricing": [
+      {
+        "qualifiers": {
+          "travelerIndices": [
+            1
+          ],
+          "passengersPricing": [
+            {
+              "passengerCode": "ADT",
+              "numberOfpassengers": 1
+            }
+          ],
+          "specificFares": [
+            {
+              "fareBasisCode": "TOTTH",
+              "flightIndices": [
+                "1"
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "asynchronousUpdateWaitTime": 3000,
+  "receivedFrom": "SabreAPIsTools",
+  "errorHandlingPolicy": [
+    "HALT_ON_ERROR"
+  ]
+}

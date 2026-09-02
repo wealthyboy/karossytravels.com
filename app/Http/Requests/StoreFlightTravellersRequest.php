@@ -2,8 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Support\PhoneCountryCodes;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 final class StoreFlightTravellersRequest extends FormRequest
 {
@@ -27,6 +30,7 @@ final class StoreFlightTravellersRequest extends FormRequest
             'travellers.*.passport_country' => ['required', 'string', 'size:2'],
             'travellers.*.passport_expiry' => ['required', 'date', 'after:today'],
             'contact.email' => ['required', 'email:rfc', 'max:255'],
+            'contact.phone_code' => ['required', 'string', 'regex:/^\+[0-9]{1,4}$/'],
             'contact.phone' => ['required', 'string', 'regex:/^[0-9 +()-]{7,24}$/'],
             'notifications' => ['nullable', 'boolean'],
         ];
@@ -53,12 +57,43 @@ final class StoreFlightTravellersRequest extends FormRequest
             return $traveller;
         })->values()->all();
 
-        $this->merge(['travellers' => $travellers]);
+        $contact = is_array($this->input('contact')) ? $this->input('contact') : [];
+        $contact['phone_code'] = $contact['phone_code'] ?? '+234';
+        $contact['phone'] = PhoneCountryCodes::normalize($contact['phone_code'], $contact['phone'] ?? '');
+
+        $this->merge(['travellers' => $travellers, 'contact' => $contact]);
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            foreach ((array) $this->input('travellers', []) as $index => $traveller) {
+                if (! is_array($traveller) || ($traveller['type'] ?? null) !== 'ADT' || empty($traveller['date_of_birth'])) {
+                    continue;
+                }
+
+                try {
+                    $dateOfBirth = CarbonImmutable::parse((string) $traveller['date_of_birth'])->startOfDay();
+                } catch (\Throwable) {
+                    continue;
+                }
+
+                if ($dateOfBirth->greaterThan(CarbonImmutable::today()->subYears(18))) {
+                    $validator->errors()->add(
+                        "travellers.{$index}.date_of_birth",
+                        'Adult travellers must be at least 18 years old on the booking date.'
+                    );
+                }
+            }
+        });
     }
 
     public function messages(): array
     {
         return [
+            'travellers.*.date_of_birth.required' => 'Enter the traveller\'s date of birth.',
+            'travellers.*.date_of_birth.date' => 'Enter a valid date of birth.',
+            'travellers.*.date_of_birth.before' => 'The date of birth must be before today.',
             'travellers.*.first_name.regex' => 'First names may contain letters, spaces, apostrophes and hyphens only.',
             'travellers.*.last_name.regex' => 'Last names may contain letters, spaces, apostrophes and hyphens only.',
         ];

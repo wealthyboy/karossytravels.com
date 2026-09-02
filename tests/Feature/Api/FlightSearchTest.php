@@ -3,6 +3,8 @@
 namespace Tests\Feature\Api;
 
 use App\Models\TravelOffer;
+use App\Travel\Contracts\FlightProvider;
+use RuntimeException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -50,9 +52,6 @@ final class FlightSearchTest extends TestCase
         $secondDate = now()->addWeeks(2)->toDateString();
 
         $response = $this->postJson('/api/v1/flights/search', [
-            'origin' => 'los',
-            'destination' => 'dxb',
-            'departure_date' => $firstDate,
             'trip_type' => 'multi_city',
             'segments' => [
                 ['origin' => 'los', 'destination' => 'lhr', 'departure_date' => $firstDate],
@@ -68,6 +67,36 @@ final class FlightSearchTest extends TestCase
             ->assertJsonPath('data.offers.0.segments.0.origin', 'LOS')
             ->assertJsonPath('data.offers.0.segments.1.destination', 'DXB');
 
-        $this->assertDatabaseHas('flight_searches', ['trip_type' => 'multi_city']);
+        $this->assertDatabaseHas('flight_searches', [
+            'trip_type' => 'multi_city',
+            'origin' => 'LOS',
+            'destination' => 'DXB',
+        ]);
+        $this->assertSame($firstDate, \App\Models\FlightSearch::query()->firstOrFail()->departure_date->toDateString());
+    }
+
+    public function test_it_never_exposes_supplier_or_transport_errors_to_customers(): void
+    {
+        $this->mock(FlightProvider::class, function ($mock): void {
+            $mock->shouldReceive('search')->once()->andReturnUsing(
+                fn () => throw new RuntimeException('cURL error 28 for https://private-supplier.example/v5/offers/shop')
+            );
+            $mock->shouldReceive('name')->andReturn('travel_api');
+        });
+
+        $response = $this->postJson('/api/v1/flights/search', [
+            'origin' => 'LOS',
+            'destination' => 'LHR',
+            'departure_date' => now()->addWeek()->toDateString(),
+            'trip_type' => 'one_way',
+            'cabin' => 'economy',
+            'adults' => 1,
+            'session_id' => (string) Str::uuid(),
+        ]);
+
+        $response->assertStatus(503)
+            ->assertJsonPath('message', 'We are having trouble connecting to the airline network. Please check your connection and try again shortly.')
+            ->assertJsonMissing(['private-supplier.example'])
+            ->assertJsonMissing(['cURL error 28']);
     }
 }
