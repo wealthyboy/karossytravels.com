@@ -1944,15 +1944,15 @@ main .h5 {
 .public-coming-search strong { font-size: .95rem; }
 .public-coming-search small { color: #747c89; font-size: var(--small-font-size, .78rem); margin-top: .25rem; }
 
-.public-trust-strip { background: radial-gradient(circle at 10% 18%, rgba(204, 0, 11, .08), transparent 24rem), linear-gradient(118deg, #f7f8fc 0%, #ffffff 52%, #fff5f6 100%); border-top: 1px solid rgba(23, 20, 63, .04); border-bottom: 1px solid #e7e9ef; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85); position: relative; z-index: 1; }
-.public-trust-strip .public-container { display: grid; grid-template-columns: repeat(4, 1fr); }
-.public-trust-strip .public-container > div { align-items: center; display: flex; gap: .8rem; padding: 1.35rem 1rem; }
-.public-trust-strip i { color: var(--karossy-red); font-size: 1.3rem; }
-.public-trust-strip strong,
-.public-trust-strip small { display: block; }
-.public-trust-strip strong { font-size: .8rem; }
-.public-trust-strip small { color: #7b8290; font-size: var(--small-font-size, .78rem); margin-top: .15rem; }
-.public-trust-strip .iata-trust strong { letter-spacing: .045em; }
+.public-trust-strip { background: #fff; padding: 1.35rem 0 1.9rem; position: relative; z-index: 1; }
+.public-trust-card { background: radial-gradient(circle at 4% 8%, rgba(204, 0, 11, .07), transparent 19rem), linear-gradient(120deg, #fafafd 0%, #ffffff 52%, #fff7f8 100%); border: 1px solid rgba(23, 20, 63, .07); border-radius: 1.6rem; box-shadow: 0 16px 42px rgba(23, 20, 63, .065), inset 0 1px 0 rgba(255, 255, 255, .92); display: grid; grid-template-columns: repeat(4, 1fr); overflow: hidden; padding: .3rem .45rem; }
+.public-trust-card > div { align-items: center; display: flex; gap: .85rem; min-width: 0; padding: 1.2rem .9rem; }
+.public-trust-card i { align-items: center; background: rgba(204, 0, 11, .065); border: 1px solid rgba(204, 0, 11, .08); border-radius: .8rem; color: var(--karossy-red); display: inline-flex; flex: 0 0 auto; font-size: 1.15rem; height: 2.55rem; justify-content: center; width: 2.55rem; }
+.public-trust-card strong,
+.public-trust-card small { display: block; }
+.public-trust-card strong { font-size: .8rem; }
+.public-trust-card small { color: #7b8290; font-size: var(--small-font-size, .78rem); margin-top: .15rem; }
+.public-trust-card .iata-trust strong { letter-spacing: .045em; }
 .public-content-section { padding: 5rem 0 7rem; }
 .public-content-section h2 { font-size: clamp(1.75rem, 3vw, 2.7rem); font-weight: 750; letter-spacing: -.035em; margin: .65rem 0; }
 .public-content-section p { color: #68707e; max-width: 46rem; }
@@ -2257,7 +2257,7 @@ main > .admin-page-heading > p:not(.small) {
     .public-service-tabs { gap: .25rem; justify-content: flex-start; overflow-x: auto; padding-inline: .75rem; }
     .public-service-tab { min-height: 5.6rem; }
     .public-hero { padding-top: 2.25rem; }
-    .public-trust-strip .public-container { grid-template-columns: repeat(2, 1fr); }
+    .public-trust-card { grid-template-columns: repeat(2, 1fr); }
     .hotel-search-form { grid-template-columns: 1fr 1fr; }
     .hotel-search-submit { width: 100%; }
 }
@@ -2292,8 +2292,8 @@ main > .admin-page-heading > p:not(.small) {
     .hotel-rooms-stay { grid-template-columns: 1fr; }
     .hotel-room-card { grid-template-columns: 1fr; }
     .hotel-room-price { align-items: flex-start; border-left: 0; border-top: 1px solid #eceef2; text-align: left; }
-    .public-trust-strip .public-container { grid-template-columns: 1fr; padding-block: .5rem; }
-    .public-trust-strip .public-container > div { padding-block: .65rem; }
+    .public-trust-card { grid-template-columns: 1fr; padding: .35rem; }
+    .public-trust-card > div { padding: .8rem .7rem; }
     .auth-page { padding: 1.5rem .25rem 3rem; }
     .auth-card { border-radius: 1rem; padding: 1.25rem; }
     .public-admin-float { border-radius: 50%; bottom: 1rem; height: 3rem; justify-content: center; padding: 0; right: 1rem; top: auto; transform: none; width: 3rem; }
@@ -3063,14 +3063,16 @@ body { max-width: 100%; overflow-x: clip; }
     .home-destinations,
     .home-flight-offers,
     .home-holidays { padding: 3.5rem 0; }
-    .public-trust-strip .public-container { grid-template-columns: 1fr 1fr; }
-    .public-trust-strip .public-container > div { align-items: flex-start; padding: .75rem .25rem; }
-    .public-trust-strip i { font-size: 1rem; }
-    .public-trust-strip strong { font-size: var(--small-font-size, .78rem); }
-    .public-trust-strip small { font-size: var(--small-font-size, .78rem); line-height: 1.4; }
+    .public-trust-card { grid-template-columns: 1fr 1fr; }
+    .public-trust-card > div { align-items: flex-start; padding: .75rem .55rem; }
+    .public-trust-card i { font-size: 1rem; height: 2.35rem; width: 2.35rem; }
+    .public-trust-card strong { font-size: var(--small-font-size, .78rem); }
+    .public-trust-card small { font-size: var(--small-font-size, .78rem); line-height: 1.4; }
 }
 
 @media (max-width: 420px) {
+    .public-trust-card { border-radius: 1.2rem; grid-template-columns: 1fr; }
+    .public-trust-card > div { align-items: center; }
     .public-brand small { display: none; }
     .public-header-action > span { display: none; }
     .public-currency > span { display: inline; }

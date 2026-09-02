@@ -58,7 +58,16 @@
     </div>
 </section>
 
-<section class="public-trust-strip"><div class="container public-container"><div><i class="bi bi-shield-check"></i><span><strong>Book with confidence</strong><small>Expert travel support when you need it</small></span></div><div><i class="bi bi-tags"></i><span><strong>Clear pricing</strong><small>No surprises at checkout</small></span></div><div><i class="bi bi-headset"></i><span><strong>Human support</strong><small>Real help before and after booking</small></span></div><div class="iata-trust"><i class="bi bi-shield-check"></i><span><strong>IATA</strong><small>Certified travel agency</small></span></div></div></section>
+<section class="public-trust-strip">
+    <div class="container public-container">
+        <div class="public-trust-card">
+            <div><i class="bi bi-shield-check"></i><span><strong>Book with confidence</strong><small>Expert travel support when you need it</small></span></div>
+            <div><i class="bi bi-tags"></i><span><strong>Clear pricing</strong><small>No surprises at checkout</small></span></div>
+            <div><i class="bi bi-headset"></i><span><strong>Human support</strong><small>Real help before and after booking</small></span></div>
+            <div class="iata-trust"><i class="bi bi-shield-check"></i><span><strong>IATA</strong><small>Certified travel agency</small></span></div>
+        </div>
+    </div>
+</section>
 
 @php
     $destinationMoods = [
