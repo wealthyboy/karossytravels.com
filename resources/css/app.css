@@ -1944,7 +1944,7 @@ main .h5 {
 .public-coming-search strong { font-size: .95rem; }
 .public-coming-search small { color: #747c89; font-size: var(--small-font-size, .78rem); margin-top: .25rem; }
 
-.public-trust-strip { background: #fff; padding: 1.35rem 0 1.9rem; position: relative; z-index: 1; }
+.public-trust-strip { background: #fff; padding: .75rem 0 .9rem; position: relative; z-index: 1; }
 .public-trust-card { background: radial-gradient(circle at 4% 8%, rgba(204, 0, 11, .07), transparent 19rem), linear-gradient(120deg, #fafafd 0%, #ffffff 52%, #fff7f8 100%); border: 1px solid rgba(23, 20, 63, .07); border-radius: 1.6rem; box-shadow: 0 16px 42px rgba(23, 20, 63, .065), inset 0 1px 0 rgba(255, 255, 255, .92); display: grid; grid-template-columns: repeat(4, 1fr); overflow: hidden; padding: .3rem .45rem; }
 .public-trust-card > div { align-items: center; display: flex; gap: .85rem; min-width: 0; padding: 1.2rem .9rem; }
 .public-trust-card i { align-items: center; background: rgba(204, 0, 11, .065); border: 1px solid rgba(204, 0, 11, .08); border-radius: .8rem; color: var(--karossy-red); display: inline-flex; flex: 0 0 auto; font-size: 1.15rem; height: 2.55rem; justify-content: center; width: 2.55rem; }
@@ -2324,7 +2324,7 @@ body { max-width: 100%; overflow-x: clip; }
         radial-gradient(circle at 82% 18%, rgba(214, 25, 39, .3), transparent 27rem),
         linear-gradient(118deg, #11102f 0%, #17143d 56%, #24143a 100%);
     min-height: 32rem;
-    padding: 2.7rem 0 4.6rem;
+    padding: 2.7rem 0 3rem;
 }
 .public-hero::before {
     background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);
@@ -2401,7 +2401,7 @@ body { max-width: 100%; overflow-x: clip; }
     .public-service-tab { flex: 1 1 6.5rem; }
 }
 @media (max-width: 767.98px) {
-    .public-hero { min-height: 0; padding: 2.8rem 0 4.5rem; }
+    .public-hero { min-height: 0; padding: 2.8rem 0 3rem; }
     .public-hero h1 { font-size: clamp(2.65rem, 13vw, 4rem); }
     .public-hero-assurance { gap: .6rem 1rem; }
     .public-service-tabs { overflow-x: auto; padding: .65rem; scrollbar-width: none; }
@@ -2675,6 +2675,7 @@ body { max-width: 100%; overflow-x: clip; }
 .home-destinations,
 .home-flight-offers,
 .home-holidays { padding: 4.8rem 0; }
+.home-destinations { padding-top: 2.4rem; }
 .home-holidays { background: #f6f7fa; }
 .destination-tabs { border-bottom: 1px solid #e2e5eb; display: flex; gap: 1.75rem; margin-bottom: 1.35rem; overflow-x: auto; }
 .destination-tabs button { background: transparent; border: 0; color: #606878; font-size: .8rem; font-weight: 750; padding: .6rem .15rem .75rem; position: relative; white-space: nowrap; }
