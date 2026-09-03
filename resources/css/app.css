@@ -493,7 +493,7 @@ main .h5 {
 .flight-airline-mark { align-items: center; background: #f1f3f7; border-radius: .7rem; display: flex; font-size: var(--small-font-size, .78rem); font-weight: 700; height: 2.7rem; justify-content: center; width: 2.7rem; }
 
 /* Admin flight search results and filters */
-.admin-flight-results { align-items: start; display: grid; gap: 1.25rem; grid-template-columns: 16.5rem minmax(0, 1fr); }
+.admin-flight-results { align-items: start; display: grid; gap: 1rem; grid-template-columns: 16.5rem minmax(0, 1fr); }
 .flight-filter-panel { background: #fff; border: 1px solid #e2e6ed; border-radius: 1rem; overflow: hidden; position: sticky; top: 1rem; }
 .flight-price-watch { align-items: center; border-bottom: 1px solid #e8ebf0; display: flex; gap: .75rem; justify-content: space-between; padding: 1rem; }
 .flight-price-watch strong,
@@ -1023,7 +1023,7 @@ main .h5 {
 .flight-results-page,
 .booking-page { background: #f5f6f9; min-height: 70vh; padding: 2.4rem 0 5rem; }
 .public-live-flight-results { padding-top: .9rem; }
-.public-flight-results-container { padding-inline: var(--bs-gutter-x, .75rem); }
+.public-flight-results-container { padding-inline: .5rem; }
 .public-live-flight-results .flight-result-content { min-width: 0; }
 .public-live-flight-results .flight-deals-overview { margin-bottom: 1.5rem; }
 @media (min-width: 992px) {
