@@ -21,6 +21,9 @@ if (page) {
     let criteria = {};
     let summaries = [];
     let filtersBound = false;
+    const RESULTS_PER_PAGE = 15;
+    let filteredSummaries = [];
+    let renderedResultCount = 0;
     const publicSearchModal = publicSearchModalElement ? Modal.getOrCreateInstance(publicSearchModalElement) : null;
 
     const closePublicSearchModal = async startedAt => {
@@ -166,6 +169,7 @@ if (page) {
                 <section class="flight-result-content">
                     <div class="flight-results-toolbar"><div><h2>Departing flights</h2><p><span data-visible-result-count>${summaries.length}</span> of ${summaries.length} itineraries · ${offers.length} fare${offers.length === 1 ? '' : 's'}</p></div><label><small>Sort by</small><select data-flight-sort><option value="recommended">Recommended</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option><option value="duration">Shortest duration</option><option value="departure">Earliest departure</option></select></label></div>
                     <div class="admin-flight-result-list" data-admin-flight-result-list></div>
+                    <div class="flight-load-more-wrap" data-flight-load-more-wrap></div>
                 </section>
                 ${isPublicResults ? `<aside class="flight-results-ad" aria-label="Jiro Air charter services"><a href="mailto:${encodeURIComponent(charterContact)}?subject=Jiro%20Air%20charter%20flight%20request"><img src="/images/ads/jiro-air-charter-v1.png" alt="Private jet at sunset" loading="lazy"><span class="jiro-ad-shine"></span><div class="jiro-ad-copy"><small><i></i> Private charter</small><strong>JIRO AIR</strong><h3>Your aircraft.<br>Your schedule.</h3><p>Private, corporate and group charter flights tailored around you.</p><b>Request a charter <i class="bi bi-arrow-up-right"></i></b></div></a></aside>` : ''}
             </div>
@@ -286,6 +290,37 @@ if (page) {
         }
     };
 
+    const updateLoadMore = () => {
+        const count = results.querySelector('[data-visible-result-count]');
+        const wrap = results.querySelector('[data-flight-load-more-wrap]');
+        const total = filteredSummaries.length;
+        const shown = Math.min(renderedResultCount, total);
+
+        if (count) count.textContent = shown;
+        if (!wrap) return;
+
+        if (!isPublicResults || shown >= total || total === 0) {
+            wrap.innerHTML = '';
+            return;
+        }
+
+        const remaining = total - shown;
+        const nextBatch = Math.min(RESULTS_PER_PAGE, remaining);
+        wrap.innerHTML = `<button class="flight-load-more" type="button" data-load-more-flights><span><strong>Load more flights</strong><small>Show ${nextBatch} more · ${remaining} remaining</small></span><i class="bi bi-chevron-down"></i></button>`;
+    };
+
+    const appendNextResultsPage = () => {
+        const list = results.querySelector('[data-admin-flight-result-list]');
+        if (!list || renderedResultCount >= filteredSummaries.length) return;
+
+        const pageSize = isPublicResults ? RESULTS_PER_PAGE : filteredSummaries.length;
+        const next = filteredSummaries.slice(renderedResultCount, renderedResultCount + pageSize);
+        const startIndex = renderedResultCount;
+        list.insertAdjacentHTML('beforeend', next.map((summary, index) => renderOffer(summary, startIndex + index)).join(''));
+        renderedResultCount += next.length;
+        updateLoadMore();
+    };
+
     const applyFilters = () => {
         const stops = checkedValues('stops');
         const airlines = checkedValues('airlines');
@@ -294,7 +329,7 @@ if (page) {
         const maxPrice = Number(results.querySelector('[data-flight-max-price]')?.value || Number.MAX_SAFE_INTEGER);
         const sort = results.querySelector('[data-flight-sort]')?.value || 'recommended';
         results.querySelector('[data-price-ceiling]').textContent = money(maxPrice, offers[0]?.price?.currency || criteria.currency);
-        let filtered = summaries.filter(item => {
+        filteredSummaries = summaries.filter(item => {
             const period = item.departureHour < 12 ? 'morning' : item.departureHour < 18 ? 'afternoon' : 'evening';
             return (!stops.length || stops.includes(stopGroup(item.stops)))
                 && (!airlines.length || airlines.some(code => item.airlines.includes(code)))
@@ -302,15 +337,24 @@ if (page) {
                 && (!refundable || item.refundable)
                 && item.price <= maxPrice;
         });
-        filtered.sort((a, b) => {
+        filteredSummaries.sort((a, b) => {
             if (sort === 'price_asc') return a.price - b.price;
             if (sort === 'price_desc') return b.price - a.price;
             if (sort === 'duration') return a.durationMinutes - b.durationMinutes;
             if (sort === 'departure') return new Date(a.first.departure_at) - new Date(b.first.departure_at);
             return a.price - b.price || a.durationMinutes - b.durationMinutes;
         });
-        results.querySelector('[data-visible-result-count]').textContent = filtered.length;
-        results.querySelector('[data-admin-flight-result-list]').innerHTML = filtered.map((summary, index) => renderOffer(summary, index)).join('') || '<div class="flight-empty-results"><i class="bi bi-funnel"></i><strong>No flights match these filters</strong><p>Clear one or more filters to see additional offers.</p></div>';
+
+        const list = results.querySelector('[data-admin-flight-result-list]');
+        renderedResultCount = 0;
+        if (!filteredSummaries.length) {
+            list.innerHTML = '<div class="flight-empty-results"><i class="bi bi-funnel"></i><strong>No flights match these filters</strong><p>Clear one or more filters to see additional offers.</p></div>';
+            updateLoadMore();
+            return;
+        }
+
+        list.innerHTML = '';
+        appendNextResultsPage();
     };
 
     const bindFilters = () => {
@@ -349,6 +393,11 @@ if (page) {
                 if (stopsInput) stopsInput.checked = true;
                 applyFilters();
                 results.querySelector('.admin-flight-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            const loadMore = event.target.closest('[data-load-more-flights]');
+            if (loadMore) {
+                loadMore.disabled = true;
+                appendNextResultsPage();
             }
             const details = event.target.closest('[data-flight-details]');
             if (details) {

@@ -3321,3 +3321,50 @@ body { max-width: 100%; overflow-x: clip; }
     .checkout-addon { padding: .65rem; }
     .checkout-travellers-summary .checkout-summary { padding: .9rem; }
 }
+
+/* Flight results progressive loading */
+.flight-load-more-wrap {
+    display: flex;
+    justify-content: center;
+    padding: .55rem 0 1rem;
+}
+.flight-load-more-wrap:empty { display: none; }
+.flight-load-more {
+    align-items: center;
+    background: #fff;
+    border: 1px solid #d8e1ed;
+    border-radius: 999px;
+    box-shadow: 0 .35rem 1rem rgba(23, 20, 63, .06);
+    color: var(--karossy-navy);
+    display: inline-flex;
+    gap: .8rem;
+    justify-content: center;
+    min-height: 3.35rem;
+    padding: .65rem 1.15rem .65rem 1.35rem;
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.flight-load-more span { display: grid; line-height: 1.15; text-align: left; }
+.flight-load-more strong { font-size: .82rem; font-weight: 800; }
+.flight-load-more small { color: #7a8494; font-size: .68rem; font-weight: 600; margin-top: .18rem; }
+.flight-load-more > i {
+    align-items: center;
+    background: #fff0f1;
+    border-radius: 50%;
+    color: var(--karossy-red);
+    display: inline-flex;
+    height: 2rem;
+    justify-content: center;
+    width: 2rem;
+}
+@media (hover: hover) and (pointer: fine) {
+    .flight-load-more:hover {
+        border-color: #c9d5e5;
+        box-shadow: 0 .55rem 1.35rem rgba(23, 20, 63, .09);
+        transform: translateY(-1px);
+    }
+}
+.flight-load-more:focus-visible { outline: 3px solid rgba(214, 0, 28, .16); outline-offset: 3px; }
+@media (max-width: 575.98px) {
+    .flight-load-more-wrap { padding-bottom: .8rem; }
+    .flight-load-more { width: 100%; }
+}
