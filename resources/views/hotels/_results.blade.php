@@ -2,7 +2,7 @@
     $money = fn (int $minor, string $code) => \App\Support\CurrencyMetadata::format($minor, $code);
 @endphp
 
-<div class="row g-4 public-filter-results" data-public-filter-shell>
+<div class="row g-4 public-filter-results public-hotel-results-layout" data-public-filter-shell>
     <button class="mobile-public-filter-trigger" type="button" data-open-public-filters><i class="bi bi-sliders"></i><span>Filter</span></button>
     <button class="mobile-public-filter-overlay" type="button" aria-label="Close filters" data-close-public-filters></button>
     <aside class="col-lg-3 public-filter-sidebar">
@@ -14,7 +14,7 @@
             <div class="filter-group"><strong>Display currency</strong><small>{{ $currency }} selected for your location</small></div>
         </div>
     </aside>
-    <div class="col-lg-9">
+    <div class="col-lg-9 public-hotel-results-main">
         <div class="hotel-offer-list">
             @forelse($properties as $property)
                 @php
@@ -54,4 +54,17 @@
             @endforelse
         </div>
     </div>
+    <aside class="flight-results-ad hotel-results-ad" aria-label="Jiro Air charter services">
+        <a href="mailto:{{ config('travel.support.email') }}?subject=Jiro%20Air%20charter%20flight%20request">
+            <img src="{{ asset('images/ads/jiro-air-charter-v1.png') }}" alt="Private jet at sunset" loading="lazy">
+            <span class="jiro-ad-shine"></span>
+            <div class="jiro-ad-copy">
+                <small><i></i> Private charter</small>
+                <strong>JIRO AIR</strong>
+                <h3>Your aircraft.<br>Your schedule.</h3>
+                <p>Private, corporate and group charter flights tailored around you.</p>
+                <b>Request a charter <i class="bi bi-arrow-up-right"></i></b>
+            </div>
+        </a>
+    </aside>
 </div>

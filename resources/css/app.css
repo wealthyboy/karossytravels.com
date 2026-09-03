@@ -531,6 +531,10 @@ main .h5 {
 .flight-results-ad { display: none; }
 @media (min-width: 1400px) {
     .public-live-flight-results .admin-flight-results { grid-template-columns: 14rem minmax(0, 1fr) 11.5rem; }
+    .public-live-hotel-results .public-hotel-results-layout { --bs-gutter-x: 0; display: grid; gap: .65rem; grid-template-columns: 14rem minmax(0, 1fr) 11.5rem; margin: 0; }
+    .public-live-hotel-results .public-hotel-results-layout > .public-filter-sidebar,
+    .public-live-hotel-results .public-hotel-results-layout > .public-hotel-results-main,
+    .public-live-hotel-results .public-hotel-results-layout > .hotel-results-ad { max-width: none; padding: 0; width: auto; }
     .flight-results-ad { align-self: start; border-radius: 1rem; box-shadow: 0 .9rem 2rem rgba(10,23,56,.18); display: block; overflow: hidden; position: sticky; top: 1rem; }
     .flight-results-ad > a { background: #07142f; color: #fff; display: block; height: 34rem; overflow: hidden; position: relative; text-decoration: none; }
     .flight-results-ad img { height: 100%; inset: 0; object-fit: cover; position: absolute; transform: scale(1.02); width: 100%; }
