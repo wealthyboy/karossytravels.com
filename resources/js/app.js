@@ -836,48 +836,6 @@ document.querySelectorAll('[data-flight-search]').forEach((searchRoot) => {
 });
 
 
-
-const nextHotelCalendarDate = (value) => {
-    const parts = String(value || '').split('-').map(Number);
-    if (parts.length !== 3 || parts.some((part) => !Number.isFinite(part))) return '';
-
-    const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
-    date.setUTCDate(date.getUTCDate() + 1);
-
-    return [date.getUTCFullYear(), String(date.getUTCMonth() + 1).padStart(2, '0'), String(date.getUTCDate()).padStart(2, '0')].join('-');
-};
-
-document.querySelectorAll('[data-home-hotel-destination]').forEach((link) => {
-    link.addEventListener('click', (event) => {
-        // Preserve normal browser behaviour for opening the fallback URL in a
-        // new tab/window. The server-rendered href already uses today/tomorrow.
-        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-
-        const hotelForm = document.querySelector('[data-public-service-panel="hotels"] [data-hotel-search]');
-        if (!hotelForm) return;
-
-        const target = new URL(link.href, window.location.origin);
-        const checkIn = hotelForm.querySelector('[data-hotel-check-in]')?.value || '';
-        const checkOut = hotelForm.querySelector('[data-hotel-check-out]')?.value || '';
-        const effectiveCheckOut = checkOut || nextHotelCalendarDate(checkIn);
-
-        if (checkIn) target.searchParams.set('check_in', checkIn);
-        if (effectiveCheckOut) target.searchParams.set('check_out', effectiveCheckOut);
-
-        ['adults', 'children', 'rooms'].forEach((field) => {
-            const value = hotelForm.querySelector(`[name="${field}"]`)?.value;
-            if (value !== undefined && value !== '') target.searchParams.set(field, value);
-        });
-
-        target.searchParams.set('destination_code', link.dataset.destinationCode || '');
-        target.searchParams.set('destination_label', link.dataset.destinationLabel || '');
-        target.searchParams.set('session_id', crypto.randomUUID?.() || `00000000-0000-4000-8000-${Date.now().toString().padStart(12, '0').slice(-12)}`);
-
-        event.preventDefault();
-        window.location.assign(target.toString());
-    });
-});
-
 document.querySelectorAll('[data-destination-tabs]').forEach((section) => {
     const tabs = [...section.querySelectorAll('[data-destination-tab]')];
     const panels = [...section.querySelectorAll('[data-destination-panel]')];
@@ -975,3 +933,44 @@ document.querySelectorAll('[data-currency-rate-row]').forEach((row) => {
     [direction, mode, value].forEach((field) => field.addEventListener('input', calculate));
     calculate();
 });
+
+// Homepage scroll reveal: keep section backgrounds stable while their content
+// eases into view as the visitor reaches each section.
+const homeRevealTargets = [...document.querySelectorAll([
+    '.public-trust-strip > .public-container',
+    '.home-destinations > .public-container',
+    '.home-flight-offers > .public-container',
+    '.home-charter-section > .public-container',
+    '.home-holidays > .public-container',
+    '.home-app-section > .public-container',
+    '.home-study-section > .public-container',
+    '.home-about > .public-container',
+].join(','))];
+
+if (homeRevealTargets.length) {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    homeRevealTargets.forEach((target, index) => {
+        target.classList.add('home-scroll-reveal');
+        target.style.setProperty('--home-reveal-delay', `${Math.min(index % 3, 2) * 45}ms`);
+    });
+
+    if (reduceMotion || !('IntersectionObserver' in window)) {
+        homeRevealTargets.forEach((target) => target.classList.add('is-visible'));
+    } else {
+        document.documentElement.classList.add('home-scroll-reveal-enabled');
+
+        const homeRevealObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add('is-visible');
+                homeRevealObserver.unobserve(entry.target);
+            });
+        }, {
+            rootMargin: '0px 0px -7% 0px',
+            threshold: 0.14,
+        });
+
+        homeRevealTargets.forEach((target) => homeRevealObserver.observe(target));
+    }
+}

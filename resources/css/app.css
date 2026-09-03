@@ -3368,3 +3368,28 @@ body { max-width: 100%; overflow-x: clip; }
     .flight-load-more-wrap { padding-bottom: .8rem; }
     .flight-load-more { width: 100%; }
 }
+
+/* Homepage section reveal: content glides in as each section enters the viewport. */
+.home-scroll-reveal { transform-origin: 50% 50%; }
+.home-scroll-reveal-enabled .home-scroll-reveal {
+    opacity: 0;
+    transform: translate3d(0, 1.65rem, 0) scale(.994);
+    transition:
+        opacity .68s cubic-bezier(.22, 1, .36, 1) var(--home-reveal-delay, 0ms),
+        transform .72s cubic-bezier(.22, 1, .36, 1) var(--home-reveal-delay, 0ms);
+    will-change: opacity, transform;
+}
+.home-scroll-reveal-enabled .home-scroll-reveal.is-visible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    will-change: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home-scroll-reveal-enabled .home-scroll-reveal,
+    .home-scroll-reveal-enabled .home-scroll-reveal.is-visible {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
