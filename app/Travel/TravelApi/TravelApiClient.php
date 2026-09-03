@@ -252,32 +252,6 @@ final class TravelApiClient
         return $this->post((string) $this->configuration['booking_create_path'], $payload);
     }
 
-    /** @param array<string, mixed> $payload
-     *  @return array<string, mixed>
-     */
-    public function priceCheckHotel(array $payload): array
-    {
-        $path = trim((string) ($this->configuration['hotel_price_check_path'] ?? ''));
-
-        // Karossy shops hotels with Sabre CSL v5. Price Check must use the
-        // matching v5 contract as well. Normalize both paths used by earlier
-        // patches so an old local .env override cannot keep checkout on the
-        // incompatible request contract.
-        if (in_array($path, ['', '/v5/hotelpricecheck', '/v2.1.0/hotel/pricecheck'], true)) {
-            $path = '/v5/hotel/pricecheck';
-        }
-
-        return $this->post($path, $payload);
-    }
-
-    /** @param array<string, mixed> $payload
-     *  @return array<string, mixed>
-     */
-    public function createHotelReservation(array $payload): array
-    {
-        return $this->post((string) $this->configuration['hotel_booking_path'], $payload);
-    }
-
     /** @param array<string, mixed> $payload @return array<string, mixed> */
     public function cancelTripOrder(array $payload): array
     {
@@ -480,24 +454,13 @@ final class TravelApiClient
         // return a controlled JSON response instead of an HTML fatal-error page.
         $timeout = min(15, max(5, (int) $this->configuration['timeout']));
 
-        $requestId = (string) request()->attributes->get('request_id', (string) str()->uuid());
-        $headers = [
-            'X-Request-ID' => $requestId,
-            'Conversation-ID' => $requestId,
-        ];
-
-        $applicationId = trim((string) ($this->configuration['application_id'] ?? ''));
-        if ($applicationId !== '') {
-            $headers['Application-ID'] = $applicationId;
-        }
-
         return Http::baseUrl($this->baseUrl())
             ->acceptJson()
             ->asJson()
             ->connectTimeout(min(5, $timeout))
             ->timeout($timeout)
             ->retry(2, 250, throw: false)
-            ->withHeaders($headers)
+            ->withHeaders(['X-Request-ID' => request()->attributes->get('request_id', (string) str()->uuid())])
             ->withToken($this->accessToken());
     }
 

@@ -47,34 +47,10 @@ final class HotelOrderController extends Controller
             );
         } catch (Throwable $exception) {
             report($exception);
-
-            return back()->withInput()->with('error', $this->bookingFailureMessage($exception));
+            return back()->withInput()->with('error', 'The hotel booking could not be completed. Check the API logs and try again.');
         }
 
         return redirect()->route('admin.bookings.show', $order->bookings->first())
-            ->with('success', 'Hotel booking confirmed with the supplier.');
-    }
-
-    private function bookingFailureMessage(Throwable $exception): string
-    {
-        $message = strtolower($exception->getMessage());
-
-        if (str_contains($message, 'payment-card guarantee')) {
-            return 'This rate requires a supplier payment-card guarantee. Choose another pay-later or agency-guaranteed rate.';
-        }
-
-        if (str_contains($message, 'agency iata')) {
-            return 'This GDS hotel rate requires the Karossy agency IATA number to be configured before it can be confirmed.';
-        }
-
-        if (str_contains($message, 'prepayment')) {
-            return 'This rate requires supplier prepayment. Choose another pay-later or agency-guaranteed rate.';
-        }
-
-        if (str_contains($message, 'rate') && str_contains($message, 'changed')) {
-            return 'The supplier changed this hotel rate. Return to the hotel results and select the latest rate before booking.';
-        }
-
-        return 'The hotel supplier did not confirm the booking. Check the hotel API logs for the exact supplier response and try again.';
+            ->with('success', $order->status === 'confirmed' ? 'Hotel booking confirmed.' : 'Hotel booking request recorded for confirmation.');
     }
 }
