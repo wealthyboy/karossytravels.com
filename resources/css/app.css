@@ -1137,7 +1137,7 @@ main .h5 {
 .flight-offer-list { display: grid; gap: 1rem; }
 .flight-offer-card { background: #fff; border: 1px solid #e3e6ec; border-radius: 1.05rem; box-shadow: 0 .3rem 1rem rgba(23,20,63,.04); overflow: hidden; position: relative; transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
 .flight-offer-card:hover { border-color: rgba(204,0,11,.3); box-shadow: 0 .8rem 1.8rem rgba(23,20,63,.08); transform: translateY(-2px); }
-.public-live-flight-results .admin-flight-card { background: #fff; border: 1px solid #dce4ef; border-radius: 1.1rem; box-shadow: 0 .55rem 1.6rem rgba(23,20,63,.06); padding: 1.15rem; transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+.public-live-flight-results .admin-flight-card { background: #fff; border: 1px solid #dce4ef; border-radius: 1.1rem; box-shadow: 0 .55rem 1.6rem rgba(23,20,63,.06); margin-bottom: .5rem; padding: 1.15rem; transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
 .public-live-flight-results .admin-flight-card:hover { border-color: #c9d5e5; box-shadow: 0 1rem 2.2rem rgba(23,20,63,.1); transform: translateY(-2px); }
 .flight-card-header { align-items: center; background: linear-gradient(110deg, #f7f9fd 0%, #fff 60%, #fff5f5 100%); border-bottom: 1px solid #e6ebf2; border-radius: .95rem .95rem 0 0; display: flex; gap: 1rem; justify-content: space-between; margin: -1.15rem -1.15rem 0; padding: 1rem 1.15rem; }
 .flight-card-airline { align-items: center; display: flex; gap: .75rem; }
