@@ -11,6 +11,8 @@ use App\Models\Order;
 use App\Support\TravelLogger;
 use App\Travel\Pricing\ExchangeRateService;
 use App\Travel\Pricing\OperatorMarkupCalculator;
+use App\Travel\TravelApi\TravelApiClient;
+use App\Travel\TravelApi\TravelApiHotelBookingRequestBuilder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -24,6 +26,8 @@ final class HotelOrderService
         private readonly ExchangeRateService $rates,
         private readonly OperatorMarkupCalculator $operatorMarkup,
         private readonly TravelLogger $travelLogger,
+        private readonly TravelApiClient $client,
+        private readonly TravelApiHotelBookingRequestBuilder $bookingBuilder,
     ) {}
 
     public function create(HotelOffer $offer, Customer $customer, Collection|array $addons = [], array $manualMarkup = [], ?string $specialRequests = null, bool $sendConfirmation = true): Order
@@ -38,11 +42,40 @@ final class HotelOrderService
         });
         $addonTotal = (int) $addonRows->sum('price_cents');
         $operatorMarkup = $this->operatorMarkup->calculate($offer->selling_total_minor + $addonTotal, $manualMarkup['type'] ?? null, $manualMarkup['value'] ?? null);
-        $isConfirmed = $offer->provider === 'fake';
-        $status = $isConfirmed ? 'confirmed' : 'pending';
-        $locator = $isConfirmed ? 'HTL-'.Str::upper(Str::random(7)) : null;
+        $providerResponse = [];
+        if ($offer->provider === 'fake') {
+            $locator = 'HTL-'.Str::upper(Str::random(7));
+        } else {
+            try {
+                $priceCheckResponse = $this->client->checkHotelPrice($this->bookingBuilder->priceCheck($offer));
+                $this->bookingBuilder->assertBookable($priceCheckResponse);
+                $bookingKey = $this->bookingBuilder->bookingKey($priceCheckResponse);
+                if ($bookingKey === '') {
+                    throw new RuntimeException('The hotel price check did not return a booking key. Search again before booking.');
+                }
+                $providerResponse = $this->client->createHotelBooking(
+                    $this->bookingBuilder->booking($offer, $customer, $bookingKey, $priceCheckResponse, $specialRequests),
+                );
+                $locator = $this->bookingBuilder->locator($providerResponse);
+                if ($locator === '') {
+                    throw new RuntimeException('The hotel reservation response did not contain a confirmation locator.');
+                }
+            } catch (\Throwable $exception) {
+                $this->travelLogger->record('hotel', 'booking', $offer->provider, [
+                    'offer_id' => $offer->id,
+                    'customer_id' => $customer->id,
+                ], [], [
+                    'status' => 'failed',
+                    'session_id' => $offer->search->session_id,
+                    'offer_id' => $offer->id,
+                    'error_message' => $exception->getMessage(),
+                ]);
+                throw $exception;
+            }
+        }
+        $status = 'confirmed';
 
-        $order = DB::transaction(function () use ($offer, $customer, $addonRows, $addonTotal, $operatorMarkup, $status, $locator, $specialRequests): Order {
+        $order = DB::transaction(function () use ($offer, $customer, $addonRows, $addonTotal, $operatorMarkup, $status, $locator, $specialRequests, $providerResponse): Order {
             $order = Order::create([
                 'reference' => 'KAR-H-'.now()->format('ymd').'-'.Str::upper(Str::random(6)),
                 'user_id' => auth()->id(), 'customer_id' => $customer->id,
@@ -66,6 +99,7 @@ final class HotelOrderService
                     'special_requests' => $specialRequests,
                     'pricing' => ['base_minor' => $offer->provider_total_minor, 'configured_markup_minor' => $offer->markup_minor, 'addons_minor' => $addonTotal, 'operator_markup_minor' => $operatorMarkup['amount_minor']],
                     'provider_confirmation_required' => $offer->provider !== 'fake',
+                    'provider_response' => $providerResponse,
                 ],
                 'booked_at' => now(),
             ]);

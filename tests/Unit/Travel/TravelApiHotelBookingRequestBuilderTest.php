@@ -10,6 +10,16 @@ use Tests\TestCase;
 
 final class TravelApiHotelBookingRequestBuilderTest extends TestCase
 {
+    public function test_it_extracts_the_booking_key_and_confirmation_locator(): void
+    {
+        $builder = $this->builder();
+
+        $this->assertSame('BOOK-123', $builder->bookingKey($this->priceCheckResponse()));
+        $this->assertSame('ABC123', $builder->locator([
+            'CreatePassengerNameRecordRS' => ['ItineraryRef' => ['ID' => 'ABC123']],
+        ]));
+    }
+
     public function test_v5_price_check_preserves_rate_stay_and_occupancy_context(): void
     {
         $builder = new TravelApiHotelBookingRequestBuilder([

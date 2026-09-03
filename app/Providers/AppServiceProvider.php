@@ -12,6 +12,7 @@ use App\Travel\TravelApi\TravelApiClient;
 use App\Travel\TravelApi\TravelApiFlightSearchRequestBuilder;
 use App\Travel\TravelApi\TravelApiFlightRevalidationRequestBuilder;
 use App\Travel\TravelApi\TravelApiHotelSearchRequestBuilder;
+use App\Travel\TravelApi\TravelApiHotelBookingRequestBuilder;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -35,6 +36,9 @@ class AppServiceProvider extends ServiceProvider
             (array) config('services.travel.travel_api')
         ));
         $this->app->singleton(TravelApiHotelSearchRequestBuilder::class, fn (): TravelApiHotelSearchRequestBuilder => new TravelApiHotelSearchRequestBuilder(
+            (array) config('services.travel.travel_api')
+        ));
+        $this->app->singleton(TravelApiHotelBookingRequestBuilder::class, fn (): TravelApiHotelBookingRequestBuilder => new TravelApiHotelBookingRequestBuilder(
             (array) config('services.travel.travel_api')
         ));
 

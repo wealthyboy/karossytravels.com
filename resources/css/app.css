@@ -984,6 +984,39 @@ main .h5 {
     .public-live-hotel-results .hotel-offer-content { grid-template-columns: minmax(0,1fr); }
     .public-live-hotel-results .hotel-offer-price { align-items: flex-start; border-left: 0; border-top: 1px solid #eceef2; padding: .8rem 0 0; text-align: left; }
 }
+/* Hotel mobile results: mirror the flight filter drawer and place Jiro Air after the first two hotels. */
+.hotel-results-inline-ad { display: none; }
+@media (max-width: 991.98px) {
+    .public-live-hotel-results .hotel-filter-panel { padding: 0; }
+    .public-live-hotel-results .hotel-filter-panel .mobile-public-filter-header { margin: 0; min-height: 4.3rem; padding: 1rem 1.15rem; }
+    .public-live-hotel-results .hotel-filter-panel .mobile-public-filter-header strong { font-size: 1.1rem; font-weight: 800; }
+    .public-live-hotel-results .hotel-filter-panel .hotel-filter-body { padding: 1rem 1.15rem 1.25rem; }
+    .public-live-hotel-results .hotel-filter-panel .hotel-filter-body > .d-flex h2 { color: var(--karossy-navy); font-size: 1rem; font-weight: 800; }
+    .public-live-hotel-results .hotel-filter-panel .hotel-filter-body > .d-flex button { font-size: .85rem; font-weight: 800; }
+    .public-live-hotel-results .hotel-filter-panel .filter-group { gap: .7rem; margin-top: 1.1rem; padding-top: 1.1rem; }
+    .public-live-hotel-results .hotel-filter-panel .filter-group strong { color: var(--karossy-navy); font-size: 1rem; font-weight: 800; }
+    .public-live-hotel-results .hotel-filter-panel .filter-group label { align-items: center; display: flex; font-size: .95rem; gap: .4rem; }
+}
+@media (max-width: 767.98px) {
+    .hotel-results-inline-ad { border-radius: 1rem; box-shadow: 0 .8rem 1.8rem rgba(10,23,56,.16); display: block; margin: .15rem 0 .2rem; overflow: hidden; }
+    .hotel-results-inline-ad > a { background: #07142f; color: #fff; display: block; height: clamp(18rem, 78vw, 22rem); overflow: hidden; position: relative; text-decoration: none; }
+    .hotel-results-inline-ad img { height: 100%; inset: 0; object-fit: cover; position: absolute; width: 100%; animation: jiro-ad-zoom 9s ease-in-out infinite alternate; }
+    .hotel-results-inline-ad > a::after { background: linear-gradient(180deg,rgba(4,12,30,.14) 20%,rgba(4,12,30,.22) 48%,rgba(4,12,30,.96) 100%); content: ''; inset: 0; position: absolute; }
+    .hotel-results-inline-ad .jiro-ad-copy { inset: 0; padding: 1.15rem; position: absolute; z-index: 2; }
+    .hotel-results-inline-ad .jiro-ad-copy small { align-items: center; color: #ffd48a; display: flex; font-size: .75rem; font-weight: 800; gap: .4rem; letter-spacing: .1em; text-transform: uppercase; }
+    .hotel-results-inline-ad .jiro-ad-copy small i { animation: jiro-ad-pulse 1.8s ease-in-out infinite; background: #e0a738; border-radius: 50%; box-shadow: 0 0 0 .3rem rgba(224,167,56,.16); height: .42rem; width: .42rem; }
+    .hotel-results-inline-ad .jiro-ad-copy > strong { display: block; font-size: 1.45rem; font-weight: 850; letter-spacing: .09em; margin-top: .75rem; }
+    .hotel-results-inline-ad .jiro-ad-copy h3 { font-size: 1.55rem; font-weight: 850; letter-spacing: -.035em; line-height: 1.03; margin: .45rem 0; }
+    .hotel-results-inline-ad .jiro-ad-copy p { bottom: 4.6rem; color: #d7deeb; font-size: .85rem; left: 1.15rem; line-height: 1.5; margin: 0; position: absolute; right: 1.15rem; }
+    .hotel-results-inline-ad .jiro-ad-copy > b { align-items: center; background: #fff; border-radius: 999px; bottom: 1.1rem; color: var(--karossy-red); display: flex; font-size: .85rem; font-weight: 850; gap: .35rem; justify-content: center; left: 1.15rem; min-height: 2.75rem; position: absolute; right: 1.15rem; }
+    .hotel-results-inline-ad .jiro-ad-shine { animation: jiro-ad-shine 5.5s ease-in-out infinite; background: linear-gradient(105deg,transparent 35%,rgba(255,255,255,.23) 48%,transparent 61%); inset: 0; position: absolute; transform: translateX(-130%); z-index: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .hotel-results-inline-ad img,
+    .hotel-results-inline-ad .jiro-ad-shine,
+    .hotel-results-inline-ad .jiro-ad-copy small i { animation: none; }
+}
+
 @media (max-width: 767.98px) { .flight-search-fields { grid-template-columns: 1fr; } .flight-location-pair { grid-column: auto; grid-template-columns: 1fr; gap: .5rem; } .flight-location-pair .flight-search-control:first-child, .flight-location-pair .flight-search-control:last-child { border: 1px solid #cfd5df; border-radius: .8rem; margin-left: 0; padding: .4rem .7rem; } .flight-swap-button { display: none; } .flight-search-footer { align-items: stretch; flex-direction: column; } .flight-search-submit { margin-left: 0; width: 100%; } .flight-result-card { align-items: flex-start; flex-wrap: wrap; } }
 @media (max-width: 767.98px) { .traveller-popover { left: 0; max-height: 75vh; overflow-y: auto; right: 0; width: auto; } }
 @media (max-width: 767.98px) {

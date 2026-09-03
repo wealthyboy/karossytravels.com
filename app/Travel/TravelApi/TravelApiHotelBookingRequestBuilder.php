@@ -184,6 +184,38 @@ final class TravelApiHotelBookingRequestBuilder
         }
     }
 
+    /** @param array<string, mixed> $response */
+    public function bookingKey(array $response): string
+    {
+        $value = $this->firstNestedValueForKey($response, 'BookingKey');
+
+        return is_scalar($value) ? trim((string) $value) : '';
+    }
+
+    /** @param array<string, mixed> $response */
+    public function locator(array $response): string
+    {
+        foreach ([
+            'CreatePassengerNameRecordRS.ItineraryRef.ID',
+            'CreatePassengerNameRecordRS.ItineraryRef.Id',
+            'ItineraryRef.ID',
+            'ItineraryRef.Id',
+            'confirmationId',
+            'ConfirmationId',
+            'locator',
+            'Locator',
+            'pnr',
+            'PNR',
+        ] as $path) {
+            $value = data_get($response, $path);
+            if (is_scalar($value) && trim((string) $value) !== '') {
+                return trim((string) $value);
+            }
+        }
+
+        return '';
+    }
+
     /**
      * @param array<string, mixed> $priceCheckResponse
      * @return array<string, mixed>

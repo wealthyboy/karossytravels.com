@@ -38,6 +38,15 @@ if (page) {
             card.classList.toggle('d-none', !visible);
             list.append(card);
         });
+
+        const mobileAd = list.querySelector('[data-hotel-mobile-ad]');
+        if (mobileAd) {
+            const visibleCards = cards.filter(card => !card.classList.contains('d-none'));
+            mobileAd.classList.toggle('d-none', visibleCards.length === 0);
+            if (visibleCards.length) {
+                visibleCards[Math.min(1, visibleCards.length - 1)].after(mobileAd);
+            }
+        }
     };
 
     const setLoadingCopy = () => {
@@ -90,6 +99,7 @@ if (page) {
                 card.style.setProperty('--hotel-result-index', index);
                 card.dataset.originalIndex = index;
             });
+            applyHotelFilters();
             results.classList.remove('d-none');
             results.setAttribute('aria-busy', 'false');
             sort.classList.toggle('d-none', propertyCount < 2);

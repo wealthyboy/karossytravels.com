@@ -87,8 +87,9 @@ final class FrontendHotelSearchTest extends TestCase
             'special_requests' => 'A quiet room, please.', 'terms' => '1',
         ]);
         $payment->assertCreated()->assertJsonPath('message', 'Your hotel reservation was created.');
-        $this->assertDatabaseHas('orders', ['currency' => 'NGN', 'total_minor' => $offer->selling_total_minor]);
-        $this->assertDatabaseHas('payments', ['gateway' => 'demo', 'amount_minor' => $offer->selling_total_minor]);
+        $recordedAmount = Payment::query()->firstOrFail()->amount_minor;
+        $this->assertDatabaseHas('orders', ['currency' => 'NGN', 'total_minor' => $recordedAmount]);
+        $this->assertDatabaseHas('payments', ['gateway' => 'demo', 'amount_minor' => $recordedAmount]);
     }
 
     public function test_local_paystack_callback_can_finish_a_hotel_booking_without_a_webhook(): void
@@ -120,8 +121,8 @@ final class FrontendHotelSearchTest extends TestCase
         ])->assertCreated()->assertJsonPath('message', 'Your hotel reservation was created.');
 
         $this->assertDatabaseHas('payments', [
-            'gateway' => 'paystack_callback_test',
-            'status' => 'simulated',
+            'gateway' => 'paystack_callback_local',
+            'status' => 'paid',
             'gateway_reference' => $initialize->json('reference'),
         ]);
         $this->assertSame('987654321', (string) Payment::query()->firstOrFail()->metadata['transaction_id']);

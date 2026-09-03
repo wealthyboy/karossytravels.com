@@ -253,6 +253,18 @@ final class TravelApiClient
     }
 
     /** @param array<string, mixed> $payload @return array<string, mixed> */
+    public function checkHotelPrice(array $payload): array
+    {
+        return $this->post((string) $this->configuration['hotel_price_check_path'], $payload);
+    }
+
+    /** @param array<string, mixed> $payload @return array<string, mixed> */
+    public function createHotelBooking(array $payload): array
+    {
+        return $this->post((string) $this->configuration['hotel_booking_path'], $payload);
+    }
+
+    /** @param array<string, mixed> $payload @return array<string, mixed> */
     public function cancelTripOrder(array $payload): array
     {
         return $this->post((string) $this->configuration['order_cancel_path'], $payload);

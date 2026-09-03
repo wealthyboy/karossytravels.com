@@ -112,7 +112,7 @@ final class HotelCheckoutController extends Controller
                 throw new \RuntimeException('Payment does not match the exact hotel reservation total.');
             }
             $attempt->update(['status' => 'paid', 'verified_at' => now(), 'gateway_response' => $verified]);
-            $gateway = $localCallback ? 'paystack_callback_test' : 'paystack';
+            $gateway = $localCallback ? 'paystack_callback_local' : 'paystack';
         } catch (Throwable $exception) {
             report($exception);
             $logger->record('hotel', 'payment', 'paystack', ['offer_id' => $offer->id, 'reference' => $attempt->reference], [], [
@@ -155,7 +155,7 @@ final class HotelCheckoutController extends Controller
             $customer = $this->customer($request, $guest);
             $order = $orders->create($offer->fresh(), $customer, specialRequests: $guest['special_requests'] ?? null, sendConfirmation: false);
             $order->update(['currency' => $attempt->currency, 'subtotal_minor' => $attempt->amount_minor, 'fees_minor' => 0, 'total_minor' => $attempt->amount_minor]);
-            Payment::create(['order_id' => $order->id, 'gateway' => $gateway, 'gateway_reference' => $attempt->reference, 'status' => in_array($gateway, ['demo', 'paystack_callback_test'], true) ? 'simulated' : 'paid', 'currency' => $attempt->currency, 'amount_minor' => $attempt->amount_minor, 'paid_at' => now(), 'metadata' => ['channel' => data_get($gatewayData, 'channel'), 'transaction_id' => data_get($gatewayData, 'id')]]);
+            Payment::create(['order_id' => $order->id, 'gateway' => $gateway, 'gateway_reference' => $attempt->reference, 'status' => $gateway === 'demo' ? 'simulated' : 'paid', 'currency' => $attempt->currency, 'amount_minor' => $attempt->amount_minor, 'paid_at' => now(), 'metadata' => ['channel' => data_get($gatewayData, 'channel'), 'transaction_id' => data_get($gatewayData, 'id'), 'verification_mode' => $gateway === 'paystack_callback_local' ? 'local_callback_unverified' : 'server_verified']]);
             $attempt->update(['status' => 'completed', 'order_id' => $order->id]);
             return $order;
         });
