@@ -1023,7 +1023,8 @@ main .h5 {
 .flight-results-page,
 .booking-page { background: #f5f6f9; min-height: 70vh; padding: 2.4rem 0 5rem; }
 .public-live-flight-results { padding-top: .9rem; }
-.public-flight-results-container { padding-inline: .5rem; }
+.public-flight-results-container { padding-inline: .25rem; }
+.public-live-flight-results .admin-flight-results { gap: .65rem; }
 .public-live-flight-results .flight-result-content { min-width: 0; }
 .public-live-flight-results .flight-deals-overview { margin-bottom: 1.5rem; }
 @media (min-width: 992px) {
