@@ -354,18 +354,22 @@ final class TravelApiHotelBookingRequestBuilder
             return null;
         }
 
+        // Optional address members must be omitted instead of serialized as
+        // null. The supplier validates PostalCode as a string when present.
+        $agencyAddress = array_filter([
+            'AddressLine1' => $street !== '' ? $street : 'Karossy Travels',
+            'CityName' => ['content' => $city !== '' ? $city : 'Lagos'],
+            'PostalCode' => $this->nonBlank('agency_postal_code'),
+            'CountryName' => ['Code' => $country !== '' ? $country : 'NG'],
+        ], fn (mixed $value): bool => $value !== null && $value !== '');
+
         $source = array_filter([
             'RequestorID' => [
                 'Type' => 5,
                 'Id' => $iataNumber,
                 'IdContext' => 'IATA',
             ],
-            'AgencyAddress' => [
-                'AddressLine1' => $street !== '' ? $street : 'Karossy Travels',
-                'CityName' => ['content' => $city !== '' ? $city : 'Lagos'],
-                'PostalCode' => $this->nonBlank('agency_postal_code'),
-                'CountryName' => ['Code' => $country !== '' ? $country : 'NG'],
-            ],
+            'AgencyAddress' => $agencyAddress,
             'AgencyName' => trim((string) ($this->configuration['agency_name'] ?? config('app.name', 'Karossy Travels'))),
             'ISOCountryCode' => $country !== '' ? $country : 'NG',
             'PseudoCityCode' => $pcc !== '' ? $pcc : null,

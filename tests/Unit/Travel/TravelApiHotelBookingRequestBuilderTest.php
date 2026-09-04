@@ -128,6 +128,25 @@ final class TravelApiHotelBookingRequestBuilderTest extends TestCase
         $this->assertArrayNotHasKey('POS', data_get($payload, 'CreatePassengerNameRecordRQ.HotelBook'));
     }
 
+    public function test_booking_omits_an_unconfigured_agency_postal_code(): void
+    {
+        $builder = new TravelApiHotelBookingRequestBuilder([
+            'hotel_price_check_path' => '/v4.0.0/hotel/pricecheck',
+            'iata_number' => '12345678',
+            'pcc' => 'ABCD',
+            'agency_name' => 'Karossy Travels',
+            'agency_street' => '1 Karossy Way',
+            'agency_city' => 'Lagos',
+            'agency_country_code' => 'NG',
+        ]);
+
+        $payload = $builder->booking($this->offer(), $this->customer(), 'BOOK-123', $this->priceCheckResponse());
+        $address = data_get($payload, 'CreatePassengerNameRecordRQ.HotelBook.POS.Source.AgencyAddress');
+
+        $this->assertIsArray($address);
+        $this->assertArrayNotHasKey('PostalCode', $address);
+    }
+
     private function builder(): TravelApiHotelBookingRequestBuilder
     {
         return new TravelApiHotelBookingRequestBuilder([
