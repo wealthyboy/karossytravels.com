@@ -32,7 +32,9 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('flight_search_id')->constrained()->cascadeOnDelete();
             $table->string('provider', 40)->index();
-            $table->text('provider_reference');
+            // This value participates in a composite unique index. MySQL cannot
+            // index an unbounded TEXT column without an explicit prefix length.
+            $table->string('provider_reference', 512);
             $table->string('channel', 24)->default('consumer')->index();
             $table->char('currency', 3);
             $table->unsignedBigInteger('provider_total_minor');

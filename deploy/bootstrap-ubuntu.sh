@@ -31,9 +31,24 @@ fail() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y ca-certificates curl git nginx mysql-server supervisor certbot \
-    python3-certbot-nginx unzip acl ufw fail2ban nodejs npm \
+    python3-certbot-nginx unzip acl ufw fail2ban \
     php-cli php-fpm php-mysql php-curl php-mbstring php-xml php-zip php-bcmath \
     php-intl php-gd php-redis
+
+if ! command -v node >/dev/null 2>&1 || [[ "$(node --version | tr -cd '0-9' | cut -c1-2)" -lt 20 ]]; then
+    curl -fsSL https://deb.nodesource.com/setup_22.x -o /tmp/nodesource-setup.sh
+    bash /tmp/nodesource-setup.sh
+    apt-get install -y nodejs
+    rm -f /tmp/nodesource-setup.sh
+fi
+
+if ! swapon --show=NAME --noheadings | grep -q .; then
+    fallocate -l 2G /swapfile
+    chmod 600 /swapfile
+    mkswap /swapfile
+    swapon /swapfile
+    printf '/swapfile none swap sw 0 0\n' >> /etc/fstab
+fi
 
 if ! command -v composer >/dev/null 2>&1; then
     expected="$(curl -fsSL https://composer.github.io/installer.sig)"
