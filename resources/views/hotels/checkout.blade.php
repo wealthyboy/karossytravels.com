@@ -9,7 +9,7 @@
     @include('checkout._progress', ['step' => 1])
     <div class="booking-heading"><span class="public-eyebrow">Secure hotel booking</span><h1>Reserve your room</h1><p>Review the stay, enter the lead guest details and complete payment securely with Paystack.</p></div>
     <div class="alert alert-danger d-none" data-hotel-error></div>
-    <form class="row g-4" action="{{ route('hotels.checkout.payment', $offer) }}" data-verify-url="{{ route('hotels.checkout.verify', $offer) }}" data-hotel-checkout>
+    <form class="row g-4" method="POST" action="{{ route('hotels.checkout.payment', $offer) }}" data-verify-url="{{ route('hotels.checkout.verify', $offer) }}" data-hotel-checkout>
         @csrf
         <div class="col-lg-8">
             <div class="booking-card">
