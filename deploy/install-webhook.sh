@@ -49,7 +49,9 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=${APP_DIR}/storage /tmp
+# The signed push handler launches the forge-owned deployment script. Grant it
+# write access only to this application checkout and the deployment lock path.
+ReadWritePaths=${APP_DIR} /tmp
 
 [Install]
 WantedBy=multi-user.target
