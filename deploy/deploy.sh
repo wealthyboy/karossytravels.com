@@ -44,7 +44,17 @@ php artisan route:cache
 php artisan view:cache
 php artisan event:cache
 php artisan queue:restart
-chmod -R ug+rwX storage bootstrap/cache
+
+# Supervisor and PHP-FPM may create runtime files between deployments. Only
+# change files owned by the deployment account: attempting to chmod an older
+# root-owned log would otherwise abort an otherwise successful release. The
+# installer establishes the shared directory ownership and setgid permissions.
+DEPLOY_USER="$(id -un)"
+find storage bootstrap/cache -user "${DEPLOY_USER}" -exec chmod ug+rwX {} +
+[[ -w storage && -w bootstrap/cache ]] || {
+    printf 'Laravel runtime directories are not writable by %s.\n' "${DEPLOY_USER}" >&2
+    exit 1
+}
 
 php artisan up
 trap - EXIT
