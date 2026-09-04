@@ -24,7 +24,7 @@ final class HotelProviderBookingTest extends TestCase
             'services.travel.travel_api.access_token' => 'test-token',
             'services.travel.travel_api.environment' => 'cert',
             'services.travel.travel_api.cert_url' => 'https://travel.test',
-            'services.travel.travel_api.hotel_price_check_path' => '/v5/get/hotel/pricecheck',
+            'services.travel.travel_api.hotel_price_check_path' => '/v4.0.0/hotel/pricecheck',
             'services.travel.travel_api.hotel_booking_path' => '/v2.5.0/passenger/records?mode=create',
             'services.travel.travel_api.pcc' => 'TEST',
             'services.travel.travel_api.iata_number' => null,
@@ -34,7 +34,7 @@ final class HotelProviderBookingTest extends TestCase
 
         Http::preventStrayRequests();
         Http::fake([
-            'https://travel.test/v5/get/hotel/pricecheck' => Http::response([
+            'https://travel.test/v4.0.0/hotel/pricecheck' => Http::response([
                 'HotelPriceCheckRS' => ['PriceCheckInfo' => [
                     'BookingKey' => 'BOOK-123',
                     'RateSource' => '110',

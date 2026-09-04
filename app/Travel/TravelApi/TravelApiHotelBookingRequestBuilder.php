@@ -26,43 +26,14 @@ final class TravelApiHotelBookingRequestBuilder
             throw new RuntimeException('This hotel offer does not contain the supplier RateKey required for price check. Search again.');
         }
 
-        $pcc = strtoupper(trim((string) ($this->configuration['pcc'] ?? '')));
-        if ($pcc === '') {
-            throw new RuntimeException('The Sabre pseudo city code is not configured for hotel price check.');
-        }
-
-        $rooms = max(1, (int) $search->rooms);
-        $adults = max(1, (int) $search->adults);
-        $children = max(0, (int) $search->children);
-
-        // Hotel Price Check must retain the stay and occupancy context that
-        // produced the v5 RateKey. Keep the room distribution aligned with
-        // the existing GetHotelAvailRQ builder so Sabre validates the same
-        // product the customer selected.
-        $roomPayload = collect(range(1, $rooms))->map(function (int $index) use ($adults, $children, $rooms): array {
-            return [
-                'Index' => $index,
-                'Adults' => max(1, intdiv($adults, $rooms) + ($index <= ($adults % $rooms) ? 1 : 0)),
-                'Children' => $children,
-            ];
-        })->all();
-
+        // The v4 Hotel Price Check contract accepts the opaque RateKey from
+        // availability. The RateKey already identifies the exact property,
+        // dates, occupancy and rate selected by the customer.
         return [
             'HotelPriceCheckRQ' => [
-                'POS' => [
-                    'Source' => [
-                        'PseudoCityCode' => $pcc,
-                    ],
-                ],
+                'version' => '4.0.0',
                 'RateInfoRef' => [
                     'RateKey' => $rateKey,
-                    'Rooms' => [
-                        'Room' => $roomPayload,
-                    ],
-                    'StayDateTimeRange' => [
-                        'StartDate' => $search->check_in?->format('Y-m-d'),
-                        'EndDate' => $search->check_out?->format('Y-m-d'),
-                    ],
                 ],
             ],
         ];

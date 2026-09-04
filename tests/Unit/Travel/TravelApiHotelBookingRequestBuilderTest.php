@@ -20,23 +20,18 @@ final class TravelApiHotelBookingRequestBuilderTest extends TestCase
         ]));
     }
 
-    public function test_v5_price_check_preserves_rate_stay_and_occupancy_context(): void
+    public function test_v4_price_check_uses_the_provider_rate_key_contract(): void
     {
         $builder = new TravelApiHotelBookingRequestBuilder([
-            'hotel_price_check_path' => '/v5/hotel/pricecheck',
+            'hotel_price_check_path' => '/v4.0.0/hotel/pricecheck',
             'pcc' => 'ABCD',
         ]);
 
         $payload = $builder->priceCheck($this->offer());
 
-        $this->assertSame('ABCD', data_get($payload, 'HotelPriceCheckRQ.POS.Source.PseudoCityCode'));
+        $this->assertSame('4.0.0', data_get($payload, 'HotelPriceCheckRQ.version'));
         $this->assertSame('RATE-123', data_get($payload, 'HotelPriceCheckRQ.RateInfoRef.RateKey'));
-        $this->assertSame('2026-09-10', data_get($payload, 'HotelPriceCheckRQ.RateInfoRef.StayDateTimeRange.StartDate'));
-        $this->assertSame('2026-09-11', data_get($payload, 'HotelPriceCheckRQ.RateInfoRef.StayDateTimeRange.EndDate'));
-        $this->assertSame(1, data_get($payload, 'HotelPriceCheckRQ.RateInfoRef.Rooms.Room.0.Index'));
-        $this->assertSame(1, data_get($payload, 'HotelPriceCheckRQ.RateInfoRef.Rooms.Room.0.Adults'));
-        $this->assertSame(0, data_get($payload, 'HotelPriceCheckRQ.RateInfoRef.Rooms.Room.0.Children'));
-        $this->assertArrayNotHasKey('version', data_get($payload, 'HotelPriceCheckRQ'));
+        $this->assertSame(['version', 'RateInfoRef'], array_keys(data_get($payload, 'HotelPriceCheckRQ')));
     }
 
     public function test_pay_later_booking_omits_payment_information(): void
@@ -106,7 +101,7 @@ final class TravelApiHotelBookingRequestBuilderTest extends TestCase
     public function test_gds_rate_without_iata_is_rejected_before_customer_payment(): void
     {
         $builder = new TravelApiHotelBookingRequestBuilder([
-            'hotel_price_check_path' => '/v5/hotel/pricecheck',
+            'hotel_price_check_path' => '/v4.0.0/hotel/pricecheck',
             'pcc' => 'ABCD',
         ]);
         $response = $this->priceCheckResponse();
@@ -121,7 +116,7 @@ final class TravelApiHotelBookingRequestBuilderTest extends TestCase
     public function test_non_gds_booking_without_iata_omits_optional_pos_instead_of_sending_invalid_pos(): void
     {
         $builder = new TravelApiHotelBookingRequestBuilder([
-            'hotel_price_check_path' => '/v5/hotel/pricecheck',
+            'hotel_price_check_path' => '/v4.0.0/hotel/pricecheck',
             'pcc' => 'ABCD',
         ]);
         $response = $this->priceCheckResponse();
@@ -136,7 +131,7 @@ final class TravelApiHotelBookingRequestBuilderTest extends TestCase
     private function builder(): TravelApiHotelBookingRequestBuilder
     {
         return new TravelApiHotelBookingRequestBuilder([
-            'hotel_price_check_path' => '/v5/hotel/pricecheck',
+            'hotel_price_check_path' => '/v4.0.0/hotel/pricecheck',
             'iata_number' => '12345678',
             'pcc' => 'ABCD',
             'agency_name' => 'Karossy Travels',
