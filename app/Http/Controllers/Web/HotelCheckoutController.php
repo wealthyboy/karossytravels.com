@@ -165,6 +165,22 @@ final class HotelCheckoutController extends Controller
             return response()->json(['message' => 'Payment could not be verified right now. Please try again shortly or contact Karossy support.'], 422);
         }
 
+        // Claim the supplier reservation exactly once. Paystack callbacks and
+        // browser retries can arrive more than once, but a hotel sell request
+        // must never be repeated blindly because the first request may have
+        // succeeded even when its locator was not parsed locally.
+        $claimed = CheckoutPaymentAttempt::query()
+            ->whereKey($attempt->id)
+            ->whereNull('reservation_attempted_at')
+            ->update(['reservation_attempted_at' => now()]);
+        if ($claimed !== 1) {
+            return response()->json([
+                'message' => 'This paid reservation has already been sent for hotel confirmation. Karossy support is reviewing the supplier response; no further payment is required.',
+                'payment_confirmed' => true,
+                'reference' => $attempt->reference,
+            ], 409);
+        }
+
         try {
             return $this->finalize($request, $offer, $attempt, $checkout['guest'], $orders, $logger, $verified, $gateway);
         } catch (Throwable $exception) {

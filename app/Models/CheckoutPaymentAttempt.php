@@ -18,6 +18,7 @@ final class CheckoutPaymentAttempt extends Model
             'addon_ids' => 'array',
             'gateway_response' => 'encrypted:array',
             'verified_at' => 'datetime',
+            'reservation_attempted_at' => 'datetime',
         ];
     }
 
