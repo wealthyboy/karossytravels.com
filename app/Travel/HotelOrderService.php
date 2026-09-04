@@ -30,6 +30,32 @@ final class HotelOrderService
         private readonly TravelApiHotelBookingRequestBuilder $bookingBuilder,
     ) {}
 
+    /**
+     * Validate the supplier rate before a payment attempt is opened.
+     *
+     * Hotel payment and supplier confirmation are separate operations. This
+     * preflight prevents collecting money when the current rate cannot produce
+     * the BookingKey or agency guarantee required for reservation creation.
+     */
+    public function assertCanCreate(HotelOffer $offer): void
+    {
+        $offer->loadMissing('search');
+        if ($offer->expires_at->isPast()) {
+            throw new RuntimeException('This hotel rate has expired. Search again.');
+        }
+
+        if ($offer->provider === 'fake') {
+            return;
+        }
+
+        $response = $this->client->checkHotelPrice($this->bookingBuilder->priceCheck($offer));
+        $this->bookingBuilder->assertBookable($response);
+
+        if ($this->bookingBuilder->bookingKey($response) === '') {
+            throw new RuntimeException('The hotel price check did not return a booking key. Search again before booking.');
+        }
+    }
+
     public function create(HotelOffer $offer, Customer $customer, Collection|array $addons = [], array $manualMarkup = [], ?string $specialRequests = null, bool $sendConfirmation = true): Order
     {
         $offer->loadMissing('search');

@@ -53,6 +53,25 @@ final class HotelCheckoutController extends Controller
         $offer->loadMissing('search');
         if ($offer->expires_at->isPast()) return response()->json(['message' => 'This hotel rate has expired. Please search again.'], 410);
 
+        try {
+            // Confirm supplier bookability before opening Paystack. Payment is
+            // never collected for a rate lacking a usable BookingKey or the
+            // agency credentials required by its guarantee rules.
+            $orders->assertCanCreate($offer);
+        } catch (Throwable $exception) {
+            report($exception);
+            $logger->record('hotel', 'booking_preflight', $offer->provider, ['offer_id' => $offer->id], [], [
+                'status' => 'failed',
+                'session_id' => $offer->search()->value('session_id'),
+                'offer_id' => $offer->id,
+                'error_message' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'This room cannot be confirmed right now. Please choose another available room or contact Karossy support.',
+            ], 422);
+        }
+
         $currency = $this->checkoutCurrency($request, $resolver);
         $amount = $rates->convertMinor($offer->fresh()->selling_total_minor, $offer->currency, $currency)['amount_minor'];
         $token = (string) $request->session()->get("hotel_checkout.{$offer->id}.token", Str::random(64));

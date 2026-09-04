@@ -17,6 +17,38 @@ final class HotelProviderBookingTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_preflight_rejects_a_gds_rate_without_iata_before_payment(): void
+    {
+        config([
+            'services.travel.travel_api.auth_scheme' => 'bearer_token',
+            'services.travel.travel_api.access_token' => 'test-token',
+            'services.travel.travel_api.environment' => 'cert',
+            'services.travel.travel_api.cert_url' => 'https://travel.test',
+            'services.travel.travel_api.hotel_price_check_path' => '/v4.0.0/hotel/pricecheck',
+            'services.travel.travel_api.pcc' => 'TEST',
+            'services.travel.travel_api.iata_number' => null,
+        ]);
+        app()->forgetInstance(TravelApiClient::class);
+        app()->forgetInstance(TravelApiHotelBookingRequestBuilder::class);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://travel.test/v4.0.0/hotel/pricecheck' => Http::response([
+                'HotelPriceCheckRS' => ['PriceCheckInfo' => [
+                    'BookingKey' => 'BOOK-123',
+                    'HotelRateInfo' => ['RateSource' => '100'],
+                ]],
+            ]),
+        ]);
+
+        [$offer] = $this->offerAndCustomer();
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('IATA RequestorID');
+
+        app(HotelOrderService::class)->assertCanCreate($offer);
+    }
+
     public function test_real_hotel_offer_is_confirmed_only_after_provider_returns_a_locator(): void
     {
         config([
@@ -45,6 +77,23 @@ final class HotelProviderBookingTest extends TestCase
             ]),
         ]);
 
+        [$offer, $customer] = $this->offerAndCustomer();
+
+        $order = app(HotelOrderService::class)->create($offer, $customer, sendConfirmation: false);
+
+        $this->assertSame('confirmed', $order->status);
+        $this->assertDatabaseHas('bookings', [
+            'order_id' => $order->id,
+            'product_type' => 'hotel',
+            'status' => 'confirmed',
+            'provider_locator' => 'HTL123',
+        ]);
+        Http::assertSentCount(2);
+    }
+
+    /** @return array{HotelOffer, Customer} */
+    private function offerAndCustomer(): array
+    {
         $search = HotelSearch::create([
             'session_id' => (string) Str::uuid(),
             'channel' => 'consumer',
@@ -82,15 +131,6 @@ final class HotelProviderBookingTest extends TestCase
             'status' => 'active',
         ]);
 
-        $order = app(HotelOrderService::class)->create($offer, $customer, sendConfirmation: false);
-
-        $this->assertSame('confirmed', $order->status);
-        $this->assertDatabaseHas('bookings', [
-            'order_id' => $order->id,
-            'product_type' => 'hotel',
-            'status' => 'confirmed',
-            'provider_locator' => 'HTL123',
-        ]);
-        Http::assertSentCount(2);
+        return [$offer, $customer];
     }
 }
