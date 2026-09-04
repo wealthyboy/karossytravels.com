@@ -28,6 +28,18 @@ Returns shared service availability, feature flags, support contacts and the def
 
 All monetary amounts use integer minor units, for example `52500000` represents `NGN 525,000.00`. Clients format money for display but never perform booking calculations using floating-point numbers.
 
+### Display currency selection
+
+Laravel is the source of truth for both the converted amount and its ISO currency. The website and mobile app must format the currency returned beside each amount; clients must not independently calculate currency conversions.
+
+The server resolves display currency in this order:
+
+1. A currency explicitly selected by the visitor and stored in the session.
+2. The saved preference of an authenticated customer.
+3. The visitor country supplied by the hosting platform or resolved from the request IP.
+
+Visitors detected in Nigeria default to `NGN`. Every other country defaults to `USD`. If country detection is unavailable, the safe fallback is `USD`. An explicit currency-switcher choice always takes precedence over location detection.
+
 ## Supplier isolation
 
 - Public offer IDs are Karossy identifiers.

@@ -74,6 +74,31 @@ final class PricingAndCurrencyTest extends TestCase
         $this->withHeader('CF-IPCountry', 'GB')->get('/')->assertOk()->assertSee('USD');
     }
 
+    public function test_ip_lookup_selects_ngn_for_nigeria_and_usd_for_other_countries(): void
+    {
+        config()->set('travel.currency.geo_lookup_enabled', true);
+        Cache::flush();
+        Http::fake([
+            'https://ipapi.co/197.210.1.10/json/' => Http::response(['country_code' => 'NG']),
+            'https://ipapi.co/8.8.8.8/json/' => Http::response(['country_code' => 'US']),
+        ]);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '197.210.1.10'])
+            ->get('/')->assertOk()->assertSee('NGN');
+        $this->withServerVariables(['REMOTE_ADDR' => '8.8.8.8'])
+            ->get('/')->assertOk()->assertSee('USD');
+    }
+
+    public function test_failed_ip_lookup_falls_back_to_usd_without_exposing_an_error(): void
+    {
+        config()->set('travel.currency.geo_lookup_enabled', true);
+        Cache::flush();
+        Http::fake(['*' => Http::response([], 503)]);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.10'])
+            ->get('/')->assertOk()->assertSee('USD');
+    }
+
     public function test_frontend_search_uses_trusted_location_currency_and_applies_airline_markup(): void
     {
         PricingSetting::where('product_type', 'airline')->update([

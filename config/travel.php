@@ -45,6 +45,8 @@ return [
         'fallback_usd_rates' => [
             'NGN' => (float) env('USD_NGN_FALLBACK_RATE', 1600),
         ],
+        // Production enables this explicitly. Nigeria resolves to NGN; every other
+        // country (and a failed lookup) resolves to the safe USD fallback.
         'geo_lookup_enabled' => (bool) env('GEOIP_LOOKUP_ENABLED', false),
         'geo_url' => env('GEOIP_URL', 'https://ipapi.co/{ip}/json/'),
         'local_country' => env('LOCAL_COUNTRY_CODE', 'NG'),
