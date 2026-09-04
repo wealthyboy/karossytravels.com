@@ -36,8 +36,15 @@ final class HotelCheckoutController extends Controller
         $currency = $this->checkoutCurrency($request, $resolver);
         $total = $rates->convertMinor($offer->selling_total_minor, $offer->currency, $currency);
         $customer = $request->user() ? Customer::where('user_id', $request->user()->id)->first() : null;
+        $recoverableAttempt = CheckoutPaymentAttempt::query()
+            ->where('hotel_offer_id', $offer->id)
+            ->where('session_fingerprint', $this->fingerprint($request, $offer))
+            ->where('status', 'paid')
+            ->whereNull('order_id')
+            ->latest()
+            ->first();
 
-        return view('hotels.checkout', compact('offer', 'currency', 'total', 'customer'));
+        return view('hotels.checkout', compact('offer', 'currency', 'total', 'customer', 'recoverableAttempt'));
     }
 
     public function initialize(Request $request, HotelOffer $offer, DisplayCurrencyResolver $resolver, ExchangeRateService $rates, HotelOrderService $orders, TravelLogger $logger): JsonResponse
