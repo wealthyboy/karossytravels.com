@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs
 
 HOST = "127.0.0.1"
 PORT = int(os.environ.get("WEBHOOK_PORT", "9100"))
@@ -65,8 +66,16 @@ class WebhookHandler(BaseHTTPRequestHandler):
             return
 
         try:
-            payload = json.loads(payload_body)
-        except json.JSONDecodeError:
+            # GitHub normally sends raw JSON when the webhook content type is
+            # application/json. Accept its documented form-encoded alternative
+            # too, while always validating the signature against the original
+            # unmodified request bytes above.
+            if self.headers.get_content_type() == "application/x-www-form-urlencoded":
+                encoded_payload = parse_qs(payload_body.decode("utf-8")).get("payload", [""])[0]
+                payload = json.loads(encoded_payload)
+            else:
+                payload = json.loads(payload_body)
+        except (UnicodeDecodeError, json.JSONDecodeError):
             self.reply(400, "Invalid JSON")
             return
 
@@ -106,4 +115,3 @@ class WebhookHandler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     ThreadingHTTPServer((HOST, PORT), WebhookHandler).serve_forever()
-
