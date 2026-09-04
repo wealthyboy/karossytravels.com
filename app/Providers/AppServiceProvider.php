@@ -43,14 +43,31 @@ class AppServiceProvider extends ServiceProvider
         ));
 
         $this->app->bind(FlightProvider::class, function (): FlightProvider {
-            return match (config('services.travel.provider')) {
+            $provider = (string) config('services.travel.provider');
+
+            // Synthetic inventory exists only for local UI development. Failing
+            // loudly in production is safer than presenting fabricated schedules
+            // or prices to a customer when deployment configuration is incomplete.
+            if ($this->app->environment('production') && $provider === 'fake') {
+                throw new \LogicException('The fake travel provider cannot be used in production.');
+            }
+
+            return match ($provider) {
                 'fake' => new FakeFlightProvider,
                 'travel_api' => $this->app->make(TravelApiFlightProvider::class),
                 default => throw new \InvalidArgumentException('Unsupported travel integration configured.'),
             };
         });
         $this->app->bind(HotelProvider::class, function (): HotelProvider {
-            return match (config('services.travel.provider')) {
+            $provider = (string) config('services.travel.provider');
+
+            // Flights and hotels share the provider switch, so enforce the same
+            // production boundary for both inventory paths.
+            if ($this->app->environment('production') && $provider === 'fake') {
+                throw new \LogicException('The fake travel provider cannot be used in production.');
+            }
+
+            return match ($provider) {
                 'fake' => new FakeHotelProvider,
                 'travel_api' => $this->app->make(TravelApiHotelProvider::class),
                 default => throw new \InvalidArgumentException('Unsupported travel integration configured.'),
