@@ -60,6 +60,21 @@ final class HotelCheckoutController extends Controller
         $offer->loadMissing('search');
         if ($offer->expires_at->isPast()) return response()->json(['message' => 'This hotel rate has expired. Please search again.'], 410);
 
+        $unresolvedPayment = CheckoutPaymentAttempt::query()
+            ->where('hotel_offer_id', $offer->id)
+            ->where('session_fingerprint', $this->fingerprint($request, $offer))
+            ->where('status', 'paid')
+            ->whereNull('order_id')
+            ->latest()
+            ->first();
+        if ($unresolvedPayment) {
+            return response()->json([
+                'message' => 'Payment has already been confirmed for this reservation. Do not pay again. Karossy support is completing the hotel confirmation.',
+                'payment_confirmed' => true,
+                'reference' => $unresolvedPayment->reference,
+            ], 409);
+        }
+
         try {
             // Confirm supplier bookability before opening Paystack. Payment is
             // never collected for a rate lacking a usable BookingKey or the

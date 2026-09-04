@@ -90,7 +90,7 @@ final class HotelOrderService
                 $this->travelLogger->record('hotel', 'booking', $offer->provider, [
                     'offer_id' => $offer->id,
                     'customer_id' => $customer->id,
-                ], [], [
+                ], $providerResponse, [
                     'status' => 'failed',
                     'session_id' => $offer->search->session_id,
                     'offer_id' => $offer->id,
