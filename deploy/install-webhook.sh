@@ -72,8 +72,10 @@ fi
 nginx -t
 systemctl daemon-reload
 systemctl enable --now karossy-webhook
+# `enable --now` does not reload an already running listener. Restart it so
+# parser and security updates are active immediately after reinstallation.
+systemctl restart karossy-webhook
 systemctl reload nginx
 
 printf 'Webhook installed at: http://%s/deploy/webhook\n' "${DOMAIN}"
 printf 'Copy its secret with: sudo cat /etc/karossy-webhook.env\n'
-
