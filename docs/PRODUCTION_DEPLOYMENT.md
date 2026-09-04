@@ -1,7 +1,7 @@
 # Karossy production deployment
 
-This setup targets a fresh Ubuntu 24.04 DigitalOcean Droplet. Every push to
-`main` runs tests and a frontend build, then connects to the server and runs a
+This setup targets a fresh Ubuntu 24.04 DigitalOcean Droplet. A signed GitHub
+webhook triggers the server after every push to `main`. The server then runs a
 locked deployment: `git pull`, dependency installation, migrations, Laravel
 cache rebuilding, and queue restart.
 
@@ -57,27 +57,33 @@ callback/webhook URLs. Apply the configuration with:
 sudo -u forge /usr/local/bin/deploy-karossy
 ```
 
-## 4. Connect GitHub Actions
+## 4. Connect the GitHub webhook
 
-Generate a dedicated deployment key on your computer:
+Install the webhook receiver on the server:
 
 ```bash
-ssh-keygen -t ed25519 -C karossy-github-actions -f karossy_github_actions
+sudo APP_DIR=/home/forge/karossytravels.online \
+  DOMAIN=karossytravels.online \
+  GITHUB_REPOSITORY=wealthyboy/karossytravels.com \
+  bash /home/forge/karossytravels.online/deploy/install-webhook.sh
 ```
 
-Append the public `.pub` key to `/home/forge/.ssh/authorized_keys` on the
-Droplet. Add these GitHub repository secrets:
+Copy the generated secret without displaying it on screen:
 
-| Secret | Value |
-| --- | --- |
-| `PRODUCTION_HOST` | Droplet IPv4 address or hostname |
-| `PRODUCTION_SSH_PORT` | `22` unless it was changed |
-| `PRODUCTION_SSH_USER` | `forge` |
-| `PRODUCTION_SSH_PRIVATE_KEY` | Complete contents of the private key |
+```bash
+ssh root@139.59.168.63 "sed -n 's/^WEBHOOK_SECRET=//p' /etc/karossy-webhook.env" | pbcopy
+```
 
-The workflow uses GitHub's `production` environment. Add required reviewers to
-that environment if production deployment should need approval. A successful
-push to `main` will deploy automatically.
+In the GitHub repository, open **Settings → Webhooks → Add webhook** and use:
+
+- Payload URL: `https://karossytravels.online/deploy/webhook`
+- Content type: `application/json`
+- Secret: paste the generated secret
+- Events: **Just the push event**
+- Active: enabled
+
+Until DNS and HTTPS are ready, the temporary payload URL may use
+`http://139.59.168.63/deploy/webhook`. Change it to HTTPS before launch.
 
 ## 5. Booking and payment safety before launch
 
