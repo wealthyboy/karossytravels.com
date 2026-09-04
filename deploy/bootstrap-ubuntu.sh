@@ -61,6 +61,8 @@ fi
 
 id "${DEPLOY_USER}" >/dev/null 2>&1 || adduser --disabled-password --gecos '' "${DEPLOY_USER}"
 usermod -aG www-data "${DEPLOY_USER}"
+chgrp www-data "/home/${DEPLOY_USER}"
+chmod 750 "/home/${DEPLOY_USER}"
 install -d -m 700 -o "${DEPLOY_USER}" -g "${DEPLOY_USER}" "/home/${DEPLOY_USER}/.ssh"
 if [[ ! -f "/home/${DEPLOY_USER}/.ssh/id_ed25519" ]]; then
     sudo -u "${DEPLOY_USER}" ssh-keygen -q -t ed25519 -N '' \
