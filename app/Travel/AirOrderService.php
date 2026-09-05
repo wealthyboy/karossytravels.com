@@ -115,9 +115,9 @@ final class AirOrderService
                 'status' => 'confirmed',
                 'source' => $this->bookingSource(),
                 'referrer' => request()->headers->get('referer'),
-                'utm_source' => request()->session()->get('attribution.utm_source'),
-                'utm_medium' => request()->session()->get('attribution.utm_medium'),
-                'utm_campaign' => request()->session()->get('attribution.utm_campaign'),
+                'utm_source' => request()->hasSession() ? request()->session()->get('attribution.utm_source') : null,
+                'utm_medium' => request()->hasSession() ? request()->session()->get('attribution.utm_medium') : null,
+                'utm_campaign' => request()->hasSession() ? request()->session()->get('attribution.utm_campaign') : null,
                 'travellers' => $travellers,
                 'details' => [
                     'itinerary' => $offer->itinerary,

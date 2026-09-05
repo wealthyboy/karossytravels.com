@@ -17,6 +17,7 @@ final class CheckoutPaymentAttempt extends Model
         return [
             'addon_ids' => 'array',
             'gateway_response' => 'encrypted:array',
+            'checkout_payload' => 'encrypted:array',
             'verified_at' => 'datetime',
             'reservation_attempted_at' => 'datetime',
         ];

@@ -8,15 +8,19 @@ use RuntimeException;
 final class PaystackService
 {
     /** @param array<string, mixed> $metadata */
-    public function initialize(string $email, int $amountMinor, string $currency, string $reference, array $metadata = []): array
+    public function initialize(string $email, int $amountMinor, string $currency, string $reference, array $metadata = [], ?string $callbackUrl = null): array
     {
-        $response = $this->client()->post('/transaction/initialize', [
+        $payload = [
             'email' => $email,
             'amount' => (string) $amountMinor,
             'currency' => $currency,
             'reference' => $reference,
             'metadata' => $metadata,
-        ]);
+        ];
+        if ($callbackUrl) {
+            $payload['callback_url'] = $callbackUrl;
+        }
+        $response = $this->client()->post('/transaction/initialize', $payload);
 
         if (! $response->successful() || ! $response->json('status')) {
             throw new RuntimeException((string) ($response->json('message') ?: 'Payment could not be initialized.'));
