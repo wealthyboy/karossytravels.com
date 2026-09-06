@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreFlightTravellersRequest;
-use App\Models\Customer;
 use App\Models\Addon;
 use App\Models\CheckoutPaymentAttempt;
+use App\Models\Customer;
 use App\Models\FairRule;
 use App\Models\Order;
 use App\Models\Payment;
@@ -23,8 +23,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Throwable;
 
@@ -425,6 +425,7 @@ final class FlightCheckoutController extends Controller
             }
 
             $customer ??= new Customer;
+            $customer->discardUnreadablePassportNumber();
             $customer->fill([
                 'user_id' => $customer->user_id ?: $user?->id,
                 'title' => $primary['title'],

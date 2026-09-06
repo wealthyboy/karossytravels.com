@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -43,5 +44,27 @@ final class Customer extends Model
     public function getFullNameAttribute(): string
     {
         return trim(collect([$this->title, $this->first_name, $this->middle_name, $this->last_name])->filter()->join(' '));
+    }
+
+    /**
+     * Discard only a legacy passport value that cannot be decrypted with the
+     * current application key. Checkout immediately replaces it with the
+     * passport supplied by the customer, encrypted using the active key.
+     */
+    public function discardUnreadablePassportNumber(): self
+    {
+        if (! $this->exists || ! array_key_exists('passport_number', $this->getAttributes())) {
+            return $this;
+        }
+
+        try {
+            $this->getAttribute('passport_number');
+        } catch (DecryptException) {
+            $attributes = $this->getAttributes();
+            $attributes['passport_number'] = null;
+            $this->setRawAttributes($attributes, true);
+        }
+
+        return $this;
     }
 }
