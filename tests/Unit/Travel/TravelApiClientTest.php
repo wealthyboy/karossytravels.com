@@ -142,15 +142,21 @@ final class TravelApiClientTest extends TestCase
             'flight_shop_path' => '/v5/offers/shop',
             'flight_revalidate_path' => '/v5/shop/flights/revalidate',
             'order_create_path' => '/v1/trip/orders/create',
+            'booking_get_path' => '/v1/trip/orders/getBooking',
+            'flight_ticket_fulfill_path' => '/v1/trip/orders/fulfillFlightTickets',
         ]);
 
         $client->shopFlights(['request' => 'shop']);
         $client->revalidateFlightOffer(['request' => 'revalidate']);
         $client->createTripOrder(['request' => 'create']);
+        $client->getBooking(['confirmationId' => 'ABC123']);
+        $client->fulfillFlightTickets(['confirmationId' => 'ABC123']);
 
         Http::assertSent(fn ($request): bool => $request->url() === 'https://travel-api.test/v5/offers/shop');
         Http::assertSent(fn ($request): bool => $request->url() === 'https://travel-api.test/v5/shop/flights/revalidate');
         Http::assertSent(fn ($request): bool => $request->url() === 'https://travel-api.test/v1/trip/orders/create');
+        Http::assertSent(fn ($request): bool => $request->url() === 'https://travel-api.test/v1/trip/orders/getBooking');
+        Http::assertSent(fn ($request): bool => $request->url() === 'https://travel-api.test/v1/trip/orders/fulfillFlightTickets');
     }
 
     public function test_it_reports_an_empty_provider_response_without_a_php_type_error(): void

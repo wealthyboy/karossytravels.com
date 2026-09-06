@@ -236,6 +236,9 @@ final class FrontendBookingFlowTest extends TestCase
         $this->assertDatabaseHas('payments', ['order_id' => $order->id, 'gateway' => 'demo', 'status' => 'simulated']);
         $this->assertDatabaseHas('travel_logs', ['product_type' => 'flight', 'stage' => 'payment', 'status' => 'success', 'order_id' => $order->id]);
         $this->assertDatabaseHas('travel_logs', ['product_type' => 'flight', 'stage' => 'booking', 'status' => 'success', 'order_id' => $order->id]);
+        $booking = $order->bookings()->where('product_type', 'flight')->firstOrFail();
+        $this->assertDatabaseHas('tickets', ['booking_id' => $booking->id, 'status' => 'issued']);
+        $this->assertDatabaseHas('travel_logs', ['product_type' => 'flight', 'stage' => 'ticketing', 'status' => 'success', 'order_id' => $order->id]);
         Mail::assertSent(BookingConfirmation::class, fn (BookingConfirmation $mail): bool => $mail->hasTo('ada.guest@example.com'));
     }
 

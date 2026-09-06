@@ -15,6 +15,7 @@ use App\Payments\PaystackService;
 use App\Support\TravelLogger;
 use App\Travel\AirOrderService;
 use App\Travel\FlightRevalidationService;
+use App\Travel\FlightTicketingService;
 use App\Travel\Pricing\DisplayCurrencyResolver;
 use App\Travel\Pricing\ExchangeRateService;
 use Illuminate\Http\JsonResponse;
@@ -112,6 +113,7 @@ final class FlightCheckoutController extends Controller
         DisplayCurrencyResolver $resolver,
         ExchangeRateService $rates,
         AirOrderService $orders,
+        FlightTicketingService $ticketing,
         TravelLogger $travelLogger,
     ): JsonResponse|RedirectResponse {
         $validated = $request->validate([
@@ -182,7 +184,7 @@ final class FlightCheckoutController extends Controller
                     'offer_id' => $offer->id,
                 ]);
 
-                $order = $this->finalizePaidOrder($request, $offer, $attempt, $checkout, $orders, $rates, $travelLogger, $demoResponse, 'demo');
+                $order = $this->finalizePaidOrder($request, $offer, $attempt, $checkout, $orders, $ticketing, $rates, $travelLogger, $demoResponse, 'demo');
 
                 return $this->success($request, $order);
             }
@@ -248,6 +250,7 @@ final class FlightCheckoutController extends Controller
         TravelOffer $offer,
         PaystackService $paystack,
         AirOrderService $orders,
+        FlightTicketingService $ticketing,
         ExchangeRateService $rates,
         TravelLogger $travelLogger,
     ): JsonResponse {
@@ -262,6 +265,11 @@ final class FlightCheckoutController extends Controller
             ->firstOrFail();
 
         if ($attempt->order_id && ($order = Order::query()->find($attempt->order_id))) {
+            $booking = $order->bookings()->where('product_type', 'flight')->first();
+            if ($booking) {
+                $ticketing->issueAfterPayment($booking);
+            }
+
             return $this->success($request, $order);
         }
 
@@ -296,7 +304,7 @@ final class FlightCheckoutController extends Controller
 
             $attempt->update(['status' => 'paid', 'verified_at' => now(), 'gateway_response' => $verified]);
             $gateway = $localCallback ? 'paystack_callback_test' : 'paystack';
-            $order = $this->finalizePaidOrder($request, $offer, $attempt, $checkout, $orders, $rates, $travelLogger, $verified, $gateway);
+            $order = $this->finalizePaidOrder($request, $offer, $attempt, $checkout, $orders, $ticketing, $rates, $travelLogger, $verified, $gateway);
         } catch (Throwable $exception) {
             report($exception);
 
@@ -323,6 +331,7 @@ final class FlightCheckoutController extends Controller
         CheckoutPaymentAttempt $attempt,
         array $checkout,
         AirOrderService $orders,
+        FlightTicketingService $ticketing,
         ExchangeRateService $rates,
         TravelLogger $travelLogger,
         array $gatewayData,
@@ -351,6 +360,12 @@ final class FlightCheckoutController extends Controller
         $attempt->update(['status' => 'completed', 'order_id' => $order->id]);
         $request->session()->put("flight_checkout.{$offer->id}.order_id", $order->id);
         $request->session()->put("completed_orders.{$order->id}", true);
+
+        // A successful charge and confirmed PNR are prerequisites for issuance.
+        // Ticketing errors are recorded for Operations and never trigger another charge.
+        $booking = $order->bookings()->where('product_type', 'flight')->firstOrFail();
+        $ticketing->issueAfterPayment($booking);
+
         $orders->sendConfirmation($order->fresh());
         $travelLogger->record('flight', 'payment', match ($gateway) {
             'demo' => 'local_demo',

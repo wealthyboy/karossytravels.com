@@ -103,7 +103,7 @@ final class TravelApiClient
     }
 
     /** @param array<string, mixed> $payload */
-    public function post(string $path, array $payload): array
+    public function post(string $path, array $payload, bool $retry = true): array
     {
         // Defensive: remove any empty agencyCustomerNumber fields to avoid TravelApi validation
         array_walk_recursive($payload, function (&$v, $k) use (&$payload) {
@@ -124,7 +124,7 @@ final class TravelApiClient
             // swallow logging errors
         }
 
-        $response = $this->authenticatedRequest()->post($path, $payload);
+        $response = $this->authenticatedRequest($retry)->post($path, $payload);
         if ($response->failed()) {
             $providerError = $this->providerErrorFrom($response->body());
 
@@ -268,6 +268,20 @@ final class TravelApiClient
     public function createAtpcoBooking(array $payload): array
     {
         return $this->post((string) $this->configuration['booking_create_path'], $payload);
+    }
+
+    /** @param array<string, mixed> $payload @return array<string, mixed> */
+    public function getBooking(array $payload): array
+    {
+        return $this->post((string) $this->configuration['booking_get_path'], $payload);
+    }
+
+    /** @param array<string, mixed> $payload @return array<string, mixed> */
+    public function fulfillFlightTickets(array $payload): array
+    {
+        // Issuance is not blindly retried. The ticketing service first checks
+        // the PNR for existing documents before another fulfillment attempt.
+        return $this->post((string) $this->configuration['flight_ticket_fulfill_path'], $payload, retry: false);
     }
 
     /** @param array<string, mixed> $payload @return array<string, mixed> */
@@ -478,18 +492,23 @@ final class TravelApiClient
         ]);
     }
 
-    private function authenticatedRequest(): PendingRequest
+    private function authenticatedRequest(bool $retry = true): PendingRequest
     {
         // Keep provider failures inside PHP's request budget so controllers can
         // return a controlled JSON response instead of an HTML fatal-error page.
         $timeout = min(15, max(5, (int) $this->configuration['timeout']));
 
-        return Http::baseUrl($this->baseUrl())
+        $request = Http::baseUrl($this->baseUrl())
             ->acceptJson()
             ->asJson()
             ->connectTimeout(min(5, $timeout))
-            ->timeout($timeout)
-            ->retry(2, 250, throw: false)
+            ->timeout($timeout);
+
+        if ($retry) {
+            $request = $request->retry(2, 250, throw: false);
+        }
+
+        return $request
             ->withHeaders(['X-Request-ID' => request()->attributes->get('request_id', (string) str()->uuid())])
             ->withToken($this->accessToken());
     }
