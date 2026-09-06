@@ -209,6 +209,7 @@ final class AirOrderService
             'data.order.id',
             // createBooking response paths
             'booking.reservationIds.0.reservationId',
+            'booking.bookingId',
             'booking.id',
             'reservationId',
             'confirmationId',
@@ -221,32 +222,6 @@ final class AirOrderService
             }
         }
 
-        // Fallback: scan the entire response for any plausible locator strings
-        $candidates = [];
-        $this->collectStrings($response, $candidates);
-
-        foreach ($candidates as $candidate) {
-            if (is_string($candidate) && preg_match('/^[0-9A-Z]{6,8}$/', $candidate)) {
-                return $candidate;
-            }
-        }
-
         return '';
-    }
-
-    /** Collect all scalar string values from nested response into array */
-    private function collectStrings(mixed $data, array &$out): void
-    {
-        if (is_string($data)) {
-            $out[] = trim($data);
-
-            return;
-        }
-
-        if (is_array($data)) {
-            foreach ($data as $v) {
-                $this->collectStrings($v, $out);
-            }
-        }
     }
 }

@@ -161,6 +161,22 @@ final class TravelApiClient
             throw new RuntimeException("The travel system returned no usable data (HTTP {$response->status()}). Please retry or choose another fare.");
         }
 
+        // Some Booking Management operations return HTTP 200 while reporting a
+        // failed sell in `errors`. Never allow that body to become a confirmed
+        // Karossy order.
+        if (is_array($json['errors'] ?? null) && $json['errors'] !== []) {
+            $providerError = $this->providerErrorFrom($response->body()) ?? 'The airline could not confirm the selected flights.';
+
+            Log::warning('Travel API returned provider errors in a successful HTTP response.', [
+                'path' => $path,
+                'status' => $response->status(),
+                'provider_error' => $providerError,
+                'request_id' => request()->attributes->get('request_id'),
+            ]);
+
+            throw new RuntimeException('The travel system rejected the request: '.$providerError);
+        }
+
         return $json;
     }
 
@@ -193,6 +209,8 @@ final class TravelApiClient
                 data_get($json, 'errorCode'),
                 data_get($json, 'errors.0.message'),
                 data_get($json, 'errors.0.errorMessage'),
+                data_get($json, 'errors.0.description'),
+                data_get($json, 'errors.0.type'),
                 data_get($json, 'validationErrors.0.message'),
             ])->filter(fn (mixed $value): bool => is_string($value) && trim($value) !== '')
                 ->unique()->values();

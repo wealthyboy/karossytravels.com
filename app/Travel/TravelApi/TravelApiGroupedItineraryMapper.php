@@ -75,6 +75,10 @@ final class TravelApiGroupedItineraryMapper
                                 'duration_minutes' => (int) ($schedule['elapsedTime'] ?? 0),
                                 'stops' => (int) ($schedule['stopCount'] ?? 0),
                                 'booking_code' => $booking['bookingCode'] ?? null,
+                                // Keep the priced fare basis with its segment. The
+                                // Booking Management API needs this value when it
+                                // recreates and prices a traditional ATPCO booking.
+                                'fare_basis_code' => $booking['fareBasisCode'] ?? null,
                                 'cabin' => $this->cabinName((string) ($booking['cabinCode'] ?? '')),
                                 'seats_available' => $booking['seatsAvailable'] ?? null,
                                 'checked_baggage_pieces' => $baggageBySegment[$segmentIndex] ?? null,
@@ -144,7 +148,10 @@ final class TravelApiGroupedItineraryMapper
         $segments = [];
         foreach ((array) ($passengerInfo['fareComponents'] ?? []) as $component) {
             foreach ((array) ($component['segments'] ?? []) as $segment) {
-                $segments[] = (array) ($segment['segment'] ?? []);
+                $segments[] = [
+                    ...(array) ($segment['segment'] ?? []),
+                    'fareBasisCode' => $component['fareBasisCode'] ?? null,
+                ];
             }
         }
 

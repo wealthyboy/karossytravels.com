@@ -202,4 +202,23 @@ final class TravelApiClientTest extends TestCase
         $this->expectExceptionMessage('The travel system rejected the request: Request validation failed — ERR.SWS.CLIENT.VALIDATION_FAILED');
         $client->revalidateFlightOffer(['request' => 'revalidate']);
     }
+
+    public function test_it_rejects_booking_errors_returned_with_http_200(): void
+    {
+        Http::fake(['https://travel-api.test/*' => Http::response([
+            'errors' => [[
+                'type' => 'UNABLE_TO_BOOK_FLIGHTS_WRONG_STATUS_CODE',
+                'description' => 'Flight returned status code: UC.',
+            ]],
+        ], 200)]);
+        $client = new TravelApiClient([
+            'environment' => 'cert', 'auth_scheme' => 'bearer_token', 'access_token' => 'test-token',
+            'cert_url' => 'https://travel-api.test', 'production_url' => 'https://travel-api.test',
+            'timeout' => 30, 'booking_create_path' => '/v1/trip/orders/createBooking',
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Flight returned status code: UC.');
+        $client->createAtpcoBooking(['request' => 'booking']);
+    }
 }

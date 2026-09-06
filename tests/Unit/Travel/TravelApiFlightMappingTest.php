@@ -78,7 +78,7 @@ final class TravelApiFlightMappingTest extends TestCase
                         'totalFare' => ['totalPrice' => 131.80, 'totalTaxAmount' => 73.80, 'currency' => 'USD'],
                         'passengerInfoList' => [['passengerInfo' => [
                             'nonRefundable' => true,
-                            'fareComponents' => [['segments' => [['segment' => ['bookingCode' => 'O', 'cabinCode' => 'Y', 'seatsAvailable' => 9]]]]],
+                            'fareComponents' => [['fareBasisCode' => 'OLOW', 'segments' => [['segment' => ['bookingCode' => 'O', 'cabinCode' => 'Y', 'seatsAvailable' => 9]]]]],
                             'baggageInformation' => [['segments' => [['id' => 0]], 'allowance' => ['ref' => 1]]],
                         ]]],
                     ]]],
@@ -95,6 +95,7 @@ final class TravelApiFlightMappingTest extends TestCase
         $this->assertSame('LO575', $offers[0]['segments'][0]['flight_number']);
         $this->assertSame(0, $offers[0]['segments'][0]['leg_index']);
         $this->assertSame(0, $offers[0]['segments'][0]['checked_baggage_pieces']);
+        $this->assertSame('OLOW', $offers[0]['segments'][0]['fare_basis_code']);
         $this->assertFalse($offers[0]['refundable']);
     }
 

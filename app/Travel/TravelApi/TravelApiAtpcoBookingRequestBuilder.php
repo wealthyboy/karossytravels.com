@@ -26,20 +26,9 @@ final class TravelApiAtpcoBookingRequestBuilder
     {
         $agencyNumber = strtoupper((string) ($agencyNumberOverride ?? $this->configuration['agency_number'] ?? ''));
 
-        $agencyState = $this->configuration['agency_state'] ?? config('services.travel.travel_api.agency_state') ?? 'Lagos';
-
-        $agency = [
-            'address' => array_filter([
-                'name'        => config('app.name'),
-                'street'      => '1 Karossy Way',
-                'city'        => 'Lagos',
-                'stateProvince'=> $agencyState ?: null,
-                'postalCode'  => '100001',
-                'countryCode' => 'NG',
-                'freeText'    => config('app.name')."\nLagos, NG",
-            ]),
-            'ticketingPolicy' => 'TODAY',
-        ];
+        // Keep the agency block identical to the provider-validated request.
+        // Agency identity is resolved from the authenticated PCC.
+        $agency = ['ticketingPolicy' => 'TODAY'];
 
         // TravelApi expects agencyCustomerNumber to follow their pattern.
         // Pattern: ^[0-9A-Z]{6}([1-9A-Z*]{1}|[0-9A-Z]{4})?$
@@ -59,29 +48,41 @@ final class TravelApiAtpcoBookingRequestBuilder
 
         return [
             'agency' => $agency,
-
-            'travelers'   => $this->buildTravelers($travellers),
             'contactInfo' => [
                 'emails' => [$customer->email],
                 'phones' => [preg_replace('/\D+/', '', (string) $customer->phone)],
             ],
-
+            'travelers'   => $this->buildTravelers($travellers, $customer),
             'flightDetails' => [
-                'flights'        => $this->buildFlights($offer),
-                'flightPricing'  => $this->buildPricing($offer),
+                'haltOnFlightStatusCodes' => ['NO', 'UC', 'US', 'UN', 'UU', 'LL', 'HL'],
+                'flights' => $this->buildFlights($offer),
+                'flightPricing' => $this->buildPricing($offer, $travellers),
             ],
+            'asynchronousUpdateWaitTime' => 3000,
+            'receivedFrom' => (string) ($this->configuration['received_from'] ?? 'KAROSSY'),
+            'errorHandlingPolicy' => ['HALT_ON_ERROR'],
         ];
     }
 
     /** @param array<int, array<string, mixed>> $travellers @return array<int, array<string, mixed>> */
-    private function buildTravelers(array $travellers): array
+    private function buildTravelers(array $travellers, Customer $customer): array
     {
-        return collect($travellers)->values()->map(function (array $t): array {
+        $phone = preg_replace('/\D+/', '', (string) $customer->phone);
+
+        return collect($travellers)->values()->map(function (array $t, int $index) use ($customer, $phone): array {
             $traveler = [
+                'id' => 'Passenger'.($index + 1),
                 'givenName'     => strtoupper($t['first_name']),
                 'surname'       => strtoupper($t['last_name']),
                 'birthDate'     => $t['date_of_birth'],
                 'passengerCode' => $t['type'],
+                'nameReferenceCode' => '',
+                'phones' => [['number' => $phone]],
+                'emails' => [$customer->email],
+                'specialServices' => [
+                    ['code' => 'CTCM', 'message' => $phone],
+                    ['code' => 'CTCE', 'message' => str_replace('@', '//', $customer->email)],
+                ],
             ];
 
             if (! empty($t['title'])) {
@@ -138,15 +139,23 @@ final class TravelApiAtpcoBookingRequestBuilder
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function buildPricing(TravelOffer $offer): array
+    private function buildPricing(TravelOffer $offer, array $travellers): array
     {
-        $validatingAirline = (string) data_get($offer->fare_summary, 'validating_airline', '');
-
-        $qualifier = ['flightIndices' => range(1, count($offer->itinerary))];
-
-        if ($validatingAirline !== '') {
-            $qualifier['validatingAirlineCode'] = $validatingAirline;
-        }
+        $qualifier = [
+            'travelerIndices' => range(1, count($travellers)),
+            'passengersPricing' => collect($travellers)
+                ->countBy(fn (array $traveller): string => (string) $traveller['type'])
+                ->map(fn (int $count, string $code): array => [
+                    'passengerCode' => $code,
+                    'numberOfpassengers' => $count,
+                ])->values()->all(),
+            'specificFares' => collect($offer->itinerary)->values()
+                ->map(fn (array $segment, int $index): array => [
+                    'fareBasisCode' => strtoupper((string) ($segment['fare_basis_code'] ?? '')),
+                    'flightIndices' => [$index + 1],
+                ])->filter(fn (array $fare): bool => $fare['fareBasisCode'] !== '')
+                ->values()->all(),
+        ];
 
         return [['qualifiers' => $qualifier]];
     }
