@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Order;
 use App\Travel\BookingLifecycleService;
+use App\Travel\FlightTicketingService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -18,7 +19,7 @@ final class BookingController extends Controller
 
     private const STATUSES = ['pending', 'confirmed', 'failed', 'cancelled', 'refunded'];
 
-    private const TICKET_STATUSES = ['issued', 'pending', 'unticketed', 'refunded'];
+    private const TICKET_STATUSES = ['issued', 'pending', 'failed', 'unticketed', 'refunded'];
 
     public function index(Request $request, string $product = 'all'): View
     {
@@ -85,8 +86,9 @@ final class BookingController extends Controller
         match ($validated['ticket_status'] ?? null) {
             'issued' => $query->whereHas('tickets', fn (Builder $tickets) => $tickets->where('status', 'issued')->orWhereNotNull('issued_at')),
             'pending' => $query->whereHas('tickets', fn (Builder $tickets) => $tickets->where('status', 'pending')),
+            'failed' => $query->whereHas('tickets', fn (Builder $tickets) => $tickets->where('status', 'failed')),
             'refunded' => $query->whereHas('tickets', fn (Builder $tickets) => $tickets->where('status', 'refunded')->orWhereNotNull('refunded_at')),
-            'unticketed' => $query->whereDoesntHave('tickets', fn (Builder $tickets) => $tickets->where('status', 'issued')->orWhereNotNull('issued_at')),
+            'unticketed' => $query->whereDoesntHave('tickets'),
             default => null,
         };
 
@@ -142,6 +144,36 @@ final class BookingController extends Controller
             report($exception);
 
             return back()->withInput()->with('error', 'The modification request could not be completed. Please review the booking and try again.');
+        }
+    }
+
+    public function issueTicket(Booking $booking, FlightTicketingService $ticketing): RedirectResponse
+    {
+        $this->authorizeVisible($booking);
+        $booking->loadMissing(['order.payments', 'tickets']);
+
+        if ($booking->product_type !== 'flight') {
+            return back()->with('error', 'Ticket issuance is only available for flight bookings.');
+        }
+
+        $paid = $booking->order?->payments
+            ?->contains(fn ($payment): bool => in_array(strtolower((string) $payment->status), ['paid', 'simulated'], true));
+
+        if (! $paid) {
+            return back()->with('error', 'This booking does not have a confirmed payment yet.');
+        }
+
+        try {
+            $tickets = $ticketing->issue($booking);
+            $count = $tickets->count();
+
+            return back()->with('success', $count === 1
+                ? 'Flight ticket issued successfully.'
+                : "{$count} flight tickets issued successfully.");
+        } catch (RuntimeException $exception) {
+            report($exception);
+
+            return back()->with('error', 'Ticket issuance failed: '.$exception->getMessage());
         }
     }
 

@@ -142,15 +142,21 @@ final class TravelApiClientTest extends TestCase
             'flight_shop_path' => '/v5/offers/shop',
             'flight_revalidate_path' => '/v5/shop/flights/revalidate',
             'order_create_path' => '/v1/trip/orders/create',
+            'booking_get_path' => '/v1/trip/orders/getBooking',
+            'flight_ticket_fulfill_path' => '/v1/trip/orders/fulfillFlightTickets',
         ]);
 
         $client->shopFlights(['request' => 'shop']);
         $client->revalidateFlightOffer(['request' => 'revalidate']);
         $client->createTripOrder(['request' => 'create']);
+        $client->getBooking(['confirmationId' => 'ABC123']);
+        $client->fulfillFlightTickets(['confirmationId' => 'ABC123']);
 
         Http::assertSent(fn ($request): bool => $request->url() === 'https://travel-api.test/v5/offers/shop');
         Http::assertSent(fn ($request): bool => $request->url() === 'https://travel-api.test/v5/shop/flights/revalidate');
         Http::assertSent(fn ($request): bool => $request->url() === 'https://travel-api.test/v1/trip/orders/create');
+        Http::assertSent(fn ($request): bool => $request->url() === 'https://travel-api.test/v1/trip/orders/getBooking');
+        Http::assertSent(fn ($request): bool => $request->url() === 'https://travel-api.test/v1/trip/orders/fulfillFlightTickets');
     }
 
     public function test_it_reports_an_empty_provider_response_without_a_php_type_error(): void
@@ -183,6 +189,49 @@ final class TravelApiClientTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('The travel system rejected the request: Unknown endpoint');
         $client->revalidateFlightOffer(['request' => 'revalidate']);
+    }
+
+    public function test_ticket_fulfillment_is_not_blindly_retried(): void
+    {
+        Http::fakeSequence()
+            ->push(['message' => 'temporary supplier failure'], 500)
+            ->push(['tickets' => [['number' => '0161234567890']]], 200);
+
+        $client = new TravelApiClient([
+            'environment' => 'cert', 'auth_scheme' => 'bearer_token', 'access_token' => 'test-token',
+            'cert_url' => 'https://travel-api.test', 'production_url' => 'https://travel-api.test',
+            'timeout' => 30, 'flight_ticket_fulfill_path' => '/v1/trip/orders/fulfillFlightTickets',
+        ]);
+
+        try {
+            $client->fulfillFlightTickets(['confirmationId' => 'ABC123']);
+            $this->fail('Ticket fulfillment should have surfaced the supplier failure.');
+        } catch (RuntimeException $exception) {
+            $this->assertStringContainsString('temporary supplier failure', $exception->getMessage());
+        }
+
+        Http::assertSentCount(1);
+    }
+
+    public function test_it_rejects_provider_errors_even_when_http_status_is_200(): void
+    {
+        Http::fake(['https://travel-api.test/*' => Http::response([
+            'timestamp' => now()->toIso8601String(),
+            'errors' => [[
+                'category' => 'APPLICATION_ERROR',
+                'type' => 'UNABLE_TO_BOOK_FLIGHTS_WRONG_STATUS_CODE',
+                'description' => 'Flight segment could not be confirmed.',
+            ]],
+        ], 200)]);
+        $client = new TravelApiClient([
+            'environment' => 'cert', 'auth_scheme' => 'bearer_token', 'access_token' => 'test-token',
+            'cert_url' => 'https://travel-api.test', 'production_url' => 'https://travel-api.test',
+            'timeout' => 30, 'order_create_path' => '/v1/trip/orders/create',
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Flight segment could not be confirmed.');
+        $client->createTripOrder(['request' => 'create']);
     }
 
     public function test_it_surfaces_a_travel_api_json_error_returned_with_http_400(): void

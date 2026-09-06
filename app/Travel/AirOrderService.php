@@ -201,13 +201,14 @@ final class AirOrderService
     /** @param array<string, mixed> $response */
     private function locator(array $response): string
     {
-        // NDC Trip Orders API paths
-        // ATPCO Booking Management API paths
+        // Known NDC Trip Orders and ATPCO Booking Management response paths.
+        // These paths are trusted because their field names explicitly identify
+        // the booking/order reference; do not scan arbitrary strings in the
+        // provider response (a postal code such as 100001 can look like a PNR).
         foreach ([
             'order.id',
             'orders.0.id',
             'data.order.id',
-            // createBooking response paths
             'booking.reservationIds.0.reservationId',
             'booking.id',
             'reservationId',
@@ -216,37 +217,37 @@ final class AirOrderService
             'CreatePassengerNameRecordRS.ItineraryRef.ID',
         ] as $path) {
             $value = data_get($response, $path);
-            if (is_string($value) && $value !== '') {
-                return $value;
+            if (is_string($value) && trim($value) !== '') {
+                return trim($value);
             }
         }
 
-        // Fallback: scan the entire response for any plausible locator strings
-        $candidates = [];
-        $this->collectStrings($response, $candidates);
+        return $this->findLocatorByKey($response);
+    }
 
-        foreach ($candidates as $candidate) {
-            if (is_string($candidate) && preg_match('/^[0-9A-Z]{6,8}$/', $candidate)) {
-                return $candidate;
+    /** Search only fields whose key explicitly represents a booking locator. */
+    private function findLocatorByKey(array $data): string
+    {
+        $locatorKeys = ['confirmationid', 'recordlocator', 'record_locator', 'pnr', 'reservationid', 'locator'];
+
+        foreach ($data as $key => $value) {
+            $normalizedKey = strtolower((string) $key);
+
+            if (is_string($value) && in_array($normalizedKey, $locatorKeys, true)) {
+                $candidate = trim($value);
+                if ($candidate !== '' && preg_match('/^[A-Z0-9][A-Z0-9_-]{4,31}$/i', $candidate) === 1) {
+                    return $candidate;
+                }
+            }
+
+            if (is_array($value)) {
+                $nested = $this->findLocatorByKey($value);
+                if ($nested !== '') {
+                    return $nested;
+                }
             }
         }
 
         return '';
-    }
-
-    /** Collect all scalar string values from nested response into array */
-    private function collectStrings(mixed $data, array &$out): void
-    {
-        if (is_string($data)) {
-            $out[] = trim($data);
-
-            return;
-        }
-
-        if (is_array($data)) {
-            foreach ($data as $v) {
-                $this->collectStrings($v, $out);
-            }
-        }
     }
 }

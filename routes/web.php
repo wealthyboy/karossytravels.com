@@ -124,6 +124,7 @@ Route::prefix('admin')->name('admin.')->middleware('admin.hidden')->group(functi
     Route::get('/bookings/visas', [BookingController::class, 'visas'])->middleware('permission:bookings.view')->name('bookings.visas');
     Route::get('/bookings/{booking}', [BookingController::class, 'show'])->whereUuid('booking')->middleware('permission:bookings.view')->name('bookings.show');
     Route::post('/bookings/{booking}/modify', [BookingController::class, 'modify'])->middleware('permission:bookings.manage')->name('bookings.modify');
+    Route::post('/bookings/{booking}/ticket', [BookingController::class, 'issueTicket'])->middleware('permission:bookings.manage')->name('bookings.ticket');
     Route::post('/bookings/{booking}/void', [BookingController::class, 'voidTickets'])->middleware('permission:bookings.manage')->name('bookings.void');
     Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->middleware('permission:bookings.manage')->name('bookings.cancel');
     Route::get('/users/admins', [SectionController::class, 'admins'])->middleware('permission:team.manage')->name('users.admins');

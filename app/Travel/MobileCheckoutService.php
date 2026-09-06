@@ -16,22 +16,36 @@ final class MobileCheckoutService
     public function __construct(
         private readonly AirOrderService $airOrders,
         private readonly HotelOrderService $hotelOrders,
+        private readonly FlightTicketingService $ticketing,
         private readonly ExchangeRateService $rates,
     ) {}
 
     public function complete(CheckoutPaymentAttempt $attempt, array $gateway): Order
     {
+        $isFlight = filled($attempt->travel_offer_id);
+
         if ($attempt->order_id && ($order = Order::find($attempt->order_id))) {
+            // A mobile verification retry must not create another reservation, but
+            // it can safely retry idempotent ticket issuance for a paid flight.
+            if ($isFlight) {
+                $booking = $order->bookings()->where('product_type', 'flight')->first();
+                if ($booking) {
+                    $this->ticketing->issueAfterPayment($booking);
+                }
+            }
+
             return $order;
         }
 
-        return DB::transaction(function () use ($attempt, $gateway): Order {
+        $order = DB::transaction(function () use ($attempt, $gateway): Order {
             $attempt->refresh();
             if ($attempt->order_id && ($order = Order::find($attempt->order_id))) {
                 return $order;
             }
+
             $payload = $attempt->checkout_payload ?? [];
             $customer = $this->customer((array) ($payload['customer'] ?? []));
+
             if ($attempt->travel_offer_id) {
                 $offer = TravelOffer::findOrFail($attempt->travel_offer_id);
                 $order = $this->airOrders->create($offer, $customer, (array) ($payload['travellers'] ?? []), sendConfirmation: false);
@@ -39,12 +53,14 @@ final class MobileCheckoutService
                 $offer = HotelOffer::findOrFail($attempt->hotel_offer_id);
                 $order = $this->hotelOrders->create($offer, $customer, specialRequests: $payload['special_requests'] ?? null, sendConfirmation: false);
             }
+
             $order->update([
                 'currency' => $attempt->currency,
                 'subtotal_minor' => $attempt->amount_minor,
                 'fees_minor' => 0,
                 'total_minor' => $attempt->amount_minor,
             ]);
+
             Payment::create([
                 'order_id' => $order->id,
                 'gateway' => 'paystack',
@@ -55,13 +71,24 @@ final class MobileCheckoutService
                 'paid_at' => now(),
                 'metadata' => ['channel' => data_get($gateway, 'channel'), 'transaction_id' => data_get($gateway, 'id'), 'source' => 'mobile'],
             ]);
+
             $attempt->update(['status' => 'completed', 'order_id' => $order->id]);
-            $attempt->travel_offer_id
-                ? $this->airOrders->sendConfirmation($order->fresh())
-                : $this->hotelOrders->sendConfirmation($order->fresh());
 
             return $order;
         });
+
+        // Keep supplier network calls and email outside the database transaction.
+        // A failed ticketing/email call must not roll back a successful payment or
+        // cause a second airline reservation to be created on retry.
+        if ($isFlight) {
+            $booking = $order->bookings()->where('product_type', 'flight')->firstOrFail();
+            $this->ticketing->issueAfterPayment($booking);
+            $this->airOrders->sendConfirmation($order->fresh());
+        } else {
+            $this->hotelOrders->sendConfirmation($order->fresh());
+        }
+
+        return $order;
     }
 
     private function customer(array $data): Customer

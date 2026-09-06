@@ -8,7 +8,8 @@
     $addonTotal = (int) data_get($booking->details, 'pricing.addons_minor', 0);
     $operatorAdjustment = (int) data_get($booking->details, 'pricing.operator_markup_minor', 0);
     $money = fn (int $minor) => \App\Support\CurrencyMetadata::format($minor, $order->currency);
-    $ticketed = $booking->tickets->isNotEmpty();
+    $issuedTickets = $booking->tickets->filter(fn ($ticket) => $ticket->status === 'issued' || $ticket->issued_at);
+    $ticketed = $issuedTickets->isNotEmpty();
 @endphp
 <section class="booking-page checkout-complete-page" data-booking-confirmation aria-live="polite">
     <div class="container public-container">
@@ -22,7 +23,7 @@
         <div class="confirmation-reference-grid">
             <div class="confirmation-reference is-primary"><span><small>Airline PNR</small><strong data-copy-value>{{ $booking->provider_locator }}</strong></span><button type="button" aria-label="Copy airline PNR" data-copy-reference><i class="bi bi-copy"></i><span>Copy</span></button></div>
             <div class="confirmation-reference"><span><small>Karossy booking reference</small><strong>{{ $order->reference }}</strong></span><i class="bi bi-bookmark-check"></i></div>
-            <div class="confirmation-reference"><span><small>Ticket status</small><strong>{{ $ticketed ? 'Ticket issued' : 'Awaiting ticket issuance' }}</strong></span><i class="bi bi-ticket-perforated"></i></div>
+            <div class="confirmation-reference"><span><small>Ticket status</small><strong>{{ $ticketed ? 'Ticket issued' : 'Awaiting ticket issuance' }}</strong>@if($ticketed)<small>{{ $issuedTickets->pluck('ticket_number')->filter()->implode(' · ') }}</small>@endif</span><i class="bi bi-ticket-perforated"></i></div>
         </div>
 
         <div class="row g-4 align-items-start">

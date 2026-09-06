@@ -6,6 +6,7 @@ use App\Mail\BookingActionNotification;
 use App\Models\Booking;
 use App\Models\Customer;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Ticket;
@@ -102,6 +103,38 @@ final class AdminBookingWorkspaceTest extends TestCase
             'booking_id' => $booking->id, 'type' => 'modify', 'status' => 'requested', 'change_type' => 'dates',
         ]);
         Mail::assertSent(BookingActionNotification::class);
+    }
+
+    public function test_paid_confirmed_fake_flight_can_be_ticketed_from_admin(): void
+    {
+        $admin = $this->bookingUser('admin');
+        $booking = $this->booking('KAR-TICKET-001', 'flight', 'confirmed', 'admin', 'fake', 'TKT001', $admin);
+        $booking->update([
+            'travellers' => [[
+                'first_name' => 'Ada',
+                'last_name' => 'Okafor',
+            ]],
+        ]);
+        Payment::create([
+            'order_id' => $booking->order_id,
+            'gateway' => 'demo',
+            'gateway_reference' => 'PAY-TICKET-001',
+            'status' => 'simulated',
+            'currency' => 'NGN',
+            'amount_minor' => 15250000,
+            'paid_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.bookings.ticket', $booking))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('tickets', [
+            'booking_id' => $booking->id,
+            'passenger_reference' => 'Ada Okafor',
+            'status' => 'issued',
+        ]);
+        $this->assertNotNull($booking->tickets()->firstOrFail()->issued_at);
     }
 
     public function test_voiding_a_fake_issued_ticket_updates_ticket_and_emails_customer(): void

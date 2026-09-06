@@ -79,6 +79,7 @@
                 <option value="">All ticket states</option>
                 <option value="issued" @selected(request('ticket_status') === 'issued')>Ticket issued</option>
                 <option value="pending" @selected(request('ticket_status') === 'pending')>Ticket pending</option>
+                <option value="failed" @selected(request('ticket_status') === 'failed')>Ticketing failed</option>
                 <option value="unticketed" @selected(request('ticket_status') === 'unticketed')>Unticketed</option>
                 <option value="refunded" @selected(request('ticket_status') === 'refunded')>Ticket refunded</option>
             </select>
@@ -119,7 +120,8 @@
                     $customerEmail = $order?->customerProfile?->email ?: data_get($order?->customer, 'email');
                     $issuedTicket = $booking->tickets->first(fn ($ticket) => $ticket->status === 'issued' || $ticket->issued_at);
                     $pendingTicket = $booking->tickets->firstWhere('status', 'pending');
-                    $ticketState = $issuedTicket ? 'Issued' : ($pendingTicket ? 'Pending' : 'Unticketed');
+                    $failedTicket = $booking->tickets->firstWhere('status', 'failed');
+                    $ticketState = $issuedTicket ? 'Issued' : ($pendingTicket ? 'Pending' : ($failedTicket ? 'Failed' : 'Unticketed'));
                     $source = $booking->source ?: $order?->channel ?: 'unknown';
                 @endphp
                 <tr>

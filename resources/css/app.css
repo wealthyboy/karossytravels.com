@@ -331,6 +331,7 @@ main .h5 {
 .booking-ticket-state { border-radius: 999px; padding: .32rem .52rem; }
 .booking-ticket-issued { background: #e7f6ee; color: #187449; }
 .booking-ticket-pending { background: #fff4d7; color: #846100; }
+.booking-ticket-failed { background: #fde8e8; color: #a61b1b; }
 .booking-ticket-unticketed { background: #eef0f4; color: #687181; }
 .booking-empty-state { padding: 4rem 1rem !important; text-align: center; }
 .booking-empty-state i, .booking-empty-state strong, .booking-empty-state span { display: block; }

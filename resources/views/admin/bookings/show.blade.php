@@ -12,8 +12,14 @@
     $canManage = app()->isLocal() || auth()->user()?->hasPermission('bookings.manage');
     $isClosed = in_array($booking->status, ['cancelled', 'refunded', 'failed'], true);
     $hasIssuedTicket = $booking->tickets->contains(fn ($ticket) => $ticket->status === 'issued' || $ticket->issued_at);
-    $isNdc = filled(data_get($booking->travelOffer?->fare_summary, 'order_offer_id'));
-    $isManualProviderWorkflow = $booking->product_type === 'flight' && strtolower($booking->provider) !== 'fake' && ! $isNdc;
+    $failedTicket = $booking->tickets->firstWhere('status', 'failed');
+    $pendingTicket = $booking->tickets->firstWhere('status', 'pending');
+    $hasPaidPayment = $order?->payments?->contains(fn ($payment) => in_array(strtolower((string) $payment->status), ['paid', 'simulated'], true)) ?? false;
+    $canIssueTicket = $booking->product_type === 'flight'
+        && $booking->status === 'confirmed'
+        && filled($booking->provider_locator)
+        && $hasPaidPayment
+        && ! $hasIssuedTicket;
     $itinerary = collect(data_get($booking->details, 'itinerary', []))->flatMap(function ($item) {
         if (! is_array($item)) return [];
         if (isset($item['origin']) || isset($item['from'])) return [$item];
@@ -37,6 +43,12 @@
             <a class="btn btn-outline-secondary" href="{{ route('admin.flights.orders.show', $order) }}"><i class="bi bi-airplane me-2"></i>Full itinerary</a>
         @endif
         @if($canManage && ! $isClosed)
+            @if($canIssueTicket)
+                <form method="POST" action="{{ route('admin.bookings.ticket', $booking) }}" data-confirm="{{ $failedTicket ? 'Retry electronic ticket issuance with Sabre?' : 'Issue the electronic ticket(s) for this paid booking now?' }}" class="d-inline">
+                    @csrf
+                    <button class="btn btn-karossy" type="submit"><i class="bi bi-ticket-perforated-fill me-2"></i>{{ $failedTicket ? 'Retry ticketing' : 'Issue ticket' }}</button>
+                </form>
+            @endif
             <button class="btn btn-light" type="button" data-bs-toggle="modal" data-bs-target="#modifyBookingModal"><i class="bi bi-pencil-square me-2"></i>Modify</button>
             @if($booking->product_type === 'flight' && $hasIssuedTicket)
                 <button class="btn btn-outline-warning" type="button" data-bs-toggle="modal" data-bs-target="#voidBookingModal"><i class="bi bi-ticket-perforated me-2"></i>Void ticket</button>
@@ -48,8 +60,10 @@
 
 @if($canManage && ! $isClosed && $hasIssuedTicket)
     <div class="booking-operator-note mb-4"><i class="bi bi-info-circle"></i><div><strong>This booking is ticketed.</strong><span>Void or refund the issued ticket before cancelling the itinerary.</span></div></div>
-@elseif($canManage && ! $isClosed && $isManualProviderWorkflow)
-    <div class="booking-operator-note mb-4"><i class="bi bi-headset"></i><div><strong>Manual confirmation applies.</strong><span>The request will be logged and emailed, but the local status will remain unchanged until a travel specialist confirms it was accepted.</span></div></div>
+@elseif($canManage && ! $isClosed && $failedTicket)
+    <div class="booking-operator-note mb-4"><i class="bi bi-exclamation-triangle"></i><div><strong>Ticketing needs attention.</strong><span>{{ $failedTicket->last_error ?: 'The last Sabre ticketing attempt failed. Review the API log and retry ticketing.' }}</span></div></div>
+@elseif($canManage && ! $isClosed && $canIssueTicket)
+    <div class="booking-operator-note mb-4"><i class="bi bi-ticket-perforated"></i><div><strong>PNR confirmed; electronic ticket not yet issued.</strong><span>The payment is confirmed. Use “Issue ticket” to reconcile the PNR and issue the e-ticket through Sabre.</span></div></div>
 @elseif($booking->product_type === 'hotel' && $booking->status === 'pending')
     <div class="booking-operator-note mb-4"><i class="bi bi-building-check"></i><div><strong>Hotel confirmation required.</strong><span>The stay and customer price are recorded. Confirm the reservation before presenting a locator as final.</span></div></div>
 @endif
@@ -103,7 +117,7 @@
         <section class="card content-card"><div class="card-body p-4">
             <h2 class="booking-panel-title">Tickets and services</h2>
             <div class="table-responsive"><table class="table admin-data-table mb-0"><thead><tr><th>Ticket number</th><th>Passenger</th><th>Status</th><th>Issued</th></tr></thead><tbody>
-                @forelse($booking->tickets as $ticket)<tr><td>{{ $ticket->ticket_number ?: 'Awaiting issuance' }}</td><td>{{ $ticket->passenger_reference ?: '—' }}</td><td>{{ ucfirst($ticket->status) }}</td><td>{{ $ticket->issued_at?->format('d M Y H:i') ?? '—' }}</td></tr>
+                @forelse($booking->tickets as $ticket)<tr><td>{{ $ticket->ticket_number ?: 'Awaiting issuance' }}</td><td>{{ $ticket->passenger_reference ?: '—' }}</td><td>{{ ucfirst($ticket->status) }}@if($ticket->status === 'failed' && $ticket->last_error)<small class="d-block text-danger mt-1">{{ $ticket->last_error }}</small>@endif</td><td>{{ $ticket->issued_at?->format('d M Y H:i') ?? '—' }}</td></tr>
                 @empty<tr><td colspan="4" class="text-center text-secondary py-4">No tickets have been issued for this booking.</td></tr>@endforelse
             </tbody></table></div>
             @if($booking->addons->isNotEmpty())

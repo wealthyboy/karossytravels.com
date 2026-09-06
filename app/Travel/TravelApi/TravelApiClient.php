@@ -103,7 +103,7 @@ final class TravelApiClient
     }
 
     /** @param array<string, mixed> $payload */
-    public function post(string $path, array $payload): array
+    public function post(string $path, array $payload, bool $retry = true): array
     {
         // Defensive: remove any empty agencyCustomerNumber fields to avoid TravelApi validation
         array_walk_recursive($payload, function (&$v, $k) use (&$payload) {
@@ -124,7 +124,7 @@ final class TravelApiClient
             // swallow logging errors
         }
 
-        $response = $this->authenticatedRequest()->post($path, $payload);
+        $response = $this->authenticatedRequest($retry)->post($path, $payload);
         if ($response->failed()) {
             $providerError = $this->providerErrorFrom($response->body());
 
@@ -161,6 +161,25 @@ final class TravelApiClient
             throw new RuntimeException("The travel system returned no usable data (HTTP {$response->status()}). Please retry or choose another fare.");
         }
 
+        // Sabre can return HTTP 200 while reporting a booking/ticketing failure
+        // in the JSON body. Treat those responses as failures so a postal code,
+        // flight number or other incidental field can never be mistaken for a
+        // successful PNR/ticketing response by downstream code.
+        if (! empty($json['errors'])) {
+            $providerError = $this->providerErrorFrom(json_encode($json, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: $response->body());
+
+            Log::warning('Travel API returned provider errors in a successful HTTP response.', [
+                'path' => $path,
+                'status' => $response->status(),
+                'provider_error' => $providerError,
+                'request_body' => $payload,
+                'response_body' => str($response->body())->limit(4000)->toString(),
+                'request_id' => request()->attributes->get('request_id'),
+            ]);
+
+            throw new RuntimeException('The travel system rejected the request'.($providerError ? ': '.$providerError : '.'));
+        }
+
         return $json;
     }
 
@@ -185,17 +204,41 @@ final class TravelApiClient
     {
         $json = json_decode($body, true);
         if (is_array($json)) {
-            $additionalMessage = collect((array) data_get($json, 'additionalMessages', []))
-                ->first(fn (mixed $message): bool => is_array($message) && in_array(($message['errorCode'] ?? null), ['INVALIDREQ', 'ERR'], true));
+            $additionalMessages = collect((array) data_get($json, 'additionalMessages', []))
+                ->filter(fn (mixed $message): bool => is_array($message))
+                ->flatMap(fn (array $message): array => [
+                    $message['message'] ?? null,
+                    $message['errorCode'] ?? null,
+                ]);
+
+            $providerErrors = collect((array) data_get($json, 'errors', []))
+                ->filter(fn (mixed $error): bool => is_array($error))
+                ->flatMap(fn (array $error): array => [
+                    $error['description'] ?? null,
+                    $error['message'] ?? null,
+                    $error['errorMessage'] ?? null,
+                    $error['type'] ?? null,
+                    $error['code'] ?? null,
+                ]);
+
+            $validationErrors = collect((array) data_get($json, 'validationErrors', []))
+                ->filter(fn (mixed $error): bool => is_array($error))
+                ->flatMap(fn (array $error): array => [
+                    $error['message'] ?? null,
+                    $error['description'] ?? null,
+                ]);
+
             $messages = collect([
-                is_array($additionalMessage) ? ($additionalMessage['message'] ?? null) : null,
                 data_get($json, 'message'),
                 data_get($json, 'errorCode'),
-                data_get($json, 'errors.0.message'),
-                data_get($json, 'errors.0.errorMessage'),
-                data_get($json, 'validationErrors.0.message'),
+                ...$additionalMessages->all(),
+                ...$providerErrors->all(),
+                ...$validationErrors->all(),
             ])->filter(fn (mixed $value): bool => is_string($value) && trim($value) !== '')
-                ->unique()->values();
+                ->map(fn (string $value): string => trim($value))
+                ->unique()
+                ->take(6)
+                ->values();
 
             if ($messages->isNotEmpty()) {
                 return $messages->implode(' — ');
@@ -250,6 +293,28 @@ final class TravelApiClient
     public function createAtpcoBooking(array $payload): array
     {
         return $this->post((string) $this->configuration['booking_create_path'], $payload);
+    }
+
+    /** Retrieve an existing Sabre booking/PNR before or after ticketing.
+     *  @param array<string, mixed> $payload
+     *  @return array<string, mixed>
+     */
+    public function getBooking(array $payload): array
+    {
+        return $this->post((string) $this->configuration['booking_get_path'], $payload);
+    }
+
+    /** Issue electronic flight tickets for a confirmed Sabre booking.
+     *  @param array<string, mixed> $payload
+     *  @return array<string, mixed>
+     */
+    public function fulfillFlightTickets(array $payload): array
+    {
+        // Ticket issuance is not safe to replay blindly: if Sabre commits the
+        // e-ticket but the HTTP response is lost, an automatic POST retry can
+        // attempt fulfillment twice. The caller reconciles the PNR before any
+        // manual/automatic retry instead.
+        return $this->post((string) $this->configuration['flight_ticket_fulfill_path'], $payload, retry: false);
     }
 
     /** @param array<string, mixed> $payload @return array<string, mixed> */
@@ -460,18 +525,23 @@ final class TravelApiClient
         ]);
     }
 
-    private function authenticatedRequest(): PendingRequest
+    private function authenticatedRequest(bool $retry = true): PendingRequest
     {
         // Keep provider failures inside PHP's request budget so controllers can
         // return a controlled JSON response instead of an HTML fatal-error page.
         $timeout = min(15, max(5, (int) $this->configuration['timeout']));
 
-        return Http::baseUrl($this->baseUrl())
+        $request = Http::baseUrl($this->baseUrl())
             ->acceptJson()
             ->asJson()
             ->connectTimeout(min(5, $timeout))
-            ->timeout($timeout)
-            ->retry(2, 250, throw: false)
+            ->timeout($timeout);
+
+        if ($retry) {
+            $request = $request->retry(2, 250, throw: false);
+        }
+
+        return $request
             ->withHeaders(['X-Request-ID' => request()->attributes->get('request_id', (string) str()->uuid())])
             ->withToken($this->accessToken());
     }
