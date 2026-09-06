@@ -281,8 +281,10 @@ final class FlightTicketingService
             $errorPolicy = 'HALT_ON_INVALID_MINIMUM_CONNECTING_TIME_ERROR';
         }
 
+        // Fulfill Flights uses one-based form-of-payment references. The first
+        // entry in formsOfPayment must therefore be referenced as 1, not 0.
         $fulfillment = [
-            'payment' => ['primaryFormOfPayment' => 0],
+            'payment' => ['primaryFormOfPayment' => 1],
         ];
 
         if ($priceQuoteRecordIds !== []) {
