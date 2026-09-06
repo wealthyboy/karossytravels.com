@@ -81,9 +81,9 @@ final class PaystackWebhookController extends Controller
             return response()->json(['received' => true]);
         }
 
-        // Paystack retries webhooks. Unknown or already completed references must
-        // still return 200 so the gateway does not keep retrying indefinitely.
-        if ($attempt->order_id) {
+        // Paystack retries webhooks. A completed attempt is already fully handled,
+        // but an order_id alone now means that seats were reserved before payment.
+        if ($attempt->status === 'completed') {
             return response()->json(['received' => true]);
         }
 

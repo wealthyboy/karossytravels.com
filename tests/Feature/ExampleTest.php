@@ -15,7 +15,7 @@ class ExampleTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk()
-            ->assertSee('Go further, for less.')
+            ->assertSee('Your world,')
             ->assertSee('Search flights');
     }
 }

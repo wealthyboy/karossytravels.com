@@ -63,7 +63,6 @@ final class FlightCheckoutController extends Controller
             ->where('travel_offer_id', $offer->id)
             ->where('session_fingerprint', $this->sessionFingerprint($request, $offer))
             ->where('status', 'paid')
-            ->whereNull('order_id')
             ->latest()
             ->first();
 
@@ -140,7 +139,6 @@ final class FlightCheckoutController extends Controller
             ->where('travel_offer_id', $offer->id)
             ->where('session_fingerprint', $this->sessionFingerprint($request, $offer))
             ->where('status', 'paid')
-            ->whereNull('order_id')
             ->latest()
             ->first();
         if ($paidAttempt) {
@@ -178,6 +176,29 @@ final class FlightCheckoutController extends Controller
                 'addon_ids' => $addons->pluck('id')->values()->all(),
             ]);
 
+            // Confirm the airline reservation before opening the payment gateway.
+            // A customer must never be charged for an itinerary whose segments
+            // have already returned an unconfirmed status such as UC or NN.
+            $customer = $this->checkoutCustomer($request, $checkout);
+            $order = $orders->create(
+                $offer->fresh(),
+                $customer,
+                $checkout['travellers'],
+                addons: $addons,
+                sendConfirmation: false,
+            );
+            $order->update([
+                'status' => 'awaiting_payment',
+                'currency' => $attempt->currency,
+                'subtotal_minor' => $base,
+                'fees_minor' => $addonTotal,
+                'total_minor' => $attempt->amount_minor,
+            ]);
+            $attempt->update([
+                'order_id' => $order->id,
+                'reservation_attempted_at' => now(),
+            ]);
+
             if ($this->demoPaymentEnabled()) {
                 $demoResponse = [
                     'status' => 'success',
@@ -202,7 +223,7 @@ final class FlightCheckoutController extends Controller
                     'offer_id' => $offer->id,
                 ]);
 
-                $order = $this->finalizePaidOrder($request, $offer, $attempt, $checkout, $orders, $ticketing, $rates, $travelLogger, $demoResponse, 'demo');
+                $order = $this->finalizePaidOrder($request, $offer, $attempt, $ticketing, $travelLogger, $demoResponse, 'demo');
 
                 return $this->success($request, $order);
             }
@@ -234,6 +255,9 @@ final class FlightCheckoutController extends Controller
                 'offer_id' => $offer->id,
             ]);
         } catch (Throwable $exception) {
+            if ($attempt && ! $attempt->order_id) {
+                $attempt->update(['status' => 'reservation_failed']);
+            }
             report($exception);
 
             $travelLogger->record('flight', 'payment', $this->demoPaymentEnabled() ? 'local_demo' : 'paystack', [
@@ -283,7 +307,7 @@ final class FlightCheckoutController extends Controller
             ->where('session_fingerprint', $this->sessionFingerprint($request, $offer))
             ->firstOrFail();
 
-        if ($attempt->order_id && ($order = Order::query()->find($attempt->order_id))) {
+        if ($attempt->status === 'completed' && $attempt->order_id && ($order = Order::query()->find($attempt->order_id))) {
             // Payment verification can be retried by the browser. Never create a
             // second PNR, but allow the idempotent ticketing stage to recover if
             // Sabre was temporarily unavailable during the first callback.
@@ -299,6 +323,16 @@ final class FlightCheckoutController extends Controller
         $checkout = $request->session()->get($sessionKey);
         if (! is_array($checkout) || empty($checkout['travellers']) || empty($checkout['contact'])) {
             return response()->json(['message' => 'Your checkout session expired before payment verification. Please contact Karossy support with your payment reference.'], 422);
+        }
+
+        $reservedOrder = $attempt->order_id
+            ? Order::query()->with('bookings')->find($attempt->order_id)
+            : null;
+        $reservedBooking = $reservedOrder?->bookings->firstWhere('product_type', 'flight');
+        if (! $reservedOrder || ! $reservedBooking || $reservedBooking->status !== 'confirmed' || blank($reservedBooking->provider_locator)) {
+            return response()->json([
+                'message' => 'Payment cannot continue because the airline reservation was not confirmed. Please choose another flight.',
+            ], 409);
         }
 
         try {
@@ -347,19 +381,25 @@ final class FlightCheckoutController extends Controller
 
         $claimed = CheckoutPaymentAttempt::query()
             ->whereKey($attempt->id)
-            ->whereNull('reservation_attempted_at')
-            ->update(['reservation_attempted_at' => now()]);
+            ->where('status', 'paid')
+            ->update(['status' => 'processing']);
         if ($claimed !== 1) {
+            $attempt->refresh();
+            if ($attempt->status === 'completed' && ($order = Order::query()->find($attempt->order_id))) {
+                return $this->success($request, $order);
+            }
+
             return response()->json([
-                'message' => "Payment is confirmed. Do not pay again. The airline confirmation is under review for reference {$attempt->reference}.",
+                'message' => "Payment is confirmed. Do not pay again. The booking is being completed for reference {$attempt->reference}.",
                 'payment_confirmed' => true,
                 'reference' => $attempt->reference,
             ], 409);
         }
 
         try {
-            $order = $this->finalizePaidOrder($request, $offer, $attempt, $checkout, $orders, $ticketing, $rates, $travelLogger, $verified, $gateway);
+            $order = $this->finalizePaidOrder($request, $offer, $attempt, $ticketing, $travelLogger, $verified, $gateway);
         } catch (Throwable $exception) {
+            $attempt->update(['status' => 'paid']);
             report($exception);
             $travelLogger->record('flight', 'booking', $gateway, [
                 'offer_id' => $offer->id,
@@ -381,39 +421,34 @@ final class FlightCheckoutController extends Controller
         return $this->success($request, $order);
     }
 
-    /** @param array<string, mixed> $checkout @param array<string, mixed> $gatewayData */
+    /** @param array<string, mixed> $gatewayData */
     private function finalizePaidOrder(
         Request $request,
         TravelOffer $offer,
         CheckoutPaymentAttempt $attempt,
-        array $checkout,
-        AirOrderService $orders,
         FlightTicketingService $ticketing,
-        ExchangeRateService $rates,
         TravelLogger $travelLogger,
         array $gatewayData,
         string $gateway,
     ): Order {
-        $customer = $this->checkoutCustomer($request, $checkout);
-        $addons = Addon::query()->whereIn('id', $attempt->addon_ids ?? [])->where('type', 'flight')->where('active', true)->get();
-        $order = $orders->create($offer->fresh(), $customer, $checkout['travellers'], addons: $addons, sendConfirmation: false);
-        $paidAddonTotal = $addons->sum(fn (Addon $addon): int => $rates->convertMinor($addon->price_cents, $addon->currency, $attempt->currency)['amount_minor']);
-        $order->update([
-            'currency' => $attempt->currency,
-            'subtotal_minor' => max(0, $attempt->amount_minor - $paidAddonTotal),
-            'fees_minor' => $paidAddonTotal,
-            'total_minor' => $attempt->amount_minor,
-        ]);
-        Payment::create([
+        $order = Order::query()->with('bookings')->findOrFail($attempt->order_id);
+        $booking = $order->bookings->firstWhere('product_type', 'flight');
+        if (! $booking || $booking->status !== 'confirmed' || blank($booking->provider_locator)) {
+            throw new \RuntimeException('The confirmed airline reservation could not be recovered after payment.');
+        }
+
+        Payment::firstOrCreate([
+            'gateway_reference' => $attempt->reference,
+        ], [
             'order_id' => $order->id,
             'gateway' => $gateway,
-            'gateway_reference' => $attempt->reference,
             'status' => in_array($gateway, ['demo', 'paystack_callback_test'], true) ? 'simulated' : 'paid',
             'currency' => $attempt->currency,
             'amount_minor' => $attempt->amount_minor,
             'paid_at' => now(),
             'metadata' => ['channel' => data_get($gatewayData, 'channel'), 'transaction_id' => data_get($gatewayData, 'id')],
         ]);
+        $order->update(['status' => 'confirmed']);
         $attempt->update(['status' => 'completed', 'order_id' => $order->id]);
         $request->session()->put("flight_checkout.{$offer->id}.order_id", $order->id);
         $request->session()->put("completed_orders.{$order->id}", true);
@@ -421,10 +456,9 @@ final class FlightCheckoutController extends Controller
         // Payment is complete and the PNR is confirmed. Ticketing is the next
         // supplier stage; failures are persisted for Operations and must never
         // ask the customer to pay a second time.
-        $booking = $order->bookings()->where('product_type', 'flight')->firstOrFail();
         $ticketing->issueAfterPayment($booking);
 
-        $orders->sendConfirmation($order->fresh());
+        app(AirOrderService::class)->sendConfirmation($order->fresh());
         $travelLogger->record('flight', 'payment', match ($gateway) {
             'demo' => 'local_demo',
             'paystack_callback_test' => 'paystack_test_callback',

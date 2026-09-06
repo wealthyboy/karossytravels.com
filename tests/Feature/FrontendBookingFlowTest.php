@@ -138,7 +138,14 @@ final class FrontendBookingFlowTest extends TestCase
             ->assertJsonPath('metadata.traveller_count', 1)
             ->assertJsonMissingPath('access_code');
         $attempt = CheckoutPaymentAttempt::query()->firstOrFail();
-        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('orders', 1);
+        $reservedOrder = Order::query()->firstOrFail();
+        $reservedBooking = $reservedOrder->bookings()->firstOrFail();
+        $this->assertSame('awaiting_payment', $reservedOrder->status);
+        $this->assertSame('confirmed', $reservedBooking->status);
+        $this->assertStringStartsWith('TEST-', $reservedBooking->provider_locator);
+        $this->assertSame($reservedOrder->id, $attempt->order_id);
+        $this->assertDatabaseCount('payments', 0);
 
         Http::fake([
             'https://api.paystack.co/transaction/verify/*' => Http::response([
