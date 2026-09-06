@@ -258,6 +258,19 @@
     };
     addonInputs.forEach(input => input.addEventListener('change', updateTotal));
     updateTotal();
+    const applyConfirmedTotal = body => {
+        const confirmedTotal = Number(body?.amount_minor);
+        if (!Number.isFinite(confirmedTotal) || confirmedTotal < 0) return;
+
+        // The server has just revalidated this fare. Reflect its authoritative
+        // amount everywhere before opening payment, including when the fare moved.
+        const addonTotal = addonInputs
+            .filter(input => input.checked)
+            .reduce((sum, input) => sum + Number(input.dataset.addonPrice || 0), 0);
+        payButton.dataset.baseTotal = String(Math.max(0, confirmedTotal - addonTotal));
+        document.querySelector('[data-confirm-total]').textContent = money(confirmedTotal);
+        document.querySelector('[data-checkout-total]').textContent = money(confirmedTotal);
+    };
 
     const responseBody = async response => {
         const type = response.headers.get('content-type') || '';
@@ -410,6 +423,7 @@
                 showConfirmation(initialized.body);
                 return;
             }
+            applyConfirmedTotal(initialized.body);
             paymentModal?.hide();
             openPaystack(initialized.body);
         } catch (error) {

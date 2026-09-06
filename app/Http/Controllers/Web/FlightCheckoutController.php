@@ -130,15 +130,10 @@ final class FlightCheckoutController extends Controller
 
         $attempt = null;
         try {
+            // Revalidation persists the airline's latest fare on the offer. Build the
+            // payment attempt from that fresh value so a price movement updates the
+            // checkout total instead of trapping the customer in a retry loop.
             $validation = $revalidation->revalidate($offer);
-            if ($validation['price_changed'] ?? false) {
-                return $this->failure(
-                    $request,
-                    'The airline changed the fare. We refreshed your total; please review it before confirming again.',
-                    route('checkout.travellers', $offer),
-                    409,
-                );
-            }
 
             $addons = Addon::query()->whereIn('id', $validated['addons'] ?? [])->where('type', 'flight')->where('active', true)->get();
             $currency = $resolver->resolve($request);
@@ -233,6 +228,7 @@ final class FlightCheckoutController extends Controller
 
         return response()->json([
             'message' => 'Payment is ready.',
+            'price_changed' => (bool) ($validation['price_changed'] ?? false),
             'reference' => $attempt->reference,
             'public_key' => $publicKey,
             'email' => $attempt->email,

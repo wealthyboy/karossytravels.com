@@ -25,15 +25,14 @@ final class MobileCheckoutController extends Controller
     {
         $data = $request->validate($this->flightRules());
         try {
+            // Always initialize payment from the freshly revalidated offer. The API
+            // returns the exact current amount to the app, including fare movements.
             $validation = $revalidation->revalidate($offer);
-            if ($validation['price_changed'] ?? false) {
-                return response()->json(['message' => 'The fare changed. Return to the offer and review the new total before paying.'], 409);
-            }
             $currency = $this->currency($request, $offer->currency);
             $amount = $rates->convertMinor($offer->fresh()->selling_total_minor, $offer->currency, $currency)['amount_minor'];
             $primary = $data['travellers'][0];
             $phone = PhoneCountryCodes::normalize($data['contact']['phone_code'], $data['contact']['phone']);
-            return $this->initialize($request, $paystack, $currency, $amount, strtolower($data['contact']['email']), [
+            $response = $this->initialize($request, $paystack, $currency, $amount, strtolower($data['contact']['email']), [
                 'travel_offer_id' => $offer->id,
                 'checkout_payload' => [
                     'travellers' => $data['travellers'],
@@ -41,6 +40,12 @@ final class MobileCheckoutController extends Controller
                 ],
                 'booking_type' => 'flight',
             ]);
+
+            $payload = $response->getData(true);
+            data_set($payload, 'data.price_changed', (bool) ($validation['price_changed'] ?? false));
+            $response->setData($payload);
+
+            return $response;
         } catch (Throwable $exception) {
             report($exception);
             return response()->json(['message' => 'This fare could not be prepared for payment. Please retry or choose another flight.'], 422);
