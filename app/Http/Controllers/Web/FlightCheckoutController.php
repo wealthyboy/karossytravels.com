@@ -59,6 +59,13 @@ final class FlightCheckoutController extends Controller
 
                 return $addon;
             });
+        $recoverableAttempt = CheckoutPaymentAttempt::query()
+            ->where('travel_offer_id', $offer->id)
+            ->where('session_fingerprint', $this->sessionFingerprint($request, $offer))
+            ->where('status', 'paid')
+            ->whereNull('order_id')
+            ->latest()
+            ->first();
 
         return view('checkout.travellers', [
             ...$this->offerData($request, $offer->fresh(), $resolver, $rates),
@@ -68,6 +75,7 @@ final class FlightCheckoutController extends Controller
             'addons' => $addons,
             'airlineCode' => $airlineCode,
             'demoPaymentEnabled' => $this->demoPaymentEnabled(),
+            'recoverableAttempt' => $recoverableAttempt,
         ]);
     }
 
@@ -126,6 +134,21 @@ final class FlightCheckoutController extends Controller
 
         if (! is_array($checkout) || empty($checkout['travellers']) || empty($checkout['contact'])) {
             return $this->failure($request, 'Your checkout session has expired. Enter the traveller details again.', route('checkout.travellers', $offer), 422);
+        }
+
+        $paidAttempt = CheckoutPaymentAttempt::query()
+            ->where('travel_offer_id', $offer->id)
+            ->where('session_fingerprint', $this->sessionFingerprint($request, $offer))
+            ->where('status', 'paid')
+            ->whereNull('order_id')
+            ->latest()
+            ->first();
+        if ($paidAttempt) {
+            return response()->json([
+                'message' => "Payment is already confirmed. Do not pay again. Karossy is reviewing the airline confirmation for reference {$paidAttempt->reference}.",
+                'payment_confirmed' => true,
+                'reference' => $paidAttempt->reference,
+            ], 409);
         }
 
         $attempt = null;
@@ -280,7 +303,10 @@ final class FlightCheckoutController extends Controller
 
         try {
             $localCallback = $this->localCallbackFinalizationEnabled();
-            $verified = $localCallback
+            $webhookVerified = $attempt->status === 'paid' && is_array($attempt->gateway_response);
+            $verified = $webhookVerified
+                ? $attempt->gateway_response
+                : ($localCallback
                 ? [
                     'status' => 'success',
                     'amount' => $attempt->amount_minor,
@@ -290,7 +316,7 @@ final class FlightCheckoutController extends Controller
                     'id' => $validated['transaction_id'] ?? null,
                     'local_callback' => true,
                 ]
-                : $paystack->verify($attempt->reference);
+                : $paystack->verify($attempt->reference));
             if (data_get($verified, 'status') !== 'success') {
                 return response()->json(['message' => 'Waiting for payment confirmation.', 'pending' => true], 202);
             }
@@ -303,7 +329,6 @@ final class FlightCheckoutController extends Controller
 
             $attempt->update(['status' => 'paid', 'verified_at' => now(), 'gateway_response' => $verified]);
             $gateway = $localCallback ? 'paystack_callback_test' : 'paystack';
-            $order = $this->finalizePaidOrder($request, $offer, $attempt, $checkout, $orders, $ticketing, $rates, $travelLogger, $verified, $gateway);
         } catch (Throwable $exception) {
             report($exception);
 
@@ -318,6 +343,39 @@ final class FlightCheckoutController extends Controller
             ]);
 
             return response()->json(['message' => 'Payment could not be verified right now. Please try again shortly or contact Karossy support.'], 422);
+        }
+
+        $claimed = CheckoutPaymentAttempt::query()
+            ->whereKey($attempt->id)
+            ->whereNull('reservation_attempted_at')
+            ->update(['reservation_attempted_at' => now()]);
+        if ($claimed !== 1) {
+            return response()->json([
+                'message' => "Payment is confirmed. Do not pay again. The airline confirmation is under review for reference {$attempt->reference}.",
+                'payment_confirmed' => true,
+                'reference' => $attempt->reference,
+            ], 409);
+        }
+
+        try {
+            $order = $this->finalizePaidOrder($request, $offer, $attempt, $checkout, $orders, $ticketing, $rates, $travelLogger, $verified, $gateway);
+        } catch (Throwable $exception) {
+            report($exception);
+            $travelLogger->record('flight', 'booking', $gateway, [
+                'offer_id' => $offer->id,
+                'reference' => $attempt->reference,
+            ], [], [
+                'status' => 'failed',
+                'session_id' => $offer->flightSearch()->value('session_id'),
+                'offer_id' => $offer->id,
+                'error_message' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => "Your payment is confirmed. Do not pay again. The airline could not immediately confirm the seats, so Karossy is reviewing the booking. Reference: {$attempt->reference}.",
+                'payment_confirmed' => true,
+                'reference' => $attempt->reference,
+            ], 503);
         }
 
         return $this->success($request, $order);

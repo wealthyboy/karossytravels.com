@@ -17,6 +17,7 @@
     @endguest
 
     @if(session('error'))<div class="alert alert-danger">{{ session('error') }}</div>@endif
+    @if($recoverableAttempt)<div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-3" role="alert"><span><strong>Payment confirmed.</strong> Do not pay again. Reference: {{ $recoverableAttempt->reference }}</span><span class="fw-bold">Airline confirmation is under review</span></div>@endif
     @if($errors->any())<div class="alert alert-danger" data-validation-summary><strong>Please check the traveller details.</strong><ul class="mb-0 mt-2">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     <div class="alert alert-danger d-none" data-booking-error role="alert"></div>
 
