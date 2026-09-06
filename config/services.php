@@ -51,7 +51,7 @@ return [
             'ticketing_form_of_payment' => strtoupper((string) env('TRAVEL_API_TICKETING_FORM_OF_PAYMENT', 'CASH')),
             'ticketing_received_from' => env('TRAVEL_API_TICKETING_RECEIVED_FROM', 'KAROSSY'),
             'ticketing_commit_wait_ms' => (int) env('TRAVEL_API_TICKETING_COMMIT_WAIT_MS', 5000),
-            'ticketing_error_policy' => env('TRAVEL_API_TICKETING_ERROR_POLICY', 'HALT_ON_ERROR'),
+            'ticketing_error_policy' => env('TRAVEL_API_TICKETING_ERROR_POLICY', 'HALT_ON_INVALID_MINIMUM_CONNECTING_TIME_ERROR'),
             'agency_number'       => env('TRAVEL_API_AGENCY_NUMBER'),
             'agency_state'        => env('TRAVEL_API_AGENCY_STATE', 'Lagos'),
             'hotel_avail_path' => env('TRAVEL_API_HOTEL_AVAIL_PATH', '/v5/get/hotelavail'),

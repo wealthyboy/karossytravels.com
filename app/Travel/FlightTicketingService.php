@@ -273,6 +273,14 @@ final class FlightTicketingService
      */
     private function fulfillmentPayload(Booking $booking, array $priceQuoteRecordIds): array
     {
+        $errorPolicy = strtoupper(trim((string) config(
+            'services.travel.travel_api.ticketing_error_policy',
+            'HALT_ON_INVALID_MINIMUM_CONNECTING_TIME_ERROR',
+        )));
+        if (! in_array($errorPolicy, ['ALLOW_PARTIAL_FULFILLMENT', 'HALT_ON_INVALID_MINIMUM_CONNECTING_TIME_ERROR'], true)) {
+            $errorPolicy = 'HALT_ON_INVALID_MINIMUM_CONNECTING_TIME_ERROR';
+        }
+
         $fulfillment = [
             'payment' => ['primaryFormOfPayment' => 0],
         ];
@@ -290,7 +298,7 @@ final class FlightTicketingService
             'acceptPriceChanges' => false,
             'acceptNegotiatedFare' => false,
             'commitTicketToBookingWaitTime' => max(1000, (int) config('services.travel.travel_api.ticketing_commit_wait_ms', 5000)),
-            'errorHandlingPolicy' => [trim((string) config('services.travel.travel_api.ticketing_error_policy', 'HALT_ON_ERROR')) ?: 'HALT_ON_ERROR'],
+            'errorHandlingPolicy' => [$errorPolicy],
             'formsOfPayment' => [[
                 'type' => $this->formOfPayment(),
             ]],
@@ -561,4 +569,3 @@ final class FlightTicketingService
         ]);
     }
 }
-
