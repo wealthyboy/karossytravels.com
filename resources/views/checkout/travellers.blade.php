@@ -314,6 +314,11 @@
         for (let attempt = 0; attempt < 60; attempt += 1) {
             if (attempt) await new Promise(resolve => window.setTimeout(resolve, 5000));
             const { response, body } = await post(checkoutForm.dataset.verifyUrl, { reference, transaction_id: transactionId });
+            if (response.status === 202 && body.payment_confirmed && body.booking_pending) {
+                const pending = new Error(body.message || `Payment confirmed. Do not pay again. Reference: ${reference}.`);
+                pending.paymentConfirmed = true;
+                throw pending;
+            }
             if (response.status === 202 && body.pending) {
                 setFinalizationProgress(35, 'Confirming your payment', 'We are waiting for the secure payment confirmation. You do not need to pay again.');
                 continue;
@@ -330,8 +335,13 @@
             showConfirmation(await waitForVerifiedPayment(reference, transactionId));
         } catch (error) {
             restoreCheckout();
-            payButton.disabled = false;
+            payButton.disabled = Boolean(error.paymentConfirmed);
+            if (error.paymentConfirmed) {
+                payButton.textContent = 'Payment confirmed';
+            }
             errorBox.textContent = error.message;
+            errorBox.classList.toggle('alert-danger', !error.paymentConfirmed);
+            errorBox.classList.toggle('alert-warning', Boolean(error.paymentConfirmed));
             errorBox.classList.remove('d-none');
             errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }

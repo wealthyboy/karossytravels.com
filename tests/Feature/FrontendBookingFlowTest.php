@@ -190,6 +190,62 @@ final class FrontendBookingFlowTest extends TestCase
             ->assertSee('Create account');
     }
 
+    public function test_confirmed_payment_is_not_reported_as_failed_when_airline_booking_fails(): void
+    {
+        config([
+            'services.paystack.public_key' => 'pk_test_checkout',
+            'services.paystack.secret_key' => 'sk_test_checkout',
+            'travel.checkout.demo_payment_enabled' => false,
+        ]);
+        $offer = $this->createOfferForGuestRedirect();
+
+        $this->postJson(route('checkout.travellers.store', $offer), [
+            'travellers' => [[
+                'type' => 'ADT', 'title' => 'Ms', 'first_name' => 'Ada', 'last_name' => 'Okafor',
+                'date_of_birth' => '1992-05-14', 'gender' => 'female', 'nationality' => 'NG',
+                'passport_number' => 'B12345678', 'passport_country' => 'NG',
+                'passport_expiry' => now()->addYears(2)->toDateString(),
+            ]],
+            'contact' => ['email' => 'ada.pending@example.com', 'phone' => '+234 801 234 5678'],
+        ])->assertOk();
+
+        $initialize = $this->postJson(route('checkout.payment.initialize', $offer), ['terms' => 1])->assertOk();
+        $attempt = CheckoutPaymentAttempt::query()->firstOrFail();
+        Http::fake([
+            'https://api.paystack.co/transaction/verify/*' => Http::response([
+                'status' => true,
+                'data' => [
+                    'status' => 'success', 'amount' => $attempt->amount_minor,
+                    'currency' => $attempt->currency, 'reference' => $attempt->reference,
+                    'channel' => 'card', 'id' => 123,
+                ],
+            ]),
+        ]);
+        $registeredUser = User::factory()->create(['email' => 'ada.pending@example.com']);
+        Customer::create([
+            'user_id' => $registeredUser->id,
+            'first_name' => 'Ada',
+            'last_name' => 'Okafor',
+            'email' => 'ada.pending@example.com',
+            'phone' => '+234 801 234 5678',
+            'status' => 'active',
+        ]);
+
+        $this->postJson(route('checkout.payment.verify', $offer), ['reference' => $initialize->json('reference')])
+            ->assertAccepted()
+            ->assertJsonPath('payment_confirmed', true)
+            ->assertJsonPath('booking_pending', true)
+            ->assertJsonPath('reference', $attempt->reference)
+            ->assertJsonFragment(['message' => "Payment confirmed. Do not pay again. The airline could not immediately confirm the seats, so Karossy is reviewing the booking. Reference: {$attempt->reference}."]);
+
+        $this->assertDatabaseHas('checkout_payment_attempts', [
+            'id' => $attempt->id,
+            'status' => 'paid',
+        ]);
+        $this->assertNotNull($attempt->fresh()->reservation_attempted_at);
+        $this->assertDatabaseCount('orders', 0);
+    }
+
     public function test_guest_can_create_an_account_inside_checkout_without_a_redirect(): void
     {
         $this->postJson(route('register.store'), [

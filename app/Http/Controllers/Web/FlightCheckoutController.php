@@ -279,6 +279,8 @@ final class FlightCheckoutController extends Controller
             return response()->json(['message' => 'Your checkout session expired before payment verification. Please contact Karossy support with your payment reference.'], 422);
         }
 
+        $paymentConfirmed = $attempt->status === 'paid' || $attempt->verified_at !== null;
+
         try {
             $localCallback = $this->localCallbackFinalizationEnabled();
             $verified = $localCallback
@@ -303,10 +305,22 @@ final class FlightCheckoutController extends Controller
             }
 
             $attempt->update(['status' => 'paid', 'verified_at' => now(), 'gateway_response' => $verified]);
+            $paymentConfirmed = true;
             $gateway = $localCallback ? 'paystack_callback_test' : 'paystack';
             $order = $this->finalizePaidOrder($request, $offer, $attempt, $checkout, $orders, $ticketing, $rates, $travelLogger, $verified, $gateway);
         } catch (Throwable $exception) {
             report($exception);
+
+            $paymentConfirmed = $paymentConfirmed
+                || $attempt->fresh()->status === 'paid'
+                || $attempt->fresh()->verified_at !== null;
+
+            if ($paymentConfirmed) {
+                $attempt->update([
+                    'status' => 'paid',
+                    'reservation_attempted_at' => now(),
+                ]);
+            }
 
             $travelLogger->record('flight', 'payment', 'paystack', [
                 'offer_id' => $offer->id,
@@ -317,6 +331,15 @@ final class FlightCheckoutController extends Controller
                 'offer_id' => $offer->id,
                 'error_message' => $exception->getMessage(),
             ]);
+
+            if ($paymentConfirmed) {
+                return response()->json([
+                    'message' => "Payment confirmed. Do not pay again. The airline could not immediately confirm the seats, so Karossy is reviewing the booking. Reference: {$attempt->reference}.",
+                    'payment_confirmed' => true,
+                    'booking_pending' => true,
+                    'reference' => $attempt->reference,
+                ], 202);
+            }
 
             return response()->json(['message' => 'Payment could not be verified right now. Please try again shortly or contact Karossy support.'], 422);
         }
