@@ -15,6 +15,7 @@ final class TravelApiGroupedItineraryMapper
         $schedules = $this->indexById((array) ($grouped['scheduleDescs'] ?? []));
         $legs = $this->indexById((array) ($grouped['legDescs'] ?? []));
         $allowances = $this->indexById((array) ($grouped['baggageAllowanceDescs'] ?? []));
+        $fareComponents = $this->indexById((array) ($grouped['fareComponentDescs'] ?? []));
         $offers = [];
 
         foreach ((array) ($grouped['itineraryGroups'] ?? []) as $groupIndex => $group) {
@@ -28,7 +29,7 @@ final class TravelApiGroupedItineraryMapper
                     $totalMinor = $this->minor($totalFare['totalPrice'] ?? 0);
                     $taxesMinor = $this->minor($totalFare['totalTaxAmount'] ?? 0);
                     $passengerInfo = (array) data_get($fare, 'passengerInfoList.0.passengerInfo', []);
-                    $fareSegments = $this->fareSegments($passengerInfo);
+                    $fareSegments = $this->fareSegments($passengerInfo, $fareComponents);
                     $baggageBySegment = $this->baggageBySegment($passengerInfo, $allowances);
                     $segments = [];
                     $segmentIndex = 0;
@@ -141,16 +142,20 @@ final class TravelApiGroupedItineraryMapper
     }
 
     /** @param array<string, mixed> $passengerInfo
+     *  @param array<int, array<string, mixed>> $fareComponentDescriptions
      *  @return array<int, array<string, mixed>>
      */
-    private function fareSegments(array $passengerInfo): array
+    private function fareSegments(array $passengerInfo, array $fareComponentDescriptions): array
     {
         $segments = [];
         foreach ((array) ($passengerInfo['fareComponents'] ?? []) as $component) {
+            $description = $fareComponentDescriptions[(int) ($component['ref'] ?? 0)] ?? [];
+            $fareBasisCode = $component['fareBasisCode'] ?? $description['fareBasisCode'] ?? null;
+
             foreach ((array) ($component['segments'] ?? []) as $segment) {
                 $segments[] = [
                     ...(array) ($segment['segment'] ?? []),
-                    'fareBasisCode' => $component['fareBasisCode'] ?? null,
+                    'fareBasisCode' => $fareBasisCode,
                 ];
             }
         }

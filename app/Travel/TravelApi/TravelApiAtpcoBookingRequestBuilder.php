@@ -152,9 +152,13 @@ final class TravelApiAtpcoBookingRequestBuilder
             'specificFares' => collect($offer->itinerary)->values()
                 ->map(fn (array $segment, int $index): array => [
                     'fareBasisCode' => strtoupper((string) ($segment['fare_basis_code'] ?? '')),
-                    'flightIndices' => [$index + 1],
+                    'flightIndex' => $index + 1,
                 ])->filter(fn (array $fare): bool => $fare['fareBasisCode'] !== '')
-                ->values()->all(),
+                ->groupBy('fareBasisCode')
+                ->map(fn ($segments, string $fareBasisCode): array => [
+                    'fareBasisCode' => $fareBasisCode,
+                    'flightIndices' => $segments->pluck('flightIndex')->values()->all(),
+                ])->values()->all(),
         ];
 
         return [['qualifiers' => $qualifier]];

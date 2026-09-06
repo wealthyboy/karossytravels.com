@@ -61,6 +61,7 @@ final class TravelApiFlightMappingTest extends TestCase
     public function test_it_resolves_grouped_itinerary_references_into_an_offer(): void
     {
         $response = ['groupedItineraryResponse' => [
+            'fareComponentDescs' => [['id' => 1, 'fareBasisCode' => 'OLOW']],
             'scheduleDescs' => [[
                 'id' => 1, 'stopCount' => 0, 'elapsedTime' => 120,
                 'departure' => ['airport' => 'WAW', 'time' => '14:20:00+02:00'],
@@ -78,7 +79,7 @@ final class TravelApiFlightMappingTest extends TestCase
                         'totalFare' => ['totalPrice' => 131.80, 'totalTaxAmount' => 73.80, 'currency' => 'USD'],
                         'passengerInfoList' => [['passengerInfo' => [
                             'nonRefundable' => true,
-                            'fareComponents' => [['fareBasisCode' => 'OLOW', 'segments' => [['segment' => ['bookingCode' => 'O', 'cabinCode' => 'Y', 'seatsAvailable' => 9]]]]],
+                            'fareComponents' => [['ref' => 1, 'segments' => [['segment' => ['bookingCode' => 'O', 'cabinCode' => 'Y', 'seatsAvailable' => 9]]]]],
                             'baggageInformation' => [['segments' => [['id' => 0]], 'allowance' => ['ref' => 1]]],
                         ]]],
                     ]]],

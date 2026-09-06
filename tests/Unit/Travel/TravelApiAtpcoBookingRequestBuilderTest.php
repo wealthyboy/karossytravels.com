@@ -35,6 +35,7 @@ final class TravelApiAtpcoBookingRequestBuilderTest extends TestCase
         $this->assertSame('CTCE', $payload['travelers'][0]['specialServices'][1]['code']);
         $this->assertSame(['NO', 'UC', 'US', 'UN', 'UU', 'LL', 'HL'], $payload['flightDetails']['haltOnFlightStatusCodes']);
         $this->assertSame('TOTTH', $payload['flightDetails']['flightPricing'][0]['qualifiers']['specificFares'][0]['fareBasisCode']);
+        $this->assertSame([1], $payload['flightDetails']['flightPricing'][0]['qualifiers']['specificFares'][0]['flightIndices']);
         $this->assertSame([1], $payload['flightDetails']['flightPricing'][0]['qualifiers']['travelerIndices']);
         $this->assertSame(3000, $payload['asynchronousUpdateWaitTime']);
         $this->assertSame(['HALT_ON_ERROR'], $payload['errorHandlingPolicy']);
