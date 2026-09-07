@@ -332,6 +332,7 @@ main .h5 {
 .booking-ticket-issued { background: #e7f6ee; color: #187449; }
 .booking-ticket-pending { background: #fff4d7; color: #846100; }
 .booking-ticket-unticketed { background: #eef0f4; color: #687181; }
+.booking-ticket-failed { background: #fdebed; color: #a61b2b; }
 .booking-empty-state { padding: 4rem 1rem !important; text-align: center; }
 .booking-empty-state i, .booking-empty-state strong, .booking-empty-state span { display: block; }
 .booking-empty-state i { color: #a7afbb; font-size: 1.6rem; margin-bottom: .5rem; }
@@ -1981,8 +1982,10 @@ main .h5 {
 .public-coming-search small { display: block; }
 .public-coming-search strong { font-size: .95rem; }
 .public-coming-search small { color: #747c89; font-size: var(--small-font-size, .78rem); margin-top: .25rem; }
+.public-coming-actions { align-items: center; display: flex; flex: 0 0 auto; gap: .55rem; }
+.public-coming-actions .btn { align-items: center; display: inline-flex; gap: .4rem; justify-content: center; white-space: nowrap; }
 
-.public-trust-strip { background: #fff; padding: .75rem 0 .9rem; position: relative; z-index: 1; }
+.public-trust-strip { background: #fff; padding: .75rem 0 .4rem; position: relative; z-index: 1; }
 .public-trust-card { background: radial-gradient(circle at 4% 8%, rgba(204, 0, 11, .07), transparent 19rem), linear-gradient(120deg, #fafafd 0%, #ffffff 52%, #fff7f8 100%); border: 1px solid rgba(23, 20, 63, .07); border-radius: 1.6rem; box-shadow: 0 16px 42px rgba(23, 20, 63, .065), inset 0 1px 0 rgba(255, 255, 255, .92); display: grid; grid-template-columns: repeat(4, 1fr); overflow: hidden; padding: .3rem .45rem; }
 .public-trust-card > div { align-items: center; display: flex; gap: .85rem; min-width: 0; padding: 1.2rem .9rem; }
 .public-trust-card i { align-items: center; background: rgba(204, 0, 11, .065); border: 1px solid rgba(204, 0, 11, .08); border-radius: .8rem; color: var(--karossy-red); display: inline-flex; flex: 0 0 auto; font-size: 1.15rem; height: 2.55rem; justify-content: center; width: 2.55rem; }
@@ -2317,6 +2320,7 @@ main > .admin-page-heading > p:not(.small) {
     .public-service-tab { flex-basis: 5rem; font-size: var(--small-font-size, .78rem); }
     .public-service-icon { font-size: 1.15rem; height: 2.5rem; width: 2.5rem; }
     .public-coming-search { align-items: flex-start; flex-wrap: wrap; }
+    .public-coming-actions { display: grid; grid-template-columns: 1fr; width: 100%; }
     .public-coming-search .btn { width: 100%; }
     .hotel-search-form { grid-template-columns: 1fr; }
     .hotel-bundle-option { grid-column: auto; }
@@ -2643,6 +2647,8 @@ body { max-width: 100%; overflow-x: clip; }
 .partner-hero > .public-container { align-items: center; display: grid; gap: clamp(2rem,5vw,5rem); grid-template-columns: minmax(0,.85fr) minmax(28rem,1fr); }
 .partner-hero h1 { font-size: clamp(2.1rem,5vw,3.6rem); font-weight: 830; letter-spacing: -.05em; line-height: 1; margin: .75rem 0 1rem; }
 .partner-hero > .public-container > div > p { color: #657080; font-size: .95rem; line-height: 1.7; }
+.partner-hero-actions { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 1.25rem; }
+.partner-hero-actions .btn { align-items: center; display: inline-flex; gap: .45rem; justify-content: center; }
 .partner-benefits { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.4rem; }
 .partner-benefits span { background: #fff; border: 1px solid #e2e6ed; border-radius: 999px; font-size: var(--small-font-size, .78rem); font-weight: 700; padding: .55rem .7rem; }
 .partner-benefits i { color: var(--karossy-red); margin-right: .3rem; }
@@ -2708,12 +2714,12 @@ body { max-width: 100%; overflow-x: clip; }
 .holiday-enquiry-card > div { align-items: flex-start; border-top: 1px solid #eceef2; display: flex; font-size: var(--small-font-size, .78rem); justify-content: space-between; padding: .85rem 0; }
 .holiday-enquiry-card > div span { color: #747e8d; }
 .holiday-enquiry-total strong { font-size: 1.1rem; }
-.holiday-enquiry-card > .btn { min-height: 3.2rem; width: 100%; }
+.holiday-enquiry-card > .btn { align-items: center; display: flex; gap: .45rem; justify-content: center; min-height: 3.2rem; text-align: center; width: 100%; }
 .holiday-enquiry-card > small { color: #7b8390; display: block; font-size: var(--small-font-size, .78rem); line-height: 1.5; margin-top: .65rem; text-align: center; }
 .home-destinations,
 .home-flight-offers,
 .home-holidays { padding: 4.8rem 0; }
-.home-destinations { padding-top: 2.4rem; }
+.home-destinations { padding-top: 1.25rem; }
 .home-holidays { background: #f6f7fa; }
 .destination-tabs { border-bottom: 1px solid #e2e5eb; display: flex; gap: 1.75rem; margin-bottom: 1.35rem; overflow-x: auto; }
 .destination-tabs button { background: transparent; border: 0; color: #606878; font-size: .8rem; font-weight: 750; padding: .6rem .15rem .75rem; position: relative; white-space: nowrap; }
@@ -2960,10 +2966,12 @@ body { max-width: 100%; overflow-x: clip; }
 .home-app-section h2 { font-size: clamp(1.8rem,4vw,3rem); font-weight: 830; letter-spacing: -.045em; margin: .55rem 0; max-width: 38rem; }
 .home-app-section p { color: #c3cee0; font-size: .9rem; line-height: 1.65; max-width: 38rem; }
 .app-store-actions { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 1.25rem; }
-.app-store-actions > span { align-items: center; background: #fff; border-radius: .75rem; color: var(--karossy-navy); display: grid; gap: 0 .6rem; grid-template-columns: auto 1fr; min-width: 10rem; padding: .65rem .8rem; }
+.app-store-actions > a { align-items: center; background: #fff; border-radius: .75rem; color: var(--karossy-navy); display: grid; gap: 0 .6rem; grid-template-columns: auto 1fr; min-width: 10rem; padding: .65rem .8rem; text-decoration: none; transition: transform .2s ease, box-shadow .2s ease; }
+.app-store-actions > a:hover { box-shadow: 0 .65rem 1.4rem rgba(0,0,0,.18); color: var(--karossy-navy); transform: translateY(-2px); }
 .app-store-actions i { font-size: 1.35rem; grid-row: 1 / 3; }
 .app-store-actions small { font-size: var(--small-font-size, .78rem); }
 .app-store-actions strong { font-size: var(--small-font-size, .78rem); }
+.app-store-copy-mobile { display: none; }
 .app-phone-preview { background: #fff; border: .45rem solid #19284e; border-radius: 2rem; box-shadow: 0 1.5rem 3rem rgba(0,0,0,.25); color: var(--karossy-navy); min-height: 23rem; padding: 1.35rem; transform: rotate(3deg); }
 .phone-logo { align-items: center; display: flex; font-size: .85rem; font-weight: 820; gap: .45rem; }
 .phone-logo img { height: 1.6rem; width: 1.6rem; }
@@ -3098,6 +3106,9 @@ body { max-width: 100%; overflow-x: clip; }
     .home-study-section > .public-container { grid-template-columns: 1fr; }
     .home-charter-visual { max-width: 22rem; }
     .home-study-visual { margin-inline: auto; max-width: 30rem; min-height: 21rem; width: 100%; }
+    .app-store-actions > a { flex: 1 1 10rem; }
+    .app-store-copy-desktop { display: none; }
+    .app-store-copy-mobile { display: inline; }
     .app-phone-preview { margin-inline: auto; max-width: 19rem; transform: none; width: 100%; }
     .home-destinations,
     .home-flight-offers,

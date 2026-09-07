@@ -23,7 +23,7 @@ final class DashboardController extends Controller
         $payments = Payment::query()->when($user?->isB2b(), fn ($query) => $query->whereHas('order', fn ($query) => $query->where('user_id', $user->id)));
         $paidPayments = (clone $payments)->where('status', 'paid');
         $bookingsCount = (clone $bookings)->count();
-        $issuedTickets = (clone $tickets)->where('status', 'issued')->count();
+        $issuedTickets = (clone $tickets)->issued()->count();
         $currentRevenue = (int) (clone $paidPayments)->where('paid_at', '>=', now()->subDays(30))->sum('amount_minor');
         $previousRevenue = (int) (clone $paidPayments)->whereBetween('paid_at', [now()->subDays(60), now()->subDays(30)])->sum('amount_minor');
         $revenueGrowth = $previousRevenue > 0 ? (($currentRevenue - $previousRevenue) / $previousRevenue) * 100 : 0;
@@ -53,8 +53,8 @@ final class DashboardController extends Controller
                 'Failed' => (clone $bookings)->where('status', 'failed')->count(),
                 'Cancelled' => (clone $bookings)->where('status', 'cancelled')->count(),
                 'Refunded' => (clone $bookings)->where('status', 'refunded')->count(),
-                'Ticketed' => (clone $bookings)->whereHas('tickets', fn ($query) => $query->where('status', 'issued'))->count(),
-                'Unticketed' => (clone $bookings)->where('status', 'confirmed')->whereDoesntHave('tickets', fn ($query) => $query->where('status', 'issued'))->count(),
+                'Ticketed' => (clone $bookings)->whereHas('tickets', fn ($query) => $query->issued())->count(),
+                'Unticketed' => (clone $bookings)->where('status', 'confirmed')->whereDoesntHave('tickets', fn ($query) => $query->issued())->count(),
             ],
             'operationalQueues' => [
                 ['label' => 'Tickets awaiting issuance', 'value' => (clone $tickets)->where('status', 'pending')->count(), 'severity' => 'warning', 'icon' => 'bi-ticket-perforated'],

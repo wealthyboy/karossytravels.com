@@ -133,7 +133,10 @@
 								<td>{{ $t->ticket_number ?? $t->number ?? '—' }}</td>
 								<td>{{ data_get($t, 'passenger_name') ?? '—' }}</td>
 								<td>{{ $t->issued_at ? $t->issued_at->format('d M Y') : '—' }}</td>
-								<td>{{ $t->voided_at ? 'Voided' : ($t->refunded_at ? 'Refunded' : 'Issued') }}</td>
+								<td>
+									{{ $t->voided_at ? 'Voided' : ($t->refunded_at ? 'Refunded' : ($t->isIssued() ? 'Issued' : ucfirst($t->status ?? 'pending'))) }}
+									@if($t->last_error)<small class="d-block text-danger mt-1">{{ $t->last_error }}</small>@endif
+								</td>
 							</tr>
 						@endforeach
 						</tbody>

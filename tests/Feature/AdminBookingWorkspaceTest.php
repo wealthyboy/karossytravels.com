@@ -67,6 +67,41 @@ final class AdminBookingWorkspaceTest extends TestCase
         $this->get(route('admin.bookings.show', $foreign))->assertNotFound();
     }
 
+    public function test_failed_ticket_attempt_without_document_number_is_not_treated_as_issued(): void
+    {
+        Mail::fake();
+        $admin = $this->bookingUser('admin');
+        $booking = $this->booking('KAR-TICKET-FAILED-001', 'flight', 'confirmed', 'admin', 'fake', 'PNRFAIL', $admin);
+        $ticket = Ticket::create([
+            'booking_id' => $booking->id,
+            'ticket_number' => null,
+            'status' => 'failed',
+            'issued_at' => null,
+            'last_error' => 'PRINTER_NOT_ASSIGNED',
+        ]);
+
+        $this->assertFalse($ticket->isIssued());
+
+        $this->actingAs($admin)->get('/admin/bookings/flights?ticket_status=issued')
+            ->assertOk()
+            ->assertDontSee('KAR-TICKET-FAILED-001');
+
+        $this->get('/admin/bookings/flights?ticket_status=failed')
+            ->assertOk()
+            ->assertSee('KAR-TICKET-FAILED-001')
+            ->assertSee('Failed');
+
+        $this->get(route('admin.bookings.show', $booking))
+            ->assertOk()
+            ->assertSee('PRINTER_NOT_ASSIGNED');
+
+        $this->post(route('admin.bookings.cancel', $booking), [
+            'reason' => 'Cancel the confirmed PNR because no ticket was issued.',
+        ])->assertSessionHas('success');
+
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'status' => 'cancelled']);
+    }
+
     public function test_cancelling_a_booking_is_audited(): void
     {
         Mail::fake();

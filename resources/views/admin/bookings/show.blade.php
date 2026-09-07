@@ -11,7 +11,7 @@
     $customerPhone = $customer?->phone ?: data_get($order?->customer, 'phone');
     $canManage = app()->isLocal() || auth()->user()?->hasPermission('bookings.manage');
     $isClosed = in_array($booking->status, ['cancelled', 'refunded', 'failed'], true);
-    $hasIssuedTicket = $booking->tickets->contains(fn ($ticket) => $ticket->status === 'issued' || $ticket->issued_at);
+    $hasIssuedTicket = $booking->tickets->contains(fn ($ticket) => $ticket->isIssued());
     $isNdc = filled(data_get($booking->travelOffer?->fare_summary, 'order_offer_id'));
     $isManualProviderWorkflow = $booking->product_type === 'flight' && strtolower($booking->provider) !== 'fake' && ! $isNdc;
     $itinerary = collect(data_get($booking->details, 'itinerary', []))->flatMap(function ($item) {
@@ -102,9 +102,9 @@
 
         <section class="card content-card"><div class="card-body p-4">
             <h2 class="booking-panel-title">Tickets and services</h2>
-            <div class="table-responsive"><table class="table admin-data-table mb-0"><thead><tr><th>Ticket number</th><th>Passenger</th><th>Status</th><th>Issued</th></tr></thead><tbody>
-                @forelse($booking->tickets as $ticket)<tr><td>{{ $ticket->ticket_number ?: 'Awaiting issuance' }}</td><td>{{ $ticket->passenger_reference ?: '—' }}</td><td>{{ ucfirst($ticket->status) }}</td><td>{{ $ticket->issued_at?->format('d M Y H:i') ?? '—' }}</td></tr>
-                @empty<tr><td colspan="4" class="text-center text-secondary py-4">No tickets have been issued for this booking.</td></tr>@endforelse
+            <div class="table-responsive"><table class="table admin-data-table mb-0"><thead><tr><th>Ticket number</th><th>Passenger</th><th>Status</th><th>Issued</th><th>Supplier response</th></tr></thead><tbody>
+                @forelse($booking->tickets as $ticket)<tr><td>{{ $ticket->ticket_number ?: 'Awaiting issuance' }}</td><td>{{ $ticket->passenger_reference ?: '—' }}</td><td>{{ $ticket->isIssued() ? 'Issued' : ucfirst($ticket->status) }}</td><td>{{ $ticket->isIssued() ? ($ticket->issued_at?->format('d M Y H:i') ?? 'Recorded') : '—' }}</td><td>@if($ticket->last_error)<span class="text-danger small">{{ $ticket->last_error }}</span>@else<span class="text-secondary">—</span>@endif</td></tr>
+                @empty<tr><td colspan="5" class="text-center text-secondary py-4">No ticketing attempts have been recorded for this booking.</td></tr>@endforelse
             </tbody></table></div>
             @if($booking->addons->isNotEmpty())
                 <h3 class="booking-panel-title mt-4">Selected add-ons</h3>

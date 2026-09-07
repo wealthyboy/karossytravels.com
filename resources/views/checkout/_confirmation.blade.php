@@ -10,10 +10,7 @@
     $money = fn (int $minor) => \App\Support\CurrencyMetadata::format($minor, $order->currency);
     // A pending/failed placeholder is not an issued e-ticket. Only show an
     // issued state when the provider returned a real ticket number/status.
-    $ticketed = $booking->tickets->contains(fn ($ticket) =>
-        ($ticket->status === 'issued' || $ticket->issued_at !== null)
-        && filled($ticket->ticket_number)
-    );
+    $ticketed = $booking->tickets->contains(fn ($ticket) => $ticket->isIssued());
 @endphp
 <section class="booking-page checkout-complete-page" data-booking-confirmation aria-live="polite">
     <div class="container public-container">

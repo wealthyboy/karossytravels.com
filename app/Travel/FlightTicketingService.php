@@ -114,7 +114,7 @@ final class FlightTicketingService
     private function issuedTickets(Booking $booking): Collection
     {
         return $booking->tickets
-            ->filter(fn (Ticket $ticket): bool => $ticket->status === 'issued' || $ticket->issued_at !== null)
+            ->filter(fn (Ticket $ticket): bool => $ticket->isIssued())
             ->values();
     }
 
