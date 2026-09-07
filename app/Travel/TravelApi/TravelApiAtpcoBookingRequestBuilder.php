@@ -89,26 +89,24 @@ final class TravelApiAtpcoBookingRequestBuilder
                 $traveler['namePrefix'] = $t['title'];
             }
 
-            // Add passport details when present
-                if (! empty($t['passport_number'])) {
-                    $traveler['identityDocuments'] = [[
-                        'documentType'           => 'PASSPORT',
-                        'documentNumber'         => strtoupper($t['passport_number']),
-                        'expiryDate'             => $t['passport_expiry'],
-                        // TravelApi expects explicit country code fields
-                        'issuingCountryCode'     => strtoupper($t['passport_country'] ?? ''),
-                        'residenceCountryCode'   => strtoupper($t['nationality'] ?? ''),
-                        'citizenshipCountryCode' => strtoupper($t['nationality'] ?? ''),
-                        'givenName'              => strtoupper($t['first_name']),
-                        'surname'                => strtoupper($t['last_name']),
-                        'birthDate'              => $t['date_of_birth'],
-                        // Normalize a variety of gender inputs to TravelApi's expected enums
-                        'gender'                 => match (strtolower((string) ($t['gender'] ?? ''))) {
-                            'male', 'm', 'ma' => 'MALE',
-                            'female', 'f', 'fe' => 'FEMALE',
-                            default => 'UNDISCLOSED',
-                        },
-                    ]];
+            // Keep the identity-document object limited to fields accepted by
+            // the provider-validated createBooking contract.
+            if (! empty($t['passport_number'])) {
+                $traveler['identityDocuments'] = [[
+                    'documentNumber' => strtoupper($t['passport_number']),
+                    'documentType' => 'PASSPORT',
+                    'expiryDate' => $t['passport_expiry'],
+                    'issuingCountryCode' => strtoupper($t['passport_country'] ?? ''),
+                    'residenceCountryCode' => strtoupper($t['nationality'] ?? ''),
+                    'birthDate' => $t['date_of_birth'],
+                    'gender' => match (strtolower((string) ($t['gender'] ?? ''))) {
+                        'male', 'm', 'ma' => 'MALE',
+                        'female', 'f', 'fe' => 'FEMALE',
+                        default => 'UNDISCLOSED',
+                    },
+                    'givenName' => strtoupper($t['first_name']),
+                    'surname' => strtoupper($t['last_name']),
+                ]];
             }
 
             return $traveler;
@@ -121,12 +119,17 @@ final class TravelApiAtpcoBookingRequestBuilder
         return collect($offer->itinerary)->values()->map(function (array $segment): array {
             $departure = CarbonImmutable::parse((string) $segment['departure_at']);
 
-            // Extract numeric-only flight number (e.g. "WB203" → 203)
-            $flightNum = (int) preg_replace('/^[A-Z]{2}/', '', strtoupper((string) ($segment['flight_number'] ?? '')));
+            // createBooking defines the flight number as a string without the
+            // marketing carrier prefix. Preserve an already-numeric value.
+            $airlineCode = strtoupper(trim((string) ($segment['marketing_airline'] ?? '')));
+            $flightNum = strtoupper(trim((string) ($segment['flight_number'] ?? '')));
+            if ($airlineCode !== '' && str_starts_with($flightNum, $airlineCode)) {
+                $flightNum = substr($flightNum, strlen($airlineCode));
+            }
 
             return [
                 'flightNumber'     => $flightNum,
-                'airlineCode'      => strtoupper((string) ($segment['marketing_airline'] ?? '')),
+                'airlineCode'      => $airlineCode,
                 'fromAirportCode'  => strtoupper((string) ($segment['origin'] ?? '')),
                 'toAirportCode'    => strtoupper((string) ($segment['destination'] ?? '')),
                 'departureDate'    => $departure->toDateString(),
@@ -157,7 +160,7 @@ final class TravelApiAtpcoBookingRequestBuilder
                 ->groupBy('fareBasisCode')
                 ->map(fn ($segments, string $fareBasisCode): array => [
                     'fareBasisCode' => $fareBasisCode,
-                    'flightIndices' => $segments->pluck('flightIndex')->values()->all(),
+                    'flightIndices' => $segments->pluck('flightIndex')->map(fn (int $index): string => (string) $index)->values()->all(),
                 ])->values()->all(),
         ];
 

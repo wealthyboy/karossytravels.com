@@ -35,9 +35,32 @@ final class TravelApiAtpcoBookingRequestBuilderTest extends TestCase
         $this->assertSame('CTCE', $payload['travelers'][0]['specialServices'][1]['code']);
         $this->assertSame(['NO', 'UC', 'US', 'UN', 'UU', 'LL', 'HL'], $payload['flightDetails']['haltOnFlightStatusCodes']);
         $this->assertSame('TOTTH', $payload['flightDetails']['flightPricing'][0]['qualifiers']['specificFares'][0]['fareBasisCode']);
-        $this->assertSame([1], $payload['flightDetails']['flightPricing'][0]['qualifiers']['specificFares'][0]['flightIndices']);
+        $this->assertSame(['1'], $payload['flightDetails']['flightPricing'][0]['qualifiers']['specificFares'][0]['flightIndices']);
         $this->assertSame([1], $payload['flightDetails']['flightPricing'][0]['qualifiers']['travelerIndices']);
+        $this->assertSame('730', $payload['flightDetails']['flights'][0]['flightNumber']);
+        $this->assertArrayNotHasKey('citizenshipCountryCode', $payload['travelers'][0]['identityDocuments'][0]);
         $this->assertSame(3000, $payload['asynchronousUpdateWaitTime']);
         $this->assertSame(['HALT_ON_ERROR'], $payload['errorHandlingPolicy']);
+    }
+
+    public function test_it_preserves_an_already_numeric_flight_number_as_a_string(): void
+    {
+        $offer = new TravelOffer([
+            'itinerary' => [[
+                'origin' => 'MNL', 'destination' => 'BKK',
+                'departure_at' => '2026-09-04T09:40:00+08:00',
+                'flight_number' => '730', 'marketing_airline' => 'PR',
+                'booking_code' => 'T', 'fare_basis_code' => 'TOTTH',
+            ]],
+        ]);
+        $customer = new Customer(['email' => 'traveler@example.com', 'phone' => '+65 1234 5678']);
+        $travellers = [[
+            'first_name' => 'Ricky', 'last_name' => 'Jones', 'type' => 'ADT',
+            'date_of_birth' => '1960-02-08',
+        ]];
+
+        $payload = (new TravelApiAtpcoBookingRequestBuilder)->build($offer, $customer, $travellers);
+
+        $this->assertSame('730', $payload['flightDetails']['flights'][0]['flightNumber']);
     }
 }
