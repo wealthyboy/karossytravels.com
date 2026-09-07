@@ -130,7 +130,11 @@
     const clearFieldError = field => {
         if (!(field instanceof HTMLElement) || !field.matches('input, select, textarea')) return;
         field.classList.remove('is-invalid');
-        const feedback = field.parentElement?.querySelector('.invalid-feedback');
+        const phoneControl = field.closest('.checkout-phone-control');
+        phoneControl?.classList.remove('is-invalid');
+        phoneControl?.querySelectorAll('.is-invalid').forEach(input => input.classList.remove('is-invalid'));
+        const feedbackScope = phoneControl?.parentElement || field.parentElement;
+        const feedback = feedbackScope?.querySelector('.invalid-feedback');
         if (feedback?.dataset.ajaxError === 'true') feedback.remove();
         else feedback?.classList.add('d-none');
         document.querySelector('[data-validation-summary]')?.classList.add('d-none');
@@ -139,12 +143,14 @@
     const showErrors = (form, errors = {}) => Object.entries(errors).forEach(([name, messages]) => {
         const field = form.elements.namedItem(fieldName(name)) || form.elements.namedItem(name);
         if (!(field instanceof HTMLElement)) return;
+        const phoneControl = field.closest('.checkout-phone-control');
         field.classList.add('is-invalid');
+        phoneControl?.classList.add('is-invalid');
         const error = document.createElement('div');
         error.className = 'invalid-feedback d-block';
         error.dataset.ajaxError = 'true';
         error.textContent = Array.isArray(messages) ? messages[0] : messages;
-        field.insertAdjacentElement('afterend', error);
+        (phoneControl || field).insertAdjacentElement('afterend', error);
     });
     const clientErrors = form => {
         const errors = {};

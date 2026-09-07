@@ -51,7 +51,7 @@ final class BookingLifecycleService
     public function cancel(Booking $booking, string $reason, ?string $internalNotes = null): BookingAction
     {
         $this->assertActionable($booking);
-        if ($booking->tickets()->issued()->exists()) {
+        if ($booking->tickets()->where(fn ($query) => $query->where('status', 'issued')->orWhereNotNull('issued_at'))->exists()) {
             throw new RuntimeException('This booking has an issued ticket. Void or refund the ticket before cancelling the itinerary.');
         }
 
@@ -76,7 +76,7 @@ final class BookingLifecycleService
         if ($booking->product_type !== 'flight') {
             throw new RuntimeException('Ticket voiding is only available for flight bookings.');
         }
-        if (! $booking->tickets()->issued()->exists()) {
+        if (! $booking->tickets()->where(fn ($query) => $query->where('status', 'issued')->orWhereNotNull('issued_at'))->exists()) {
             throw new RuntimeException('There is no issued ticket to void on this booking.');
         }
 
@@ -132,7 +132,7 @@ final class BookingLifecycleService
                 }
 
                 if ($type === 'void') {
-                    $booking->tickets()->issued()
+                    $booking->tickets()->where(fn ($query) => $query->where('status', 'issued')->orWhereNotNull('issued_at'))
                         ->update(['status' => 'voided', 'voided_at' => now()]);
                 }
             });

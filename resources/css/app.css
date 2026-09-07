@@ -332,7 +332,6 @@ main .h5 {
 .booking-ticket-issued { background: #e7f6ee; color: #187449; }
 .booking-ticket-pending { background: #fff4d7; color: #846100; }
 .booking-ticket-unticketed { background: #eef0f4; color: #687181; }
-.booking-ticket-failed { background: #fdebed; color: #a61b2b; }
 .booking-empty-state { padding: 4rem 1rem !important; text-align: center; }
 .booking-empty-state i, .booking-empty-state strong, .booking-empty-state span { display: block; }
 .booking-empty-state i { color: #a7afbb; font-size: 1.6rem; margin-bottom: .5rem; }
@@ -3277,8 +3276,11 @@ body { max-width: 100%; overflow-x: clip; }
 .booking-page[data-flight-checkout-page] input[type="date"].form-control::-webkit-datetime-edit { font-size: .9rem; line-height: 1.25; }
 .checkout-phone-control { align-items: stretch; border: 1px solid #dce1e9; border-radius: 4.65rem; display: grid; grid-template-columns: auto minmax(0,1fr); min-height: 2.85rem; overflow: hidden; }
 .checkout-phone-control:focus-within { border-color: rgba(204,0,11,.55); }
+.checkout-phone-control.is-invalid { border-color: #dc3545; box-shadow: 0 0 0 .14rem rgba(220,53,69,.1); }
 .checkout-phone-code { appearance: none; background: #f7f9fc; border: 0; border-right: 1px solid #dce1e9; color: #303746; cursor: pointer; font-size: .82rem; font-weight: 700; max-width: 6.6rem; min-width: 5.5rem; padding: 0 .7rem; }
 .checkout-phone-control .form-control { border: 0 !important; border-radius: 0 !important; min-height: 100% !important; padding-left: .75rem !important; }
+.checkout-phone-control .form-control.is-invalid { background-image: none !important; padding-right: 1rem !important; }
+.checkout-phone-control + .invalid-feedback { margin-top: .35rem; padding-left: .75rem; }
 .checkout-phone-code:focus,
 .checkout-phone-control .form-control:focus { box-shadow: none; outline: 0; }
 .booking-page[data-flight-checkout-page] .checkout-summary { padding: 1rem; }

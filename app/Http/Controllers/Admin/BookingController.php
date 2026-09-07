@@ -18,7 +18,7 @@ final class BookingController extends Controller
 
     private const STATUSES = ['pending', 'confirmed', 'failed', 'cancelled', 'refunded'];
 
-    private const TICKET_STATUSES = ['issued', 'pending', 'failed', 'unticketed', 'refunded'];
+    private const TICKET_STATUSES = ['issued', 'pending', 'unticketed', 'refunded'];
 
     public function index(Request $request, string $product = 'all'): View
     {
@@ -54,7 +54,8 @@ final class BookingController extends Controller
             'confirmed' => (clone $productQuery)->where('status', 'confirmed')->count(),
             'pending' => (clone $productQuery)->where('status', 'pending')->count(),
             'cancelled' => (clone $productQuery)->where('status', 'cancelled')->count(),
-            'ticketed' => (clone $productQuery)->whereHas('tickets', fn (Builder $query) => $query->issued())->count(),
+            'ticketed' => (clone $productQuery)->whereHas('tickets', fn (Builder $query) => $query
+                ->where('status', 'issued')->orWhereNotNull('issued_at'))->count(),
         ];
 
         $sources = (clone $productQuery)->whereNotNull('source')->where('source', '!=', '')
@@ -82,11 +83,10 @@ final class BookingController extends Controller
             ->when($validated['date_to'] ?? null, fn (Builder $query, string $date) => $query->whereDate('created_at', '<=', $date));
 
         match ($validated['ticket_status'] ?? null) {
-            'issued' => $query->whereHas('tickets', fn (Builder $tickets) => $tickets->issued()),
+            'issued' => $query->whereHas('tickets', fn (Builder $tickets) => $tickets->where('status', 'issued')->orWhereNotNull('issued_at')),
             'pending' => $query->whereHas('tickets', fn (Builder $tickets) => $tickets->where('status', 'pending')),
-            'failed' => $query->whereHas('tickets', fn (Builder $tickets) => $tickets->where('status', 'failed')),
             'refunded' => $query->whereHas('tickets', fn (Builder $tickets) => $tickets->where('status', 'refunded')->orWhereNotNull('refunded_at')),
-            'unticketed' => $query->whereDoesntHave('tickets', fn (Builder $tickets) => $tickets->issued()),
+            'unticketed' => $query->whereDoesntHave('tickets', fn (Builder $tickets) => $tickets->where('status', 'issued')->orWhereNotNull('issued_at')),
             default => null,
         };
 

@@ -7,17 +7,6 @@ return [
         'phone' => env('TRAVEL_SUPPORT_PHONE'),
         'whatsapp' => env('TRAVEL_WHATSAPP_PHONE', env('TRAVEL_SUPPORT_PHONE')),
     ],
-    'cars' => [
-        'phone' => env('TRAVEL_CARS_PHONE', '+234 706 138 2134'),
-    ],
-    'charter' => [
-        'phone' => env('TRAVEL_CHARTER_PHONE', '+234 706 138 2134'),
-        'email' => env('TRAVEL_CHARTER_EMAIL', env('TRAVEL_SUPPORT_EMAIL', 'info@karossytravels.com')),
-    ],
-    'mobile_app' => [
-        'ios_url' => env('KAROSSY_IOS_APP_URL', 'https://apps.apple.com/'),
-        'android_url' => env('KAROSSY_ANDROID_APP_URL', 'https://play.google.com/store/apps'),
-    ],
     'features' => [
         'flights' => true,
         'hotels' => false,

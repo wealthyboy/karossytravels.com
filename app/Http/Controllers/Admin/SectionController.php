@@ -85,7 +85,7 @@ final class SectionController extends Controller
                 'bookings' => $bookingCount,
                 'searches' => $searchCount,
                 'conversion' => $searchCount > 0 ? round(($bookingCount / $searchCount) * 100, 1) : 0,
-                'tickets_issued' => Ticket::query()->issued()->where('issued_at', '>=', $since)->count(),
+                'tickets_issued' => Ticket::query()->whereNotNull('issued_at')->where('issued_at', '>=', $since)->count(),
                 'average_booking_minor' => $bookingCount > 0 ? (int) round($revenueMinor / $bookingCount) : 0,
                 'failed_api_calls' => TravelLog::query()->where('status', 'failed')->where('created_at', '>=', $since)->count(),
                 'average_api_ms' => (int) round((float) (TravelLog::query()->where('created_at', '>=', $since)->avg('duration_ms') ?? 0)),
