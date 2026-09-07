@@ -43,4 +43,34 @@ final class PhoneCountryCodes
 
         return $dial.ltrim($local, '0');
     }
+
+    /** @return array{code:string, number:string} */
+    public static function splitForInput(?string $number, ?string $fallbackDialCode = '+234'): array
+    {
+        $fallback = '+'.preg_replace('/\D+/', '', (string) $fallbackDialCode);
+        $value = trim((string) $number);
+
+        if (! str_starts_with($value, '+')) {
+            return ['code' => $fallback, 'number' => $value];
+        }
+
+        $digits = preg_replace('/\D+/', '', substr($value, 1));
+        $dialCodes = collect(self::options())
+            ->pluck('dial')
+            ->unique()
+            ->sortByDesc(fn (string $dial): int => strlen($dial));
+
+        foreach ($dialCodes as $dial) {
+            $dialDigits = ltrim($dial, '+');
+
+            if (str_starts_with($digits, $dialDigits)) {
+                return [
+                    'code' => $dial,
+                    'number' => substr($digits, strlen($dialDigits)),
+                ];
+            }
+        }
+
+        return ['code' => $fallback, 'number' => $digits];
+    }
 }

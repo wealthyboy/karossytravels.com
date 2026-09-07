@@ -191,6 +191,43 @@ final class FrontendBookingFlowTest extends TestCase
             ->assertSee('Create account');
     }
 
+    public function test_logged_in_account_does_not_prefill_passenger_identity_and_phone_prefix_is_not_duplicated(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Account Owner',
+            'email' => 'owner@example.com',
+            'account_type' => 'b2c',
+            'status' => 'active',
+        ]);
+        Customer::create([
+            'user_id' => $user->id,
+            'title' => 'Ms',
+            'first_name' => 'Account',
+            'last_name' => 'Owner',
+            'email' => 'owner@example.com',
+            'phone' => '+2348169389899',
+            'date_of_birth' => '1990-01-01',
+            'gender' => 'female',
+            'nationality' => 'NG',
+            'passport_number' => 'ACCOUNT123',
+            'passport_country' => 'NG',
+            'passport_expires_at' => now()->addYears(2),
+            'status' => 'active',
+        ]);
+
+        $offer = $this->createOfferForGuestRedirect();
+
+        $this->actingAs($user)
+            ->get(route('checkout.travellers', $offer))
+            ->assertOk()
+            ->assertDontSee('value="Account"', false)
+            ->assertDontSee('value="Owner"', false)
+            ->assertDontSee('value="ACCOUNT123"', false)
+            ->assertSee('value="owner@example.com"', false)
+            ->assertSee('value="8169389899"', false)
+            ->assertDontSee('value="+2348169389899"', false);
+    }
+
     public function test_logged_in_customer_can_book_for_a_different_contact_without_overwriting_their_profile(): void
     {
         Mail::fake();
