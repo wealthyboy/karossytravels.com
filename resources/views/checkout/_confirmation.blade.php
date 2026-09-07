@@ -8,6 +8,7 @@
     $addonTotal = (int) data_get($booking->details, 'pricing.addons_minor', 0);
     $operatorAdjustment = (int) data_get($booking->details, 'pricing.operator_markup_minor', 0);
     $money = fn (int $minor) => \App\Support\CurrencyMetadata::format($minor, $order->currency);
+    $receiptEmail = $order->user_id ? \App\Models\User::query()->whereKey($order->user_id)->value('email') : data_get($order->customer, 'email');
     // A pending/failed placeholder is not an issued e-ticket. Only show an
     // issued state when the provider returned a real ticket number/status.
     $ticketed = $booking->tickets->contains(fn ($ticket) =>
@@ -70,7 +71,7 @@
                 <div class="confirmation-panel confirmation-summary">
                     <span class="public-eyebrow">Booking summary</span><h2>Total paid</h2><strong class="confirmation-total">{{ $money((int) $order->total_minor) }}</strong>
                     <div class="confirmation-price-lines"><div><span>Flight fare and taxes</span><strong>{{ $money((int) $order->subtotal_minor) }}</strong></div>@if($addonTotal > 0)<div><span>Additional services</span><strong>{{ $money($addonTotal) }}</strong></div>@endif @if($operatorAdjustment > 0)<div><span>Price adjustment</span><strong>{{ $money($operatorAdjustment) }}</strong></div>@endif</div>
-                    <div class="confirmation-contact"><i class="bi bi-envelope-check"></i><span><small>Confirmation sent to</small><strong>{{ data_get($order->customer, 'email') }}</strong></span></div>
+                    <div class="confirmation-contact"><i class="bi bi-envelope-check"></i><span><small>Confirmation sent to</small><strong>{{ data_get($order->customer, 'email') }}</strong>@if($receiptEmail && strtolower((string) $receiptEmail) !== strtolower((string) data_get($order->customer, 'email')))<small class="d-block mt-1">Receipt: {{ $receiptEmail }}</small>@else<small class="d-block mt-1">Payment receipt sent here too</small>@endif</span></div>
                     <a class="btn btn-karossy w-100" href="{{ route('account.bookings.show', $booking) }}"><i class="bi bi-receipt"></i> View booking</a>
                     <a class="btn btn-outline-dark w-100" href="{{ route('home') }}"><i class="bi bi-house"></i> Back to home</a>
                     <a class="confirmation-support" href="mailto:{{ config('travel.support.email') }}?subject=Booking%20{{ urlencode($order->reference) }}"><i class="bi bi-headset"></i> Need help? Contact support</a>

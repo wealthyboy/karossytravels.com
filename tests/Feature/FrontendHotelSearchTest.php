@@ -2,8 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Mail\BookingConfirmation;
+use App\Mail\PaymentReceipt;
+use App\Models\Customer;
+use App\Models\CheckoutPaymentAttempt;
 use App\Models\HotelOffer;
+use App\Models\Order;
 use App\Models\Payment;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
@@ -90,6 +96,72 @@ final class FrontendHotelSearchTest extends TestCase
         $recordedAmount = Payment::query()->firstOrFail()->amount_minor;
         $this->assertDatabaseHas('orders', ['currency' => 'NGN', 'total_minor' => $recordedAmount]);
         $this->assertDatabaseHas('payments', ['gateway' => 'demo', 'amount_minor' => $recordedAmount]);
+    }
+
+    public function test_logged_in_customer_can_reserve_a_hotel_for_a_different_guest_without_overwriting_their_profile(): void
+    {
+        Mail::fake();
+        config()->set('travel.checkout.demo_payment_enabled', true);
+
+        $user = User::factory()->create([
+            'name' => 'Jacob Atam',
+            'email' => 'jacob.hotel.owner@example.com',
+            'account_type' => 'b2c',
+            'status' => 'active',
+        ]);
+        $ownerCustomer = Customer::create([
+            'user_id' => $user->id,
+            'first_name' => 'Jacob',
+            'last_name' => 'Atam',
+            'email' => 'jacob.hotel.owner@example.com',
+            'phone' => '+2348000000000',
+            'status' => 'active',
+        ]);
+        $otherUser = User::factory()->create([
+            'name' => 'Ada Okafor',
+            'email' => 'ada.hotel.contact@example.com',
+            'account_type' => 'b2c',
+            'status' => 'active',
+        ]);
+        Customer::create([
+            'user_id' => $otherUser->id,
+            'first_name' => 'Ada',
+            'last_name' => 'Okafor',
+            'email' => 'ada.hotel.contact@example.com',
+            'phone' => '+2348111111111',
+            'status' => 'active',
+        ]);
+        $this->actingAs($user);
+
+        $criteria = [
+            'destination_code' => 'LOS', 'destination_label' => 'Lagos, Nigeria',
+            'check_in' => now()->addDays(14)->toDateString(), 'check_out' => now()->addDays(18)->toDateString(),
+            'adults' => 2, 'children' => 0, 'rooms' => 1, 'currency' => 'NGN', 'session_id' => (string) Str::uuid(),
+        ];
+        $this->get(route('hotels.results', $criteria))->assertOk();
+        $this->postJson(route('hotels.search.store'), $criteria)->assertOk();
+        $offer = HotelOffer::query()->firstOrFail();
+
+        $this->postJson(route('hotels.checkout.payment', $offer), [
+            'first_name' => 'Ada', 'last_name' => 'Okafor',
+            'email' => 'ada.hotel.contact@example.com', 'phone_code' => '+234', 'phone' => '8111111111',
+            'terms' => '1',
+        ])->assertCreated()->assertJsonPath('message', 'Your hotel reservation was created.');
+
+        $order = Order::query()->firstOrFail();
+        $this->assertSame($user->id, $order->user_id);
+        $this->assertSame($ownerCustomer->id, $order->customer_id);
+        $this->assertSame('ada.hotel.contact@example.com', data_get($order->customer, 'email'));
+        $this->assertSame('jacob.hotel.owner@example.com', CheckoutPaymentAttempt::query()->firstOrFail()->email);
+        $this->assertSame('Ada Okafor', data_get($order->bookings()->firstOrFail()->travellers, '0.name'));
+
+        $ownerCustomer->refresh();
+        $this->assertSame('Jacob', $ownerCustomer->first_name);
+        $this->assertSame('Atam', $ownerCustomer->last_name);
+        $this->assertSame('jacob.hotel.owner@example.com', $ownerCustomer->email);
+
+        Mail::assertSent(BookingConfirmation::class, fn (BookingConfirmation $mail): bool => $mail->hasTo('ada.hotel.contact@example.com'));
+        Mail::assertSent(PaymentReceipt::class, fn (PaymentReceipt $mail): bool => $mail->hasTo('jacob.hotel.owner@example.com'));
     }
 
     public function test_local_paystack_callback_can_finish_a_hotel_booking_without_a_webhook(): void

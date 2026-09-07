@@ -14,7 +14,7 @@
         @csrf
         <div class="col-lg-8">
             <div class="booking-card">
-                <div class="booking-card-title"><div><span class="traveller-number"><i class="bi bi-person"></i></span><div><h2>Lead guest</h2><p>The reservation and receipt will be issued to this guest.</p></div></div></div>
+                <div class="booking-card-title"><div><span class="traveller-number"><i class="bi bi-person"></i></span><div><h2>Lead guest</h2><p>The reservation confirmation will be sent to this guest. If you are signed in, the payment receipt goes to your account email.</p></div></div></div>
                 <div class="row g-2">
                     <div class="col-md-6"><label class="form-label">First name</label><input class="form-control" name="first_name" required autocomplete="given-name" value="{{ old('first_name', $customer?->first_name ?: auth()->user()?->first_name) }}"></div>
                     <div class="col-md-6"><label class="form-label">Last name</label><input class="form-control" name="last_name" required autocomplete="family-name" value="{{ old('last_name', $customer?->last_name ?: auth()->user()?->last_name) }}"></div>
@@ -39,6 +39,109 @@
 @push('scripts')
 @unless(app()->environment(['local','testing']) && config('travel.checkout.demo_payment_enabled'))<script src="https://js.paystack.co/v2/inline.js"></script>@endunless
 <script>
-(()=>{const form=document.querySelector('[data-hotel-checkout]');if(!form)return;const button=form.querySelector('[data-hotel-pay]'),retryButton=document.querySelector('[data-retry-hotel-confirmation]'),errorBox=document.querySelector('[data-hotel-error]'),overlay=document.querySelector('[data-hotel-finishing]'),csrf=document.querySelector('meta[name="csrf-token"]').content;const fail=m=>{overlay.classList.add('d-none');button.disabled=!!form.dataset.recoveryReference;if(retryButton)retryButton.disabled=false;errorBox.textContent=m;errorBox.classList.remove('d-none');errorBox.scrollIntoView({behavior:'smooth',block:'center'})};const post=async(url,payload)=>{const response=await fetch(url,{method:'POST',headers:{Accept:'application/json','X-Requested-With':'XMLHttpRequest','X-CSRF-TOKEN':csrf,...(payload instanceof FormData?{}:{'Content-Type':'application/json'})},body:payload instanceof FormData?payload:JSON.stringify(payload)});const body=await response.json();if(!response.ok)throw new Error(Object.values(body.errors||{}).flat()[0]||body.message||'The request could not be completed.');return body};const finish=body=>{overlay.classList.remove('d-none');window.location.assign(body.redirect)};form.addEventListener('submit',async e=>{e.preventDefault();if(form.dataset.recoveryReference)return;if(!form.reportValidity())return;button.disabled=true;errorBox.classList.add('d-none');overlay.classList.remove('d-none');try{const init=await post(form.action,new FormData(form));if(init.redirect){finish(init);return}if(typeof window.PaystackPop!=='function')throw new Error('The secure payment window did not load. Check your connection and retry.');overlay.classList.add('d-none');new window.PaystackPop().newTransaction({key:init.public_key,email:init.email,amount:init.amount_minor,currency:init.currency,reference:init.reference,firstName:init.first_name,lastName:init.last_name,phone:init.phone,metadata:init.metadata,onSuccess:async tx=>{overlay.classList.remove('d-none');try{finish(await post(form.dataset.verifyUrl,{reference:tx.reference||init.reference,transaction_id:tx.transaction||tx.trans||null}))}catch(error){fail(error.message)}},onCancel:()=>fail('Payment was not completed. You can try again.'),onError:error=>fail(error?.message||'Payment could not be opened.')})}catch(error){fail(error.message)}});retryButton?.addEventListener('click',async()=>{retryButton.disabled=true;errorBox.classList.add('d-none');overlay.classList.remove('d-none');try{finish(await post(form.dataset.verifyUrl,{reference:form.dataset.recoveryReference}))}catch(error){fail(error.message)}})})();
+(()=>{
+    const form=document.querySelector('[data-hotel-checkout]');
+    if(!form)return;
+    const button=form.querySelector('[data-hotel-pay]');
+    const retryButton=document.querySelector('[data-retry-hotel-confirmation]');
+    const errorBox=document.querySelector('[data-hotel-error]');
+    const overlay=document.querySelector('[data-hotel-finishing]');
+    const csrf=document.querySelector('meta[name="csrf-token"]').content;
+
+    const showError=(message,locked=false,reference=null)=>{
+        overlay.classList.add('d-none');
+        if(reference) form.dataset.recoveryReference=reference;
+        const paymentLocked=locked||Boolean(form.dataset.recoveryReference);
+        button.disabled=paymentLocked;
+        if(paymentLocked) button.textContent='Payment received';
+        if(retryButton) retryButton.disabled=false;
+        errorBox.textContent=message;
+        errorBox.classList.toggle('alert-danger',!paymentLocked);
+        errorBox.classList.toggle('alert-warning',paymentLocked);
+        errorBox.classList.remove('d-none');
+        errorBox.scrollIntoView({behavior:'smooth',block:'center'});
+    };
+
+    const post=async(url,payload)=>{
+        const response=await fetch(url,{
+            method:'POST',
+            headers:{
+                Accept:'application/json',
+                'X-Requested-With':'XMLHttpRequest',
+                'X-CSRF-TOKEN':csrf,
+                ...(payload instanceof FormData?{}:{'Content-Type':'application/json'})
+            },
+            body:payload instanceof FormData?payload:JSON.stringify(payload)
+        });
+        const body=await response.json();
+        if(!response.ok){
+            const error=new Error(Object.values(body.errors||{}).flat()[0]||body.message||'The request could not be completed.');
+            error.paymentLocked=Boolean(body.payment_confirmed||body.payment_locked);
+            error.reference=body.reference||null;
+            throw error;
+        }
+        return body;
+    };
+
+    const finish=body=>{
+        if(!body.redirect){
+            const error=new Error(body.message||'Your payment is being reviewed. Do not pay again.');
+            error.paymentLocked=Boolean(body.payment_confirmed||body.payment_locked||body.pending);
+            error.reference=body.reference||null;
+            throw error;
+        }
+        overlay.classList.remove('d-none');
+        window.location.assign(body.redirect);
+    };
+
+    form.addEventListener('submit',async e=>{
+        e.preventDefault();
+        if(form.dataset.recoveryReference)return;
+        if(!form.reportValidity())return;
+        button.disabled=true;
+        errorBox.classList.add('d-none');
+        overlay.classList.remove('d-none');
+        try{
+            const init=await post(form.action,new FormData(form));
+            if(init.redirect){finish(init);return;}
+            if(typeof window.PaystackPop!=='function')throw new Error('The secure payment window did not load. Check your connection and retry.');
+            overlay.classList.add('d-none');
+            new window.PaystackPop().newTransaction({
+                key:init.public_key,
+                email:init.email,
+                amount:init.amount_minor,
+                currency:init.currency,
+                reference:init.reference,
+                firstName:init.first_name,
+                lastName:init.last_name,
+                phone:init.phone,
+                metadata:init.metadata,
+                onSuccess:async tx=>{
+                    overlay.classList.remove('d-none');
+                    try{
+                        finish(await post(form.dataset.verifyUrl,{reference:tx.reference||init.reference,transaction_id:tx.transaction||tx.trans||null}));
+                    }catch(error){
+                        showError(error.message,error.paymentLocked,error.reference||init.reference);
+                    }
+                },
+                onCancel:()=>showError('Payment was not completed. You can try again.'),
+                onError:error=>showError(error?.message||'Payment could not be opened.')
+            });
+        }catch(error){
+            showError(error.message,error.paymentLocked,error.reference);
+        }
+    });
+
+    retryButton?.addEventListener('click',async()=>{
+        retryButton.disabled=true;
+        errorBox.classList.add('d-none');
+        overlay.classList.remove('d-none');
+        try{
+            finish(await post(form.dataset.verifyUrl,{reference:form.dataset.recoveryReference}));
+        }catch(error){
+            showError(error.message,error.paymentLocked!==false,error.reference||form.dataset.recoveryReference);
+        }
+    });
+})();
 </script>
 @endpush

@@ -310,7 +310,7 @@
         if (finalizationScreen && !finalizationScreen.hidden) {
             setFinalizationProgress(100, 'Booking confirmed', 'Your reservation is complete. We are opening your booking confirmation now.');
             if (finalizationTitle) finalizationTitle.textContent = 'Your booking is ready';
-            if (finalizationNote) finalizationNote.textContent = 'Your confirmation and receipt have been sent to your email address.';
+            if (finalizationNote) finalizationNote.textContent = 'Your booking confirmation and payment receipt have been emailed.';
             window.setTimeout(revealConfirmation, 650);
             return;
         }
@@ -420,7 +420,9 @@
             const initialized = await post(form.dataset.paymentUrl, new FormData(form));
             if (!initialized.response.ok) {
                 showErrors(form, initialized.body.errors);
-                throw new Error(Object.values(initialized.body.errors || {}).flat()[0] || initialized.body.message || 'Secure payment could not be started.');
+                const initializationError = new Error(Object.values(initialized.body.errors || {}).flat()[0] || initialized.body.message || 'Secure payment could not be started.');
+                initializationError.paymentConfirmed = Boolean(initialized.body.payment_confirmed || initialized.body.payment_locked);
+                throw initializationError;
             }
             if (initialized.body.confirmation_html) {
                 showConfirmation(initialized.body);
@@ -431,11 +433,14 @@
         } catch (error) {
             paymentModal?.hide();
             errorBox.textContent = error.message;
+            errorBox.classList.toggle('alert-danger', !error.paymentConfirmed);
+            errorBox.classList.toggle('alert-warning', Boolean(error.paymentConfirmed));
             errorBox.classList.remove('d-none');
             const first = form.querySelector('.is-invalid');
             (first || errorBox)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             first?.focus();
-            button.disabled = false;
+            button.disabled = Boolean(error.paymentConfirmed);
+            if (error.paymentConfirmed) payButton.textContent = 'Payment confirmed';
         } finally {
             spinner?.classList.add('d-none');
         }

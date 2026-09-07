@@ -17,6 +17,7 @@ final class CheckoutPaymentAttempt extends Model
         return [
             'addon_ids' => 'array',
             'gateway_response' => 'encrypted:array',
+            'checkout_payload' => 'encrypted:array',
             'verified_at' => 'datetime',
             'reservation_attempted_at' => 'datetime',
         ];
@@ -30,6 +31,11 @@ final class CheckoutPaymentAttempt extends Model
     public function hotelOffer(): BelongsTo
     {
         return $this->belongsTo(HotelOffer::class);
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
     }
 
     public function order(): BelongsTo

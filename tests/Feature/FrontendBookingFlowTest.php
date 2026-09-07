@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Mail\BookingConfirmation;
+use App\Mail\PaymentReceipt;
 use App\Models\Customer;
 use App\Models\Addon;
 use App\Models\FairRule;
@@ -190,13 +191,41 @@ final class FrontendBookingFlowTest extends TestCase
             ->assertSee('Create account');
     }
 
-    public function test_confirmed_payment_is_not_reported_as_failed_when_airline_booking_fails(): void
+    public function test_logged_in_customer_can_book_for_a_different_contact_without_overwriting_their_profile(): void
     {
-        config([
-            'services.paystack.public_key' => 'pk_test_checkout',
-            'services.paystack.secret_key' => 'sk_test_checkout',
-            'travel.checkout.demo_payment_enabled' => false,
+        Mail::fake();
+        config(['travel.checkout.demo_payment_enabled' => true]);
+
+        $user = User::factory()->create([
+            'name' => 'Jacob Atam',
+            'email' => 'jacob.owner@example.com',
+            'account_type' => 'b2c',
+            'status' => 'active',
         ]);
+        $ownerCustomer = Customer::create([
+            'user_id' => $user->id,
+            'first_name' => 'Jacob',
+            'last_name' => 'Atam',
+            'email' => 'jacob.owner@example.com',
+            'phone' => '+2348000000000',
+            'status' => 'active',
+        ]);
+        $otherUser = User::factory()->create([
+            'name' => 'Ada Okafor',
+            'email' => 'ada.contact@example.com',
+            'account_type' => 'b2c',
+            'status' => 'active',
+        ]);
+        Customer::create([
+            'user_id' => $otherUser->id,
+            'first_name' => 'Ada',
+            'last_name' => 'Okafor',
+            'email' => 'ada.contact@example.com',
+            'phone' => '+2348111111111',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user);
         $offer = $this->createOfferForGuestRedirect();
 
         $this->postJson(route('checkout.travellers.store', $offer), [
@@ -206,44 +235,81 @@ final class FrontendBookingFlowTest extends TestCase
                 'passport_number' => 'B12345678', 'passport_country' => 'NG',
                 'passport_expiry' => now()->addYears(2)->toDateString(),
             ]],
-            'contact' => ['email' => 'ada.pending@example.com', 'phone' => '+234 801 234 5678'],
+            'contact' => ['email' => 'ada.contact@example.com', 'phone_code' => '+234', 'phone' => '8111111111'],
         ])->assertOk();
 
-        $initialize = $this->postJson(route('checkout.payment.initialize', $offer), ['terms' => 1])->assertOk();
-        $attempt = CheckoutPaymentAttempt::query()->firstOrFail();
-        Http::fake([
-            'https://api.paystack.co/transaction/verify/*' => Http::response([
-                'status' => true,
-                'data' => [
-                    'status' => 'success', 'amount' => $attempt->amount_minor,
-                    'currency' => $attempt->currency, 'reference' => $attempt->reference,
-                    'channel' => 'card', 'id' => 123,
-                ],
-            ]),
+        $response = $this->postJson(route('checkout.payment.initialize', $offer), ['terms' => 1])
+            ->assertCreated()
+            ->assertJsonPath('message', 'Your flight was confirmed by the airline.');
+
+        $order = Order::query()->firstOrFail();
+        $this->assertSame($user->id, $order->user_id);
+        $this->assertSame($ownerCustomer->id, $order->customer_id);
+        $this->assertSame('ada.contact@example.com', data_get($order->customer, 'email'));
+        $this->assertSame('jacob.owner@example.com', CheckoutPaymentAttempt::query()->firstOrFail()->email);
+        $this->assertNotEmpty($order->bookings()->firstOrFail()->provider_locator);
+
+        $ownerCustomer->refresh();
+        $this->assertSame('Jacob', $ownerCustomer->first_name);
+        $this->assertSame('Atam', $ownerCustomer->last_name);
+        $this->assertSame('jacob.owner@example.com', $ownerCustomer->email);
+        $this->assertNull($ownerCustomer->passport_number);
+
+        Mail::assertSent(BookingConfirmation::class, fn (BookingConfirmation $mail): bool => $mail->hasTo('ada.contact@example.com'));
+        Mail::assertSent(PaymentReceipt::class, fn (PaymentReceipt $mail): bool => $mail->hasTo('jacob.owner@example.com'));
+        $response->assertJsonPath('reference', $order->reference);
+    }
+
+    public function test_guest_using_a_registered_contact_email_can_book_without_claiming_that_account(): void
+    {
+        Mail::fake();
+        config(['travel.checkout.demo_payment_enabled' => true]);
+
+        $registeredUser = User::factory()->create([
+            'name' => 'Ada Okafor',
+            'email' => 'ada.registered@example.com',
+            'account_type' => 'b2c',
+            'status' => 'active',
         ]);
-        $registeredUser = User::factory()->create(['email' => 'ada.pending@example.com']);
-        Customer::create([
+        $registeredCustomer = Customer::create([
             'user_id' => $registeredUser->id,
             'first_name' => 'Ada',
             'last_name' => 'Okafor',
-            'email' => 'ada.pending@example.com',
-            'phone' => '+234 801 234 5678',
+            'email' => 'ada.registered@example.com',
+            'phone' => '+2348111111111',
             'status' => 'active',
         ]);
 
-        $this->postJson(route('checkout.payment.verify', $offer), ['reference' => $initialize->json('reference')])
-            ->assertAccepted()
-            ->assertJsonPath('payment_confirmed', true)
-            ->assertJsonPath('booking_pending', true)
-            ->assertJsonPath('reference', $attempt->reference)
-            ->assertJsonFragment(['message' => "Payment confirmed. Do not pay again. The airline could not immediately confirm the seats, so Karossy is reviewing the booking. Reference: {$attempt->reference}."]);
+        $offer = $this->createOfferForGuestRedirect();
+        $this->postJson(route('checkout.travellers.store', $offer), [
+            'travellers' => [[
+                'type' => 'ADT', 'title' => 'Ms', 'first_name' => 'Ada', 'last_name' => 'Okafor',
+                'date_of_birth' => '1992-05-14', 'gender' => 'female', 'nationality' => 'NG',
+                'passport_number' => 'B12345678', 'passport_country' => 'NG',
+                'passport_expiry' => now()->addYears(2)->toDateString(),
+            ]],
+            'contact' => ['email' => 'ada.registered@example.com', 'phone_code' => '+234', 'phone' => '8111111111'],
+        ])->assertOk();
 
-        $this->assertDatabaseHas('checkout_payment_attempts', [
-            'id' => $attempt->id,
-            'status' => 'paid',
-        ]);
-        $this->assertNotNull($attempt->fresh()->reservation_attempted_at);
-        $this->assertDatabaseCount('orders', 0);
+        $response = $this->postJson(route('checkout.payment.initialize', $offer), ['terms' => 1])
+            ->assertCreated()
+            ->assertJsonPath('message', 'Your flight was confirmed by the airline.');
+
+        $order = Order::query()->firstOrFail();
+        $this->assertNull($order->user_id);
+        $this->assertNull($order->customer_id);
+        $this->assertSame('ada.registered@example.com', data_get($order->customer, 'email'));
+        $this->assertStringStartsWith('TEST-', $order->bookings()->firstOrFail()->provider_locator);
+
+        $registeredCustomer->refresh();
+        $this->assertSame($registeredUser->id, $registeredCustomer->user_id);
+        $this->assertSame('Ada', $registeredCustomer->first_name);
+        $this->assertSame('Okafor', $registeredCustomer->last_name);
+        $this->assertSame('ada.registered@example.com', $registeredCustomer->email);
+
+        Mail::assertSent(BookingConfirmation::class, fn (BookingConfirmation $mail): bool => $mail->hasTo('ada.registered@example.com'));
+        Mail::assertSent(PaymentReceipt::class, fn (PaymentReceipt $mail): bool => $mail->hasTo('ada.registered@example.com'));
+        $response->assertJsonPath('reference', $order->reference);
     }
 
     public function test_guest_can_create_an_account_inside_checkout_without_a_redirect(): void
