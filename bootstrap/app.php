@@ -6,6 +6,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\AddApiRequestId;
+use App\Http\Middleware\AuthenticateMobileToken;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin.hidden' => HideAdminFromGuests::class,
             'permission' => RequirePermission::class,
+            'mobile.auth' => AuthenticateMobileToken::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
