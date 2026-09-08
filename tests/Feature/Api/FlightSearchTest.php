@@ -75,6 +75,35 @@ final class FlightSearchTest extends TestCase
         $this->assertSame($firstDate, \App\Models\FlightSearch::query()->firstOrFail()->departure_date->toDateString());
     }
 
+    public function test_it_revalidates_and_returns_an_offer_for_mobile_review(): void
+    {
+        $search = $this->postJson('/api/v1/flights/search', [
+            'origin' => 'LOS',
+            'destination' => 'ABV',
+            'departure_date' => now()->addWeek()->toDateString(),
+            'trip_type' => 'one_way',
+            'cabin' => 'economy',
+            'adults' => 1,
+            'currency' => 'NGN',
+            'session_id' => (string) Str::uuid(),
+        ])->assertOk();
+
+        $offerId = $search->json('data.offers.0.id');
+
+        $this->getJson("/api/v1/flights/offers/{$offerId}?currency=NGN")
+            ->assertOk()
+            ->assertJsonPath('data.offer.id', $offerId)
+            ->assertJsonPath('data.offer.price.currency', 'NGN')
+            ->assertJsonPath('data.validation.available', true)
+            ->assertJsonStructure([
+                'data' => [
+                    'offer' => ['id', 'segments', 'price', 'refundable', 'expires_at'],
+                    'validation' => ['available', 'price_changed'],
+                ],
+                'meta' => ['api_version'],
+            ]);
+    }
+
     public function test_it_never_exposes_supplier_or_transport_errors_to_customers(): void
     {
         $this->mock(FlightProvider::class, function ($mock): void {
