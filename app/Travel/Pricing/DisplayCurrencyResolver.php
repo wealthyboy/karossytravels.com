@@ -13,6 +13,13 @@ final class DisplayCurrencyResolver
     {
         $supported = array_map('strtoupper', config('travel.currency.supported', ['NGN', 'USD']));
 
+        // Native clients send the currency selected in the app with each search.
+        // Honour that explicit value before applying account or IP defaults.
+        $requested = strtoupper((string) $request->input('currency', ''));
+        if (in_array($requested, $supported, true)) {
+            return $requested;
+        }
+
         // A visitor's explicit choice is authoritative. Location detection only
         // supplies the initial default and never overrides the currency switcher.
         $selected = $request->hasSession() ? strtoupper((string) $request->session()->get('display_currency', '')) : '';
