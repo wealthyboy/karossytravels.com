@@ -1803,6 +1803,7 @@ main .h5 {
 .public-utility-nav .nav-link:hover { color: var(--karossy-red); }
 .public-primary-nav .nav-link.active::after { opacity: 1; transform: scaleX(1); }
 .public-currency { align-items: center; display: inline-flex; gap: .35rem; }
+.public-currency-flag { font-size: 1.05rem; line-height: 1; }
 
 /* Blend the main navigation into the dark homepage hero. */
 .public-header {

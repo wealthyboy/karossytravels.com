@@ -223,7 +223,7 @@ final class FlightCheckoutController extends Controller
 
         $addons = Addon::query()->whereIn('id', $validated['addons'] ?? [])->where('type', 'flight')->where('active', true)->get();
         $currency = $resolver->resolve($request);
-        if (! in_array($currency, ['NGN', 'USD'], true)) {
+        if (! in_array($currency, config('travel.currency.supported', ['NGN', 'USD']), true)) {
             $currency = 'USD';
         }
         $base = $rates->convertMinor($offer->fresh()->selling_total_minor, $offer->currency, $currency)['amount_minor'];
@@ -702,7 +702,7 @@ final class FlightCheckoutController extends Controller
     {
         abort_if($offer->expires_at->isPast(), 410, 'This fare has expired. Please search again.');
         $currency = $resolver->resolve($request);
-        if (! in_array($currency, ['NGN', 'USD'], true)) {
+        if (! in_array($currency, config('travel.currency.supported', ['NGN', 'USD']), true)) {
             $currency = 'USD';
         }
 

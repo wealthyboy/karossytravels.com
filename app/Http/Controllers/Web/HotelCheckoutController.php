@@ -608,7 +608,7 @@ final class HotelCheckoutController extends Controller
     {
         $currency = $resolver->resolve($request);
 
-        return in_array($currency, ['NGN', 'USD'], true) ? $currency : 'USD';
+        return in_array($currency, config('travel.currency.supported', ['NGN', 'USD']), true) ? $currency : 'USD';
     }
 
     private function fingerprint(Request $request, HotelOffer $offer): string

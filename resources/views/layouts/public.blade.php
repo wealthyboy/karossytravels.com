@@ -12,7 +12,7 @@
 <body class="public-site">
 @php
     $displayCurrency = app(\App\Travel\Pricing\DisplayCurrencyResolver::class)->resolve(request());
-    $supportedCurrencies = ['NGN', 'USD'];
+    $supportedCurrencies = config('travel.currency.public_supported', ['NGN', 'USD', 'GBP', 'EUR']);
     $serviceUrl = fn (string $service) => route('home', ['service' => $service]).'#travel-search';
     $whatsappPhone = preg_replace('/\D+/', '', (string) config('travel.support.whatsapp'));
     if ($whatsappPhone !== '' && str_starts_with($whatsappPhone, '0')) {
@@ -39,7 +39,8 @@
                 <a class="nav-link {{ request()->routeIs('study-program') ? 'active' : '' }}" href="{{ route('study-program') }}">Student Study Program</a>
             </div>
             <div class="public-header-actions">
-                <div class="dropdown"><button class="public-header-action public-currency" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-globe2"></i><span>{{ $displayCurrency }}</span><i class="bi bi-chevron-down public-action-chevron"></i></button><div class="dropdown-menu dropdown-menu-end currency-switcher-menu p-2">@foreach($supportedCurrencies as $currencyCode)@php($currencyMeta = \App\Support\CurrencyMetadata::for($currencyCode))<form method="POST" action="{{ route('currency.update') }}">@csrf<input type="hidden" name="currency" value="{{ $currencyCode }}"><button class="dropdown-item currency-switcher-option {{ $displayCurrency === $currencyCode ? 'active' : '' }}" type="submit"><span>{{ $currencyMeta['flag'] }}</span><span><strong>{{ $currencyCode }}</strong><small>{{ $currencyMeta['country'] }}</small></span>@if($displayCurrency === $currencyCode)<i class="bi bi-check2"></i>@endif</button></form>@endforeach</div></div>
+                @php($activeCurrencyMeta = \App\Support\CurrencyMetadata::for($displayCurrency))
+                <div class="dropdown"><button class="public-header-action public-currency" type="button" data-bs-toggle="dropdown" aria-expanded="false"><span class="public-currency-flag" aria-hidden="true">{{ $activeCurrencyMeta['flag'] }}</span><span>{{ $displayCurrency }}</span><i class="bi bi-chevron-down public-action-chevron"></i></button><div class="dropdown-menu dropdown-menu-end currency-switcher-menu p-2">@foreach($supportedCurrencies as $currencyCode)@php($currencyMeta = \App\Support\CurrencyMetadata::for($currencyCode))<form method="POST" action="{{ route('currency.update') }}">@csrf<input type="hidden" name="currency" value="{{ $currencyCode }}"><button class="dropdown-item currency-switcher-option {{ $displayCurrency === $currencyCode ? 'active' : '' }}" type="submit"><span>{{ $currencyMeta['flag'] }}</span><span><strong>{{ $currencyCode }}</strong><small>{{ $currencyMeta['country'] }}</small></span>@if($displayCurrency === $currencyCode)<i class="bi bi-check2"></i>@endif</button></form>@endforeach</div></div>
                 @auth
                     <a class="public-header-action" href="{{ route('account.bookings.index') }}"><i class="bi bi-person-circle"></i><span>Account</span></a>
                 @else

@@ -74,6 +74,18 @@ final class PricingAndCurrencyTest extends TestCase
         $this->withHeader('CF-IPCountry', 'GB')->get('/')->assertOk()->assertSee('USD');
     }
 
+    public function test_public_currency_selector_contains_the_four_customer_currencies_and_flags(): void
+    {
+        $this->withHeader('CF-IPCountry', 'NG')
+            ->get('/')
+            ->assertOk()
+            ->assertSee('🇳🇬')
+            ->assertSee('value="NGN"', false)
+            ->assertSee('value="USD"', false)
+            ->assertSee('value="GBP"', false)
+            ->assertSee('value="EUR"', false);
+    }
+
     public function test_ip_lookup_selects_ngn_for_nigeria_and_usd_for_other_countries(): void
     {
         config()->set('travel.currency.geo_lookup_enabled', true);

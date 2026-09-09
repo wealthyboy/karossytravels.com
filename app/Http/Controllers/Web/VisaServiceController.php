@@ -173,7 +173,7 @@ final class VisaServiceController extends Controller
     private function pricing(Request $request, Visa $visa, int $travellers, bool $consultation, DisplayCurrencyResolver $resolver, ExchangeRateService $rates): array
     {
         $currency = $resolver->resolve($request);
-        if (! in_array($currency, ['NGN', 'USD'], true)) {
+        if (! in_array($currency, config('travel.currency.supported', ['NGN', 'USD']), true)) {
             $currency = 'USD';
         }
         $visaTotal = $rates->convertMinor($visa->fee_cents * $travellers, $visa->currency ?: 'NGN', $currency);

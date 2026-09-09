@@ -39,6 +39,9 @@ return [
     ],
     'currency' => [
         'supported' => ['NGN', 'USD', 'GBP', 'EUR', 'CAD', 'ZAR', 'AED'],
+        // Keep the customer-facing website selector focused on these currencies.
+        // The broader supported list remains available to internal/API workflows.
+        'public_supported' => ['NGN', 'USD', 'GBP', 'EUR'],
         'rates_url' => env('EXCHANGE_RATES_URL', 'https://open.er-api.com/v6/latest/USD'),
         'cache_hours' => (int) env('EXCHANGE_RATES_CACHE_HOURS', 6),
         'timeout' => (int) env('EXCHANGE_RATES_TIMEOUT', 5),

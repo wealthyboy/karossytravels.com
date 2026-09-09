@@ -99,7 +99,7 @@
                 </div>
                 <div class="tab-pane fade" id="checkout-register-pane" role="tabpanel">
                     <form action="{{ route('register.store') }}" method="POST" data-checkout-register novalidate>
-                        @csrf<input type="hidden" name="currency_code" value="{{ in_array(session('display_currency'), ['NGN', 'USD'], true) ? session('display_currency') : 'NGN' }}">
+                        @csrf<input type="hidden" name="currency_code" value="{{ app(\App\Travel\Pricing\DisplayCurrencyResolver::class)->resolve(request()) }}">
                         <div class="alert alert-danger d-none" data-register-error></div>
                         <div class="row g-3"><div class="col-sm-6"><label class="form-label" for="checkout-register-first-name">First name</label><input class="form-control" id="checkout-register-first-name" name="first_name" autocomplete="given-name"></div><div class="col-sm-6"><label class="form-label" for="checkout-register-last-name">Last name</label><input class="form-control" id="checkout-register-last-name" name="last_name" autocomplete="family-name"></div></div>
                         <label class="form-label mt-3" for="checkout-register-email">Email address</label><input class="form-control" id="checkout-register-email" name="email" type="email" autocomplete="email">
