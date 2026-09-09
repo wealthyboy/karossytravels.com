@@ -1514,10 +1514,41 @@ main .h5 {
         padding-left: .75rem;
         padding-right: .75rem;
     }
-    .flight-deals-topline { align-items: stretch; flex-direction: column; }
-    .flight-deal-highlights { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .flight-deals-topline {
+        align-items: stretch;
+        flex-direction: column;
+        max-width: 100%;
+        min-width: 0;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        scroll-snap-type: x proximity;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    .flight-deals-topline::-webkit-scrollbar,
+    .flight-deals-scroll::-webkit-scrollbar { display: none; }
+    .flight-deal-highlights {
+        grid-template-columns: repeat(3, minmax(8.5rem, 1fr));
+        min-width: 26rem;
+        overflow: visible;
+        width: max-content;
+    }
+    .flight-deal-highlights > div { scroll-snap-align: start; }
     .flight-deal-highlights > div { padding: .65rem; }
     .flight-deal-highlights strong { font-size: var(--small-font-size, .78rem); }
+    .flight-deals-disclosure {
+        max-width: 100%;
+        min-width: 0;
+    }
+    .flight-deals-disclosure .flight-deals-scroll {
+        max-width: 100%;
+        overscroll-behavior-inline: contain;
+        scroll-snap-type: x proximity;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    .flight-deals-table th,
+    .flight-deals-table td { scroll-snap-align: start; }
     .flight-card-header { align-items: center; }
     .flight-card-leg { gap: .65rem; grid-template-columns: 4.6rem minmax(0, 1fr); }
     .flight-card-time { gap: .4rem; }
@@ -1580,8 +1611,8 @@ main .h5 {
 }
 @media (max-width: 575.98px) {
     .flight-deals-topline > p { display: none; }
-    .flight-deal-highlights { width: 100%; }
-    .flight-deals-disclosure summary b { font-size: 0; }
+    .flight-deal-highlights { width: max-content; }
+    .flight-deals-disclosure summary b { font-size: .75rem; }
     .flight-deals-disclosure summary b i { font-size: .8rem; }
     .flight-compact-card .flight-card-price { display: block; max-width: none; text-align: left; width: auto; }
     .flight-compact-card .flight-card-price .btn { margin-top: .55rem; width: 100%; }
