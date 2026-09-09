@@ -1509,6 +1509,11 @@ main .h5 {
     .public-flight-results-header .flight-deal-highlights { width: 100%; }
 }
 @media (max-width: 767.98px) {
+    /* Give the mobile flight listing breathing room without moving its fixed filter controls. */
+    .public-live-flight-results .public-flight-results-container {
+        padding-left: .75rem;
+        padding-right: .75rem;
+    }
     .flight-deals-topline { align-items: stretch; flex-direction: column; }
     .flight-deal-highlights { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .flight-deal-highlights > div { padding: .65rem; }
