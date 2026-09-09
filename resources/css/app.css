@@ -2958,7 +2958,7 @@ body { max-width: 100%; overflow-x: clip; }
     .hotel-location-map { height: 7rem; }
     .hotel-stay-summary { grid-template-columns: 1fr; }
 }
-.home-charter-section { background: #07142f url('/images/ads/jiro-air-charter-v1.png') 76% 66% / cover no-repeat; color: #fff; min-height: clamp(30rem,45vw,36rem); overflow: hidden; padding: clamp(2.75rem,5vw,4.5rem) 0; position: relative; }
+.home-charter-section { background: #07142f url('/images/ads/charter-private-jet-traveller.jpg') 76% 66% / cover no-repeat; color: #fff; min-height: clamp(30rem,45vw,36rem); overflow: hidden; padding: clamp(2.75rem,5vw,4.5rem) 0; position: relative; }
 .home-charter-section::before { background: linear-gradient(90deg,rgba(3,10,27,.98) 0%,rgba(3,10,27,.9) 37%,rgba(3,10,27,.52) 68%,rgba(3,10,27,.28) 100%),linear-gradient(180deg,rgba(3,10,27,.25),transparent 45%,rgba(3,10,27,.82)); content: ''; inset: 0; position: absolute; }
 .home-charter-section::after { animation: jiro-ad-shine 6.5s ease-in-out infinite; background: linear-gradient(105deg,transparent 38%,rgba(255,255,255,.1) 49%,transparent 60%); content: ''; inset: 0; position: absolute; transform: translateX(-130%); }
 .home-charter-section > .public-container { align-items: center; display: flex; min-height: clamp(24rem,35vw,28rem); position: relative; z-index: 2; }
