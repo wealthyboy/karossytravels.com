@@ -221,10 +221,10 @@
 <section class="home-charter-section" id="charter-flights">
     <div class="container public-container">
         <div class="home-charter-copy">
-            <div class="home-charter-partner"><small><i></i> KAROSSY CHARTER PARTNER</small><strong>JIRO AIR</strong></div>
-            <span class="public-eyebrow"><i class="bi bi-stars"></i> Private charter flights <b>Powered by Jiro Air</b></span>
+            <div class="home-charter-partner"><small><i></i> KAROSSY CHARTER PARTNER</small><strong>GYRO AIR</strong></div>
+            <span class="public-eyebrow"><i class="bi bi-stars"></i> Private charter flights <b>Powered by Gyro Air</b></span>
             <h2>Your schedule. Your aircraft. Your journey.</h2>
-            <p>Fly privately with Jiro Air for business, leisure, executive movements or group trips. Karossy manages your request, itinerary and travel support around your exact requirements.</p>
+            <p>Fly privately with Gyro Air for business, leisure, executive movements or group trips. Karossy manages your request, itinerary and travel support around your exact requirements.</p>
             <div class="home-charter-benefits">
                 <span><i class="bi bi-clock-history"></i> Fly on your schedule</span>
                 <span><i class="bi bi-people"></i> Private, corporate &amp; group travel</span>

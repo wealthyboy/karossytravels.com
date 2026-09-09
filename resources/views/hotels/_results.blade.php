@@ -52,13 +52,13 @@
                     </div>
                 </article>
                 @if($loop->iteration === min(2, $loop->count))
-                    <aside class="hotel-results-inline-ad" data-hotel-mobile-ad aria-label="Jiro Air charter services">
-                        <a href="mailto:{{ config('travel.support.email') }}?subject=Jiro%20Air%20charter%20flight%20request">
+                    <aside class="hotel-results-inline-ad" data-hotel-mobile-ad aria-label="Gyro Air charter services">
+                        <a href="mailto:{{ config('travel.support.email') }}?subject=Gyro%20Air%20charter%20flight%20request">
                             <img src="{{ asset('images/ads/jiro-air-charter-v1.png') }}" alt="Private jet at sunset" loading="lazy">
                             <span class="jiro-ad-shine"></span>
                             <div class="jiro-ad-copy">
                                 <small><i></i> Private charter</small>
-                                <strong>JIRO AIR</strong>
+                                <strong>GYRO AIR</strong>
                                 <h3>Your aircraft.<br>Your schedule.</h3>
                                 <p>Private, corporate and group charter flights tailored around you.</p>
                                 <b>Request a charter <i class="bi bi-arrow-up-right"></i></b>
@@ -71,13 +71,13 @@
             @endforelse
         </div>
     </div>
-    <aside class="flight-results-ad hotel-results-ad" aria-label="Jiro Air charter services">
-        <a href="mailto:{{ config('travel.support.email') }}?subject=Jiro%20Air%20charter%20flight%20request">
+    <aside class="flight-results-ad hotel-results-ad" aria-label="Gyro Air charter services">
+        <a href="mailto:{{ config('travel.support.email') }}?subject=Gyro%20Air%20charter%20flight%20request">
             <img src="{{ asset('images/ads/jiro-air-charter-v1.png') }}" alt="Private jet at sunset" loading="lazy">
             <span class="jiro-ad-shine"></span>
             <div class="jiro-ad-copy">
                 <small><i></i> Private charter</small>
-                <strong>JIRO AIR</strong>
+                <strong>GYRO AIR</strong>
                 <h3>Your aircraft.<br>Your schedule.</h3>
                 <p>Private, corporate and group charter flights tailored around you.</p>
                 <b>Request a charter <i class="bi bi-arrow-up-right"></i></b>
