@@ -16,6 +16,7 @@
                     <span><i class="bi bi-check2-circle"></i> Live travel options</span>
                     <span><i class="bi bi-headset"></i> Human support</span>
                     <span><i class="bi bi-shield-check"></i> Secure booking</span>
+                    <span><i class="bi bi-shield-check"></i> IATA certified travel agency</span>
                 </div>
             </div>
             <div class="public-hero-visual" aria-hidden="true">
@@ -238,8 +239,35 @@
     </div>
 </section>
 
-@if($holidayPackages->isNotEmpty())<section class="home-holidays"><div class="container public-container"><div class="section-heading split"><div><span class="public-eyebrow">Curated escapes</span><h2>Holidays planned around you</h2><p>Ready-made packages with room to personalise the details.</p></div><a href="{{ route('holidays.index') }}">View all packages <i class="bi bi-arrow-right"></i></a></div><div class="home-holiday-grid">@foreach($holidayPackages->take(3) as $package)<a href="{{ route('holidays.show',$package) }}"><img src="{{ $package->image_path?Storage::url($package->image_path):asset('images/holiday-hero-v2.png') }}" alt="{{ $package->destination }}"><span><small>{{ $package->country }}</small><strong>{{ $package->title }}</strong><b>From {{ \App\Support\CurrencyMetadata::format($package->display_price['amount_minor'], $package->display_price['currency'], 0) }}</b></span></a>@endforeach</div></div></section>@endif
-<section class="home-app-section"><div class="container public-container"><div><span class="public-eyebrow">Karossy in your pocket</span><h2>Plan, book and manage your trip anywhere.</h2><p>Keep your flights, hotels, visa support and travel updates together in the Karossy mobile experience.</p><div class="app-store-actions"><a href="https://apps.apple.com/" target="_blank" rel="noopener noreferrer" aria-label="Open the Apple App Store"><i class="bi bi-apple"></i><small><span class="app-store-copy-desktop">Coming soon on</span><span class="app-store-copy-mobile">Download on</span></small><strong>App Store</strong></a><a href="https://play.google.com/store/apps" target="_blank" rel="noopener noreferrer" aria-label="Open Google Play"><i class="bi bi-google-play"></i><small><span class="app-store-copy-desktop">Coming soon on</span><span class="app-store-copy-mobile">Download on</span></small><strong>Google Play</strong></a></div></div><div class="app-phone-preview"><span class="phone-logo"><img src="{{ asset('favicon.png') }}" alt=""> KAROSSY</span><small>YOUR NEXT TRIP</small><h3>Everything you need, ready when you are.</h3><div><i class="bi bi-airplane-fill"></i><span><strong>Lagos to London</strong><small>Trip details and updates in one place</small></span></div></div></div></section>
+@if($holidayPackages->isNotEmpty())
+    @php
+        $holidayFallbackImages = [
+            'explore-zanzibar' => asset('images/holidays/zanzibar.jpg'),
+            'summer-in-egypt' => asset('images/holidays/egypt.jpg'),
+            'magical-morocco' => asset('images/holidays/morocco.jpg'),
+            'couples-escape-to-maldives' => asset('images/holidays/maldives.jpg'),
+            'experience-singapore' => asset('images/holidays/singapore.jpg'),
+        ];
+    @endphp
+    <section class="home-holidays">
+        <div class="container public-container">
+            <div class="section-heading split">
+                <div><span class="public-eyebrow">Curated escapes</span><h2>Holidays planned around you</h2><p>Ready-made packages with room to personalise the details.</p></div>
+                <a href="{{ route('holidays.index') }}">View all packages <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="home-holiday-grid">
+                @foreach($holidayPackages->take(3) as $package)
+                    @php($holidayImage = $package->image_path ? Storage::url($package->image_path) : ($holidayFallbackImages[$package->slug] ?? asset('images/holiday-hero-v2.jpg')))
+                    <a href="{{ route('holidays.show',$package) }}">
+                        <img src="{{ $holidayImage }}" alt="{{ $package->destination }}">
+                        <span><small>{{ $package->country }}</small><strong>{{ $package->title }}</strong><b>From {{ \App\Support\CurrencyMetadata::format($package->display_price['amount_minor'], $package->display_price['currency'], 0) }}</b></span>
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    </section>
+@endif
+<section class="home-app-section"><div class="container public-container"><div><span class="public-eyebrow">The Karossy app</span><h2>Make every journey easier from your phone.</h2><p>Download the Karossy app to search, book and manage flights, hotels, visa support and travel updates wherever you go.</p><div class="app-store-actions"><a href="https://apps.apple.com/" target="_blank" rel="noopener noreferrer" aria-label="Open the Apple App Store"><i class="bi bi-apple"></i><small><span class="app-store-copy-desktop">Get it on</span><span class="app-store-copy-mobile">Download on</span></small><strong>App Store</strong></a><a href="https://play.google.com/store/apps" target="_blank" rel="noopener noreferrer" aria-label="Open Google Play"><i class="bi bi-google-play"></i><small><span class="app-store-copy-desktop">Get it on</span><span class="app-store-copy-mobile">Download on</span></small><strong>Google Play</strong></a></div></div><div class="app-phone-preview"><span class="phone-logo"><img src="{{ asset('favicon.jpg') }}" alt=""> KAROSSY</span><small>YOUR NEXT TRIP</small><h3>Everything you need, ready when you are.</h3><div><i class="bi bi-airplane-fill"></i><span><strong>Lagos to London</strong><small>Trip details and updates in one place</small></span></div></div></div></section>
 <section class="home-study-section" id="student-study-program">
     <div class="container public-container">
         <div class="home-study-visual" aria-hidden="true">

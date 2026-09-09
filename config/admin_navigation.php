@@ -62,7 +62,7 @@ return [
         ['label' => 'Accounts', 'slug' => 'accounts', 'route' => 'admin.users.index', 'active' => 'admin.users.*'], ['label' => 'Roles', 'slug' => 'roles', 'route' => 'admin.roles.index', 'active' => 'admin.roles.*'], ['label' => 'Permissions', 'slug' => 'permissions', 'route' => 'admin.permissions.index', 'active' => 'admin.permissions.*'], ['label' => 'Audit Logs', 'slug' => 'audit-logs'],
     ]],
     ['label' => 'Settings', 'slug' => 'settings', 'icon' => 'bi-gear-fill', 'permission' => 'settings.manage', 'items' => [
-        ['label' => 'Company', 'slug' => 'company'], ['label' => 'General', 'slug' => 'general'], ['label' => 'Payment Gateway', 'slug' => 'payment-gateway'], ['label' => 'Currency', 'slug' => 'currency', 'route' => 'admin.settings.currency.edit'], ['label' => 'Taxes', 'slug' => 'taxes'], ['label' => 'Languages', 'slug' => 'languages'], ['label' => 'Email', 'slug' => 'email'], ['label' => 'SMS', 'slug' => 'sms'], ['label' => 'API Credentials', 'slug' => 'api-credentials'],
+        ['label' => 'Currency', 'slug' => 'currency', 'route' => 'admin.settings.currency.edit'], ['label' => 'Email', 'slug' => 'email'],
     ]],
     // Logs removed per recent decision
 ];
