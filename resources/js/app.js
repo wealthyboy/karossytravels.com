@@ -78,6 +78,24 @@ document.querySelectorAll('[data-checkout-passport-expiry]').forEach(input => {
     });
 });
 
+document.querySelectorAll('[data-visa-date]').forEach(input => {
+    const isBirthDate = input.dataset.visaDate === 'birth';
+    flatpickr(input, {
+        altFormat: 'd/m/Y',
+        altInput: true,
+        altInputClass: 'form-control',
+        dateFormat: 'Y-m-d',
+        disableMobile: true,
+        maxDate: input.dataset.maxDate || null,
+        minDate: input.dataset.minDate || null,
+        monthSelectorType: 'dropdown',
+        onReady: (_, __, instance) => instance.calendarContainer.classList.add('karossy-flight-calendar', 'karossy-checkout-calendar'),
+        onOpen: (_, __, instance) => {
+            if (!instance.selectedDates.length) instance.jumpToDate(isBirthDate ? (input.dataset.maxDate || undefined) : (input.dataset.minDate || undefined));
+        },
+    });
+});
+
 document.querySelectorAll('[data-global-route-card]').forEach((card) => {
     const routes = [
         ['LHR', 'London', 'DXB', 'Dubai'],

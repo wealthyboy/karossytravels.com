@@ -16,9 +16,9 @@
                     <div class="visa-form-grid">
                         <label><span>First name</span><input name="applicants[{{ $number - 1 }}][first_name]" autocomplete="given-name" required></label>
                         <label><span>Last name</span><input name="applicants[{{ $number - 1 }}][last_name]" autocomplete="family-name" required></label>
-                        <label><span>Date of birth</span><input type="date" name="applicants[{{ $number - 1 }}][date_of_birth]" max="{{ now()->subDay()->toDateString() }}" required></label>
+                        <label><span>Date of birth</span><input type="text" name="applicants[{{ $number - 1 }}][date_of_birth]" data-visa-date="birth" data-max-date="{{ now()->subDay()->toDateString() }}" placeholder="dd/mm/yyyy" autocomplete="bday" readonly required></label>
                         <label><span>Passport number</span><input name="applicants[{{ $number - 1 }}][passport_number]" autocomplete="off" required></label>
-                        <label><span>Passport expiry</span><input type="date" name="applicants[{{ $number - 1 }}][passport_expiry]" min="{{ now()->addDay()->toDateString() }}" required></label>
+                        <label><span>Passport expiry</span><input type="text" name="applicants[{{ $number - 1 }}][passport_expiry]" data-visa-date="expiry" data-min-date="{{ now()->addDay()->toDateString() }}" placeholder="dd/mm/yyyy" autocomplete="off" readonly required></label>
                     </div>
                 </article>
                 @endforeach

@@ -34,9 +34,8 @@
                         <div class="col-md-5"><label class="form-label">Last name</label><input name="travellers[{{ $index }}][last_name]" value="{{ old("travellers.$index.last_name") }}" class="form-control @error("travellers.$index.last_name") is-invalid @enderror" autocomplete="off" placeholder="As on passport"></div>
                         <div class="col-md-4"><label class="form-label">Date of birth</label><input name="travellers[{{ $index }}][date_of_birth]" value="{{ old("travellers.$index.date_of_birth") }}" class="form-control @error("travellers.$index.date_of_birth") is-invalid @enderror" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" data-checkout-date-of-birth data-traveller-type="{{ $type }}" data-max-date="{{ $type === 'ADT' ? now()->subYears(18)->toDateString() : now()->subDay()->toDateString() }}"></div>
                         <div class="col-md-4"><label class="form-label">Gender</label><select name="travellers[{{ $index }}][gender]" class="form-select @error("travellers.$index.gender") is-invalid @enderror"><option value="">Select</option>@foreach(['male'=>'Male','female'=>'Female','unspecified'=>'Unspecified'] as $value=>$label)<option value="{{ $value }}" @selected(old("travellers.$index.gender") === $value)>{{ $label }}</option>@endforeach</select></div>
-                        <div class="col-md-4"><label class="form-label">Nationality code</label><input name="travellers[{{ $index }}][nationality]" value="{{ old("travellers.$index.nationality", 'NG') }}" class="form-control text-uppercase @error("travellers.$index.nationality") is-invalid @enderror" maxlength="2" placeholder="NG"></div>
+                        <div class="col-md-4"><label class="form-label">Nationality code</label><input name="travellers[{{ $index }}][nationality]" value="{{ old("travellers.$index.nationality", 'NG') }}" class="form-control text-uppercase @error("travellers.$index.nationality") is-invalid @enderror" maxlength="2" placeholder="NG" data-nationality-code="{{ $index }}"><input type="hidden" name="travellers[{{ $index }}][passport_country]" value="{{ old("travellers.$index.passport_country", old("travellers.$index.nationality", 'NG')) }}" data-passport-country="{{ $index }}"></div>
                         <div class="col-md-4"><label class="form-label">Passport number</label><input name="travellers[{{ $index }}][passport_number]" value="{{ old("travellers.$index.passport_number") }}" class="form-control text-uppercase @error("travellers.$index.passport_number") is-invalid @enderror" autocomplete="off" placeholder="A00000000"></div>
-                        <div class="col-md-4"><label class="form-label">Issuing country code</label><input name="travellers[{{ $index }}][passport_country]" value="{{ old("travellers.$index.passport_country", 'NG') }}" class="form-control text-uppercase @error("travellers.$index.passport_country") is-invalid @enderror" maxlength="2" placeholder="NG"></div>
                         <div class="col-md-4"><label class="form-label">Passport expiry</label><input name="travellers[{{ $index }}][passport_expiry]" value="{{ old("travellers.$index.passport_expiry") }}" class="form-control @error("travellers.$index.passport_expiry") is-invalid @enderror" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" data-checkout-passport-expiry></div>
                     </div>
                 </div>
@@ -180,6 +179,12 @@
     };
 
     const checkoutForm = document.querySelector('[data-checkout-travellers-form]');
+    checkoutForm?.querySelectorAll('[data-nationality-code]').forEach(field => {
+        field.addEventListener('input', () => {
+            const passportCountry = checkoutForm.querySelector(`[data-passport-country="${field.dataset.nationalityCode}"]`);
+            if (passportCountry) passportCountry.value = field.value.toUpperCase();
+        });
+    });
     const payButton = checkoutForm?.querySelector('[data-open-booking-payment]');
     const errorBox = document.querySelector('[data-booking-error]');
     const modalElement = document.querySelector('#publicBookingConfirmationModal');
