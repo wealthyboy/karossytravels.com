@@ -14,14 +14,16 @@ final class DisplayCurrencyResolver
         $supported = array_map('strtoupper', config('travel.currency.supported', ['NGN', 'USD']));
 
         // Native clients send the currency selected in the app with each search.
-        // Honour that explicit value before applying account or IP defaults.
+        // Their request value must win because native searches are stateless.
         $requested = strtoupper((string) $request->input('currency', ''));
-        if (in_array($requested, $supported, true)) {
+        $isNativeClient = $request->header('X-Client-Platform') === 'mobile';
+        if ($isNativeClient && in_array($requested, $supported, true)) {
             return $requested;
         }
 
-        // A visitor's explicit choice is authoritative. Location detection only
-        // supplies the initial default and never overrides the currency switcher.
+        // On the website, the session is the source of truth after a customer uses
+        // the selector. Search/listing URLs can retain an older hidden currency
+        // query parameter, so reading it first would undo the customer's choice.
         $selected = $request->hasSession() ? strtoupper((string) $request->session()->get('display_currency', '')) : '';
         if (in_array($selected, $supported, true)) {
             return $selected;
