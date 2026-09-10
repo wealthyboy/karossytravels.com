@@ -5,18 +5,19 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Support\ServiceCatalog;
+use App\Travel\Pricing\DisplayCurrencyResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 final class AppBootstrapController extends Controller
 {
-    public function __invoke(Request $request, ServiceCatalog $catalog): JsonResponse
+    public function __invoke(Request $request, ServiceCatalog $catalog, DisplayCurrencyResolver $currencyResolver): JsonResponse
     {
         return ApiResponse::success($request, [
             'application' => [
                 'name' => config('app.name'),
                 'environment' => app()->environment(),
-                'default_currency' => config('travel.default_currency'),
+                'default_currency' => $currencyResolver->resolve($request),
             ],
             'services' => $catalog->all(),
             'features' => config('travel.features'),

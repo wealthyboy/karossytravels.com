@@ -12,6 +12,7 @@ use App\Support\PhoneCountryCodes;
 use App\Travel\FlightRevalidationService;
 use App\Travel\HotelOrderService;
 use App\Travel\MobileCheckoutService;
+use App\Travel\Exceptions\BookingCreationException;
 use App\Travel\Pricing\ExchangeRateService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -79,6 +80,10 @@ final class MobileCheckoutController extends Controller
         if ($attempt->order_id) {
             return ApiResponse::success($request, $this->completed($attempt));
         }
+        if ($attempt->failure_stage) {
+            return ApiResponse::success($request, $this->failed($attempt));
+        }
+
         try {
             $verified = $paystack->verify($attempt->reference);
             if (data_get($verified, 'status') !== 'success') {
@@ -93,7 +98,21 @@ final class MobileCheckoutController extends Controller
             $attempt->update(['status' => 'paid', 'verified_at' => now(), 'gateway_response' => $verified]);
             $claimed = CheckoutPaymentAttempt::whereKey($attempt->id)->whereNull('reservation_attempted_at')->update(['reservation_attempted_at' => now()]);
             if ($claimed === 1) {
-                $checkout->complete($attempt->fresh(), $verified);
+                try {
+                    $checkout->complete($attempt->fresh(), $verified);
+                } catch (Throwable $exception) {
+                    report($exception);
+                    $attempt->update([
+                        'status' => 'paid',
+                        'failure_stage' => $exception instanceof BookingCreationException ? $exception->stage : 'internal',
+                        'failure_message' => str($exception->getMessage())->limit(5000)->toString(),
+                    ]);
+
+                    return ApiResponse::success($request, $this->failed(
+                        $attempt->fresh(),
+                        $exception instanceof BookingCreationException ? $exception->publicMessage : null,
+                    ));
+                }
             }
             $attempt->refresh();
 
@@ -102,6 +121,16 @@ final class MobileCheckoutController extends Controller
             report($exception);
             return ApiResponse::success($request, ['status' => $attempt->status === 'paid' ? 'processing' : 'pending', 'reference' => $attempt->reference]);
         }
+    }
+
+    private function failed(CheckoutPaymentAttempt $attempt, ?string $message = null): array
+    {
+        return [
+            'status' => 'failed',
+            'reference' => $attempt->reference,
+            'payment_confirmed' => true,
+            'message' => $message ?: 'Your payment was received, but Karossy could not confirm the booking. Do not pay again; keep this reference and contact support.',
+        ];
     }
 
     private function initialize(Request $request, PaystackService $paystack, string $currency, int $amount, string $email, array $context): JsonResponse
