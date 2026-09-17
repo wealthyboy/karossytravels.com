@@ -50,7 +50,7 @@ return [
         ['label' => 'API Logs', 'slug' => 'api-logs', 'route' => 'admin.travel-logs.index', 'active' => 'admin.travel-logs.*', 'route_parameters' => ['product' => 'all']],
     ]],
     ['label' => 'Pricing', 'slug' => 'pricing', 'icon' => 'bi-cash-coin', 'permission' => 'offers.manage', 'items' => [
-        ['label' => 'Airline Markups', 'slug' => 'airline-markups', 'route' => 'admin.pricing.edit', 'route_parameters' => ['product' => 'airline']], ['label' => 'Hotel Markups', 'slug' => 'hotel-markups', 'route' => 'admin.pricing.edit', 'route_parameters' => ['product' => 'hotel']],
+        ['label' => 'Airline Markups', 'slug' => 'airline-markups', 'route' => 'admin.pricing.edit', 'route_parameters' => ['product' => 'airline']], ['label' => 'Flight Deals', 'slug' => 'flight-deals', 'route' => 'admin.flight-deals.index', 'active' => 'admin.flight-deals.*'], ['label' => 'Hotel Markups', 'slug' => 'hotel-markups', 'route' => 'admin.pricing.edit', 'route_parameters' => ['product' => 'hotel']],
     ]],
     ['label' => 'Content', 'slug' => 'content', 'icon' => 'bi-layout-text-window-reverse', 'permission' => 'services.manage', 'items' => [
         ['label' => 'Homepage', 'slug' => 'homepage'], ['label' => 'Destinations', 'slug' => 'destinations'], ['label' => 'Travel Guides', 'slug' => 'travel-guides'], ['label' => 'Blog', 'slug' => 'blog'], ['label' => 'Banners', 'slug' => 'banners'], ['label' => 'FAQs', 'slug' => 'faqs'], ['label' => 'Testimonials', 'slug' => 'testimonials'],

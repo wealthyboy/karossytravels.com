@@ -74,7 +74,7 @@ final class FlightRevalidationService
         }
 
         $normalized = FlightOffer::fromProvider($matched);
-        $priced = $this->pricing->price($normalized, $offer->channel, $offer->currency);
+        $priced = $this->pricing->price($normalized, $offer->channel, $offer->currency, 'airline', $offer->flightSearch->departure_date?->toDateString(), $offer->flightSearch->origin, $offer->flightSearch->destination);
 
         DB::transaction(function () use ($offer, $normalized, $priced, $matched): void {
             $offer->update([
@@ -82,6 +82,8 @@ final class FlightRevalidationService
                 'provider_total_minor' => $priced['provider_total_minor'],
                 'markup_minor' => $priced['markup_minor'],
                 'selling_total_minor' => $priced['selling_total_minor'],
+                'flight_deal_id' => $priced['deal_id'],
+                'deal_discount_minor' => $priced['deal_discount_minor'],
                 'itinerary' => $normalized->segments,
                 'fare_summary' => [
                     ...($offer->fare_summary ?? []),
@@ -89,6 +91,8 @@ final class FlightRevalidationService
                     'taxes_minor' => $normalized->taxesMinor,
                     'validating_airline' => $normalized->validatingAirline,
                     'refundable' => $normalized->refundable,
+                    'deal_id' => $priced['deal_id'],
+                    'deal_discount_minor' => $priced['deal_discount_minor'],
                     'order_offer_id' => data_get($matched, 'order_offer_id'),
                     'selected_offer_item_ids' => data_get($matched, 'selected_offer_item_ids', []),
                 ],

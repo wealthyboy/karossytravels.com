@@ -59,6 +59,7 @@ final class FlightOfferController extends Controller
                 'price' => [
                     'currency' => $converted['currency'],
                     'total_minor' => $converted['amount_minor'],
+                    'discount_minor' => $rates->convertMinor((int) $offer->deal_discount_minor, $offer->currency, $currency)['amount_minor'],
                 ],
                 'refundable' => (bool) data_get($offer->fare_summary, 'refundable', false),
                 'expires_at' => $offer->expires_at->toIso8601String(),

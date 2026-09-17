@@ -37,7 +37,8 @@ final class FlightReviewController extends Controller
         $total = $rates->convertMinor($offer->selling_total_minor, $offer->currency, $currency);
         $provider = $rates->convertMinor($offer->provider_total_minor, $offer->currency, $currency);
         $markup = $rates->convertMinor($offer->markup_minor, $offer->currency, $currency);
+        $discount = $rates->convertMinor((int) $offer->deal_discount_minor, $offer->currency, $currency);
 
-        return view('flights.review', compact('offer', 'currency', 'total', 'provider', 'markup'));
+        return view('flights.review', compact('offer', 'currency', 'total', 'provider', 'markup', 'discount'));
     }
 }

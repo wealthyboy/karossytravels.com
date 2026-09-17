@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AddonController;
 use App\Http\Controllers\Admin\AnalyticsEventController;
 use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\BookingHoldSettingController;
+use App\Http\Controllers\Admin\FlightDealController;
 use App\Http\Controllers\Admin\CurrencySettingController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -119,6 +120,7 @@ Route::prefix('admin')->name('admin.')->middleware('admin.hidden')->group(functi
     Route::get('/', DashboardController::class)->middleware('permission:dashboard.view')->name('dashboard');
     Route::get('/flights/search', FlightSearchPageController::class)->middleware('permission:bookings.view')->name('flights.search');
     Route::resource('flight-offers', FlightOfferController::class)->except('show')->middleware('permission:offers.manage');
+    Route::resource('flight-deals', FlightDealController::class)->except('show')->middleware('permission:offers.manage');
     Route::post('/flights/search', FlightSearchController::class)->middleware(['permission:bookings.view', 'throttle:30,1'])->name('flights.search.store');
     Route::post('/flights/offers/{offer}/revalidate', FlightRevalidationController::class)->middleware(['permission:bookings.manage', 'throttle:20,1'])->name('flights.offers.revalidate');
     Route::get('/flights/offers/{offer}/book', [FlightOrderController::class, 'create'])->middleware('permission:bookings.manage')->name('flights.orders.create');

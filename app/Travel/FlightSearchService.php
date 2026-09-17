@@ -72,7 +72,7 @@ final class FlightSearchService
 
             $offers = collect($providerOffers)->map(function (array $rawOffer) use ($search, $channel, $criteria): array {
                 $offer = FlightOffer::fromProvider($rawOffer);
-                $price = $this->pricing->price($offer, $channel, $criteria['currency']);
+                $price = $this->pricing->price($offer, $channel, $criteria['currency'], 'airline', $criteria['departure_date'] ?? null, $criteria['origin'] ?? null, $criteria['destination'] ?? null);
                 $expiresAt = now()->addMinutes((int) config('travel.offers.ttl_minutes', 15));
 
                 $stored = $search->offers()->create([
@@ -83,12 +83,16 @@ final class FlightSearchService
                     'provider_total_minor' => $price['provider_total_minor'],
                     'markup_minor' => $price['markup_minor'],
                     'selling_total_minor' => $price['selling_total_minor'],
+                    'flight_deal_id' => $price['deal_id'],
+                    'deal_discount_minor' => $price['deal_discount_minor'],
                     'itinerary' => $offer->segments,
                     'fare_summary' => [
                         'base_minor' => $offer->baseMinor,
                         'taxes_minor' => $offer->taxesMinor,
                         'validating_airline' => $offer->validatingAirline,
                         'refundable' => $offer->refundable,
+                        'deal_id' => $price['deal_id'],
+                        'deal_discount_minor' => $price['deal_discount_minor'],
                     ],
                     'expires_at' => $expiresAt,
                 ]);
@@ -102,6 +106,7 @@ final class FlightSearchService
                         'base_minor' => $price['display_base_minor'],
                         'taxes_minor' => $price['display_taxes_minor'],
                         'markup_minor' => $price['display_markup_minor'],
+                        'discount_minor' => $price['display_discount_minor'],
                         'total_minor' => $price['display_total_minor'],
                         'provider_currency' => $offer->currency,
                         'exchange_rate' => $price['exchange_rate'],
