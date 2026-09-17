@@ -1339,6 +1339,8 @@ main .h5 {
 .booking-card .form-control,
 .booking-card .form-select { font-size: var(--small-font-size, .78rem); min-height: 2.7rem; }
 .checkout-actions { align-items: center; display: flex; justify-content: space-between; margin-top: 1.25rem; }
+.checkout-actions.checkout-actions-stacked { align-items: stretch; display: flex; flex-direction: column; gap: .75rem; }
+.checkout-actions.checkout-actions-stacked .btn { width: 100%; }
 .checkout-actions .btn { font-size: var(--small-font-size, .78rem); padding: .7rem 1.1rem; }
 .payment-security { align-items: center; background: #f2faf6; border-radius: .8rem; display: flex; gap: .7rem; margin-bottom: 1rem; padding: .75rem; }
 .payment-security > span { align-items: center; background: #d9f1e5; border-radius: 50%; color: #187a4d; display: inline-flex; height: 2rem; justify-content: center; width: 2rem; }

@@ -15,7 +15,11 @@ final class Order extends Model
 
     protected function casts(): array
     {
-        return ['customer' => 'encrypted:array', 'expires_at' => 'datetime'];
+        return [
+            'customer' => 'encrypted:array',
+            'expires_at' => 'datetime',
+            'payment_due_at' => 'datetime',
+        ];
     }
 
     public function bookings(): HasMany
