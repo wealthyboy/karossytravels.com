@@ -1,0 +1,10 @@
+@extends('layouts.admin')
+@section('title', 'Book on Hold Settings')
+@section('content')
+<header class="mb-4"><p class="text-danger fw-semibold mb-1">SETTINGS</p><h1 class="h3 fw-bold mb-2">Book on Hold</h1><p class="text-secondary mb-0">Control pay-later reservations and the bank details printed on customer invoices.</p></header>
+<form method="POST" action="{{ route('admin.settings.booking-hold.update') }}" class="card content-card"><div class="card-body p-4">@csrf @method('PUT')
+<div class="form-check form-switch mb-4"><input type="hidden" name="enabled" value="0"><input class="form-check-input" type="checkbox" name="enabled" value="1" @checked($settings->enabled)><label class="form-check-label"><strong>Enable Book on Hold</strong><small class="d-block text-secondary">Allow customers to reserve eligible flights without paying immediately.</small></label></div>
+<div class="mb-4"><label class="form-label">Hold timeout</label><div class="input-group"><input class="form-control" type="number" name="timeout_hours" min="1" max="168" value="{{ old('timeout_hours', $settings->timeout_hours) }}"><span class="input-group-text">hours</span></div></div>
+<h2 class="h5 mb-3">Bank transfer details</h2><div class="row g-3"><div class="col-md-6"><label class="form-label">Bank name</label><input class="form-control" name="bank_name" value="{{ old('bank_name', $settings->bank_name) }}"></div><div class="col-md-6"><label class="form-label">Account name</label><input class="form-control" name="account_name" value="{{ old('account_name', $settings->account_name) }}"></div><div class="col-md-6"><label class="form-label">Account number</label><input class="form-control" name="account_number" value="{{ old('account_number', $settings->account_number) }}"></div><div class="col-md-6"><label class="form-label">Sort code / other identifier</label><input class="form-control" name="sort_code" value="{{ old('sort_code', $settings->sort_code) }}"></div></div>
+<button class="btn btn-karossy mt-4" type="submit">Save settings</button></div></form>
+@endsection

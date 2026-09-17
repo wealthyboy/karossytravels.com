@@ -21,8 +21,8 @@
         @include('checkout._progress', ['step' => 3])
         <div class="confirmation-hero">
             <span class="completion-icon"><i class="bi bi-check-lg"></i></span>
-            <div><span class="public-eyebrow">Reservation confirmed</span><h1>Your flight is booked</h1><p>Your booking was completed successfully. We have sent the confirmation to <strong>{{ data_get($order->customer, 'email') }}</strong>.</p></div>
-            <span class="confirmation-status"><i class="bi bi-check-circle-fill"></i> Confirmed</span>
+            <div><span class="public-eyebrow">{{ $order->status === 'pending_payment' ? 'Pending payment' : 'Reservation confirmed' }}</span><h1>{{ $order->status === 'pending_payment' ? 'Your flight is on hold' : 'Your flight is booked' }}</h1><p>{{ $order->status === 'pending_payment' ? 'Your PNR has been created. Complete payment before '.$order->payment_due_at?->format('D, d M Y H:i').'. An invoice has been emailed to ' : 'Your booking was completed successfully. We have sent the confirmation to ' }}<strong>{{ data_get($order->customer, 'email') }}</strong>.</p></div>
+            <span class="confirmation-status"><i class="bi bi-{{ $order->status === 'pending_payment' ? 'clock' : 'check-circle-fill' }}"></i> {{ $order->status === 'pending_payment' ? 'Pending payment' : 'Confirmed' }}</span>
         </div>
 
         <div class="confirmation-reference-grid">
@@ -69,7 +69,7 @@
 
             <aside class="col-xl-4">
                 <div class="confirmation-panel confirmation-summary">
-                    <span class="public-eyebrow">Booking summary</span><h2>Total paid</h2><strong class="confirmation-total">{{ $money((int) $order->total_minor) }}</strong>
+                    <span class="public-eyebrow">Booking summary</span><h2>{{ $order->status === 'pending_payment' ? 'Total due' : 'Total paid' }}</h2><strong class="confirmation-total">{{ $money((int) $order->total_minor) }}</strong>
                     <div class="confirmation-price-lines"><div><span>Flight fare and taxes</span><strong>{{ $money((int) $order->subtotal_minor) }}</strong></div>@if($addonTotal > 0)<div><span>Additional services</span><strong>{{ $money($addonTotal) }}</strong></div>@endif @if($operatorAdjustment > 0)<div><span>Price adjustment</span><strong>{{ $money($operatorAdjustment) }}</strong></div>@endif</div>
                     <div class="confirmation-contact"><i class="bi bi-envelope-check"></i><span><small>Confirmation sent to</small><strong>{{ data_get($order->customer, 'email') }}</strong>@if($receiptEmail && strtolower((string) $receiptEmail) !== strtolower((string) data_get($order->customer, 'email')))<small class="d-block mt-1">Receipt: {{ $receiptEmail }}</small>@else<small class="d-block mt-1">Payment receipt sent here too</small>@endif</span></div>
                     <a class="btn btn-karossy w-100" href="{{ route('account.bookings.show', $booking) }}"><i class="bi bi-receipt"></i> View booking</a>

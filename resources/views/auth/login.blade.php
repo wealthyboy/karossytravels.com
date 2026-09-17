@@ -18,6 +18,12 @@
                 </div>
             @enderror
 
+            @if(session('status'))
+                <div class="alert alert-success py-2 px-3 small mb-3" role="status">
+                    <i class="bi bi-check-circle me-1"></i>{{ session('status') }}
+                </div>
+            @endif
+
             <a
                 href="{{ route('auth.google.redirect') }}"
                 class="btn w-100 d-flex align-items-center justify-content-center gap-2 bg-white text-dark fw-semibold border"
@@ -49,7 +55,7 @@
                 <div>
                     <div class="d-flex justify-content-between">
                         <label for="password" class="form-label">Password</label>
-                        <a href="#" class="auth-helper-link">Forgot password?</a>
+                        <a href="{{ route('password.request') }}" class="auth-helper-link">Forgot password?</a>
                     </div>
                     <div class="auth-password">
                         <input id="password" name="password" type="password" class="form-control @error('password') is-invalid @enderror" autocomplete="current-password" required>

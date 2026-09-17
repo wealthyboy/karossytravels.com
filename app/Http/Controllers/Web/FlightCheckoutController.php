@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreFlightTravellersRequest;
 use App\Models\Customer;
 use App\Models\Addon;
+use App\Models\BookingHoldSetting;
 use App\Models\CheckoutPaymentAttempt;
 use App\Models\FairRule;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\TravelOffer;
 use App\Payments\PaystackService;
+use App\Mail\BookingInvoice;
 use App\Support\TravelLogger;
 use App\Travel\AirOrderService;
 use App\Travel\CheckoutCustomerResolver;
@@ -25,6 +27,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -70,6 +74,7 @@ final class FlightCheckoutController extends Controller
             'addons' => $addons,
             'airlineCode' => $airlineCode,
             'demoPaymentEnabled' => $this->demoPaymentEnabled(),
+            'holdSettings' => BookingHoldSetting::current(),
         ]);
     }
 
@@ -121,6 +126,7 @@ final class FlightCheckoutController extends Controller
     ): JsonResponse|RedirectResponse {
         $validated = $request->validate([
             'terms' => ['accepted'],
+            'payment_method' => ['nullable', Rule::in(['online', 'hold'])],
             'addons' => ['nullable', 'array'],
             'addons.*' => ['uuid', 'distinct', Rule::exists('addons', 'id')->where(fn ($query) => $query->where('type', 'flight')->where('active', true))],
         ]);
@@ -129,6 +135,10 @@ final class FlightCheckoutController extends Controller
 
         if (! is_array($checkout) || empty($checkout['travellers']) || empty($checkout['contact'])) {
             return $this->failure($request, 'Your checkout session has expired. Enter the traveller details again.', route('checkout.travellers', $offer), 422, 'CHECKOUT_SESSION_EXPIRED');
+        }
+
+        if (($validated['payment_method'] ?? 'online') === 'hold') {
+            return $this->createHoldBooking($request, $offer, $checkout, $validated, $revalidation, $orders, $customerResolver, $rates, $travelLogger);
         }
 
         $unresolvedPayment = CheckoutPaymentAttempt::query()
@@ -551,6 +561,83 @@ final class FlightCheckoutController extends Controller
             'order' => $order->load(['bookings.tickets', 'bookings.addons', 'bookings.travelOffer.flightSearch']),
             'booking' => $order->bookings->firstOrFail(),
         ]);
+    }
+
+    public function holdPayment(Request $request, Order $order): View
+    {
+        abort_unless($order->payment_mode === 'hold', 404);
+        if ($this->holdExpired($order)) {
+            return view('checkout.hold-payment-expired', ['message' => 'Booking date has passed.']);
+        }
+
+        return view('checkout.hold-payment', ['order' => $order->load(['bookings.travelOffer.flightSearch']), 'booking' => $order->bookings->firstOrFail()]);
+    }
+
+    public function holdPaymentInitialize(Request $request, Order $order): JsonResponse
+    {
+        abort_unless($order->payment_mode === 'hold', 404);
+        if ($this->holdExpired($order)) return response()->json(['message' => 'Booking date has passed.'], 410);
+        $payment = $order->payments()->where('status', 'pending')->latest()->firstOrFail();
+        $reference = $payment->gateway_reference ?: 'KAR-HOLD-'.Str::upper(Str::random(18));
+        $payment->update(['gateway' => 'paystack', 'gateway_reference' => $reference]);
+        $email = (string) data_get($order->customer, 'email');
+        if ($this->demoPaymentEnabled()) {
+            return response()->json(['reference' => $reference, 'public_key' => 'demo', 'email' => $email, 'amount_minor' => $payment->amount_minor, 'currency' => $payment->currency]);
+        }
+        try {
+            $data = app(PaystackService::class)->initialize($email, $payment->amount_minor, $payment->currency, $reference, ['order_id' => $order->id, 'booking_type' => 'flight_hold']);
+        } catch (Throwable $exception) {
+            return response()->json(['message' => $exception->getMessage()], 503);
+        }
+        return response()->json(['reference' => $reference, 'public_key' => config('services.paystack.public_key'), 'email' => $email, 'amount_minor' => $payment->amount_minor, 'currency' => $payment->currency, 'first_name' => data_get($order->customer, 'name')]);
+    }
+
+    public function holdPaymentVerify(Request $request, Order $order, PaystackService $paystack, FlightTicketingService $ticketing, AirOrderService $orders): JsonResponse
+    {
+        abort_unless($order->payment_mode === 'hold', 404);
+        if ($this->holdExpired($order)) return response()->json(['message' => 'Booking date has passed.'], 410);
+        $reference = (string) $request->validate(['reference' => ['required', 'string', 'max:100']])['reference'];
+        $payment = $order->payments()->where('gateway_reference', $reference)->firstOrFail();
+        if ($payment->status !== 'paid') {
+            $data = $this->demoPaymentEnabled() ? ['status' => 'success', 'amount' => $payment->amount_minor, 'currency' => $payment->currency, 'reference' => $reference] : $paystack->verify($reference);
+            abort_unless(data_get($data, 'status') === 'success' && (int) data_get($data, 'amount') === $payment->amount_minor && strtoupper((string) data_get($data, 'currency')) === $payment->currency, 422);
+            $payment->update(['status' => 'paid', 'paid_at' => now(), 'metadata' => $data]);
+            $order->update(['status' => 'confirmed']);
+            $booking = $order->bookings->firstOrFail();
+            $ticketing->issueAfterPayment($booking);
+            $orders->sendConfirmation($order->fresh());
+            $orders->sendReceipt($order->fresh());
+        }
+        return response()->json(['redirect' => route('checkout.complete', $order)]);
+    }
+
+    private function createHoldBooking(Request $request, TravelOffer $offer, array $checkout, array $validated, FlightRevalidationService $revalidation, AirOrderService $orders, CheckoutCustomerResolver $customerResolver, ExchangeRateService $rates, TravelLogger $travelLogger): JsonResponse|RedirectResponse
+    {
+        $settings = BookingHoldSetting::current();
+        $departureDate = $offer->flightSearch()->value('departure_date');
+        if (! $settings->enabled) return $this->failure($request, 'Book on Hold is currently unavailable.', route('checkout.travellers', $offer), 422, 'HOLD_DISABLED');
+        if ($departureDate && now()->toDateString() === (string) $departureDate) return $this->failure($request, 'Book on Hold is unavailable for flights departing today.', route('checkout.travellers', $offer), 422, 'HOLD_SAME_DAY');
+        try { $revalidation->revalidate($offer); } catch (Throwable $exception) { return $this->failure($request, 'The live fare could not be confirmed. Please retry.', route('checkout.travellers', $offer), 422, 'FARE_REVALIDATION_FAILED'); }
+        $primary = (array) data_get($checkout, 'travellers.0', []);
+        $customer = $customerResolver->transientCustomer($primary, (array) data_get($checkout, 'contact', []));
+        $addons = Addon::query()->whereIn('id', $validated['addons'] ?? [])->where('type', 'flight')->where('active', true)->get();
+        try { $order = $orders->create($offer->fresh(), $customer, $checkout['travellers'], addons: $addons, sendConfirmation: false, contact: (array) data_get($checkout, 'contact', []), ownerUserId: $request->user()?->id); } catch (Throwable $exception) { report($exception); return $this->failure($request, 'The airline could not create the reservation. Please retry.', route('checkout.travellers', $offer), 422, 'HOLD_BOOKING_FAILED'); }
+        $due = now()->addHours(max(1, (int) $settings->timeout_hours));
+        if ($departureDate) $due = $due->min(\Illuminate\Support\Carbon::parse($departureDate)->startOfDay());
+        $order->update(['status' => 'pending_payment', 'payment_mode' => 'hold', 'payment_due_at' => $due, 'expires_at' => $due]);
+        $order->payments()->create(['gateway' => 'bank_transfer', 'status' => 'pending', 'currency' => $order->currency, 'amount_minor' => $order->total_minor]);
+        $booking = $order->bookings->firstOrFail();
+        $url = URL::signedRoute('checkout.hold.pay', ['order' => $order]);
+        try { Mail::to(data_get($order->customer, 'email'))->send(new BookingInvoice($order->fresh(), $booking, $settings, $url)); } catch (Throwable $exception) { report($exception); }
+        $request->session()->put("completed_orders.{$order->id}", true);
+        $payload = ['message' => 'Your booking is on hold and the invoice has been emailed.', 'redirect' => route('checkout.complete', $order), 'hold' => true];
+        return $request->expectsJson() ? response()->json($payload, 201) : redirect($payload['redirect']);
+    }
+
+    private function holdExpired(Order $order): bool
+    {
+        $departure = $order->bookings()->with('travelOffer.flightSearch')->first()?->travelOffer?->flightSearch?->departure_date;
+        return $order->payment_due_at?->isPast() || ($departure && now()->toDateString() > (string) $departure);
     }
 
     private function claimReservationAttempt(CheckoutPaymentAttempt $attempt): bool

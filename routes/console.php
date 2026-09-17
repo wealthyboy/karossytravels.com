@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use App\Travel\TravelApi\TravelApiClient;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -15,3 +16,5 @@ Artisan::command('travel-api:authenticate {--force : Discard the cached token an
 
     return self::SUCCESS;
 })->purpose('Authenticate with the private travel API and cache the access token securely');
+
+Schedule::command('bookings:expire-holds')->hourly();

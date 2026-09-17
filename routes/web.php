@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AddonController;
 use App\Http\Controllers\Admin\AnalyticsEventController;
 use App\Http\Controllers\Admin\BookingController;
+use App\Http\Controllers\Admin\BookingHoldSettingController;
 use App\Http\Controllers\Admin\CurrencySettingController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -25,6 +26,8 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VisaApplicationController;
 use App\Http\Controllers\Admin\VisaController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Web\AccountBookingController;
 use App\Http\Controllers\Web\CarPartnerController;
@@ -82,6 +85,9 @@ Route::post('/checkout/{offer}/payment/initialize', [FlightCheckoutController::c
 Route::post('/checkout/{offer}/payment/verify', [FlightCheckoutController::class, 'verifyPayment'])
     ->middleware('throttle:30,1')->name('checkout.payment.verify');
 Route::get('/checkout/complete/{order}', [FlightCheckoutController::class, 'complete'])->name('checkout.complete');
+Route::get('/booking-hold/{order}/pay', [FlightCheckoutController::class, 'holdPayment'])->middleware('signed')->name('checkout.hold.pay');
+Route::post('/booking-hold/{order}/pay/initialize', [FlightCheckoutController::class, 'holdPaymentInitialize'])->middleware(['signed', 'throttle:8,1'])->name('checkout.hold.pay.initialize');
+Route::post('/booking-hold/{order}/pay/verify', [FlightCheckoutController::class, 'holdPaymentVerify'])->middleware(['signed', 'throttle:20,1'])->name('checkout.hold.pay.verify');
 Route::post('/webhooks/paystack', PaystackWebhookController::class)->name('webhooks.paystack');
 Route::middleware('auth')->group(function (): void {
     Route::get('/account/bookings', [AccountBookingController::class, 'index'])->name('account.bookings.index');
@@ -92,6 +98,10 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:login')->name('login.store');
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
     Route::post('/register', [RegisteredUserController::class, 'store'])->middleware('throttle:registration')->name('register.store');
+    Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])->middleware('throttle:5,1')->name('password.email');
+    Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+    Route::post('/reset-password', [NewPasswordController::class, 'store'])->middleware('throttle:5,1')->name('password.update');
 });
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth')->name('logout');
 Route::post('/currency', function (Request $request) {
@@ -144,6 +154,8 @@ Route::prefix('admin')->name('admin.')->middleware('admin.hidden')->group(functi
     Route::get('/settings/currency', [CurrencySettingController::class, 'edit'])->middleware('permission:settings.manage')->name('settings.currency.edit');
     Route::put('/settings/currency', [CurrencySettingController::class, 'update'])->middleware('permission:settings.manage')->name('settings.currency.update');
     Route::post('/settings/currency/refresh', [CurrencySettingController::class, 'refresh'])->middleware(['permission:settings.manage', 'throttle:6,1'])->name('settings.currency.refresh');
+    Route::get('/settings/booking-hold', [BookingHoldSettingController::class, 'edit'])->middleware('permission:settings.manage')->name('settings.booking-hold.edit');
+    Route::put('/settings/booking-hold', [BookingHoldSettingController::class, 'update'])->middleware('permission:settings.manage')->name('settings.booking-hold.update');
     Route::delete('permissions/bulk', [PermissionController::class, 'bulkDestroy'])->middleware('permission:team.manage')->name('permissions.bulk-destroy');
     Route::resource('permissions', PermissionController::class)
         ->except('show')

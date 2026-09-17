@@ -54,7 +54,7 @@
 
         </div>
         <aside class="checkout-travellers-summary">@include('checkout._summary')</aside>
-        <div class="checkout-actions"><a href="{{ route('flights.review', $offer) }}" class="btn btn-outline-dark checkout-desktop-back d-none d-lg-inline-flex"><i class="bi bi-arrow-left"></i> Back</a><button class="btn btn-karossy checkout-pay-button" type="submit" data-open-booking-payment data-base-total="{{ $total['amount_minor'] }}" data-currency-symbol="{{ $symbol }}"><span data-submit-label>Pay <b data-confirm-total>{{ $money($total['amount_minor']) }}</b></span><span class="spinner-border spinner-border-sm d-none" data-submit-spinner></span> <i class="bi bi-arrow-right"></i></button></div>
+        <div class="checkout-actions"><a href="{{ route('flights.review', $offer) }}" class="btn btn-outline-dark checkout-desktop-back d-none d-lg-inline-flex"><i class="bi bi-arrow-left"></i> Back</a>@php($holdAllowed = $holdSettings->enabled && \Carbon\Carbon::parse($offer->flightSearch->departure_date)->isFuture())<button class="btn btn-karossy checkout-pay-button" name="payment_method" value="online" type="submit" data-open-booking-payment data-base-total="{{ $total['amount_minor'] }}" data-currency-symbol="{{ $symbol }}"><span data-submit-label>Pay <b data-confirm-total>{{ $money($total['amount_minor']) }}</b></span><span class="spinner-border spinner-border-sm d-none" data-submit-spinner></span> <i class="bi bi-arrow-right"></i></button>@if($holdAllowed)<button class="btn btn-outline-dark" name="payment_method" value="hold" type="submit"><i class="bi bi-clock-history"></i> Book on Hold / Pay Later</button>@endif</div>
     </form>
 </div></section>
 
@@ -400,7 +400,9 @@
     document.querySelector('[data-checkout-travellers-form]')?.addEventListener('submit', async event => {
         event.preventDefault();
         const form = event.currentTarget;
-        const button = form.querySelector('[type="submit"]');
+        const submitter = event.submitter || form.querySelector('[type="submit"]');
+        const isHold = submitter?.value === 'hold';
+        const button = submitter;
         const spinner = button.querySelector('.spinner-border');
         clearErrors(form);
         const localErrors = clientErrors(form);
@@ -422,7 +424,9 @@
                 showErrors(form, saved.body.errors);
                 throw new Error(saved.body.message || 'Please check the highlighted details.');
             }
-            const initialized = await post(form.dataset.paymentUrl, new FormData(form));
+            const payload = new FormData(form);
+            if (submitter?.name) payload.set(submitter.name, submitter.value);
+            const initialized = await post(form.dataset.paymentUrl, payload);
             if (!initialized.response.ok) {
                 showErrors(form, initialized.body.errors);
                 const initializationError = new Error(Object.values(initialized.body.errors || {}).flat()[0] || initialized.body.message || 'Secure payment could not be started.');
@@ -431,6 +435,10 @@
             }
             if (initialized.body.confirmation_html) {
                 showConfirmation(initialized.body);
+                return;
+            }
+            if (initialized.body.hold && initialized.body.redirect) {
+                window.location.href = initialized.body.redirect;
                 return;
             }
             paymentModal?.hide();
