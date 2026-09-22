@@ -87,8 +87,8 @@ Route::post('/checkout/{offer}/payment/verify', [FlightCheckoutController::class
     ->middleware('throttle:30,1')->name('checkout.payment.verify');
 Route::get('/checkout/complete/{order}', [FlightCheckoutController::class, 'complete'])->name('checkout.complete');
 Route::get('/booking-hold/{order}/pay', [FlightCheckoutController::class, 'holdPayment'])->middleware('signed')->name('checkout.hold.pay');
-Route::post('/booking-hold/{order}/pay/initialize', [FlightCheckoutController::class, 'holdPaymentInitialize'])->middleware(['signed', 'throttle:8,1'])->name('checkout.hold.pay.initialize');
-Route::post('/booking-hold/{order}/pay/verify', [FlightCheckoutController::class, 'holdPaymentVerify'])->middleware(['signed', 'throttle:20,1'])->name('checkout.hold.pay.verify');
+Route::post('/booking-hold/{order}/pay/initialize', [FlightCheckoutController::class, 'holdPaymentInitialize'])->middleware(['signed:relative', 'throttle:8,1'])->name('checkout.hold.pay.initialize');
+Route::post('/booking-hold/{order}/pay/verify', [FlightCheckoutController::class, 'holdPaymentVerify'])->middleware(['signed:relative', 'throttle:20,1'])->name('checkout.hold.pay.verify');
 Route::post('/webhooks/paystack', PaystackWebhookController::class)->name('webhooks.paystack');
 Route::middleware('auth')->group(function (): void {
     Route::get('/account/bookings', [AccountBookingController::class, 'index'])->name('account.bookings.index');
