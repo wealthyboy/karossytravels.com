@@ -59,13 +59,20 @@
 <div class="modal fade public-flight-search-modal" id="publicFlightSearchModal" tabindex="-1" aria-labelledby="publicFlightSearchModalTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-body text-center">
-                <span class="public-search-progress-icon"><i class="bi bi-airplane"></i></span>
-                <span class="modal-eyebrow">Live flight search</span>
-                <h2 id="publicFlightSearchModalTitle">Finding your best flights</h2>
-                <p data-public-search-status>Checking live fares from {{ $origin }} to {{ $destination }}…</p>
-                <div class="public-search-progress" role="progressbar" aria-label="Flight search in progress"><span></span></div>
-                <small>Please keep this page open while airlines return their latest availability.</small>
+            <div class="modal-body public-flight-search-promo">
+                <div class="public-flight-search-promo-media">
+                    <img src="{{ asset('images/ads/charter-private-jet-traveller.jpg') }}" alt="Traveller approaching a private charter jet">
+                    <div class="public-flight-search-promo-shade" aria-hidden="true"></div>
+                    <span class="public-flight-search-sponsored">Karossy charter partner</span>
+                    <div class="public-flight-search-promo-brand"><strong>GYRO AIR</strong><small>Charter flights</small></div>
+                    <div class="public-search-progress" role="progressbar" aria-label="Flight search in progress"><span></span></div>
+                </div>
+                <div class="public-flight-search-promo-copy text-center">
+                    <span class="modal-eyebrow">Fly private</span>
+                    <h2 id="publicFlightSearchModalTitle">Fly with Gyro Air</h2>
+                    <p data-public-search-status>Checking live fares from {{ $origin }} to {{ $destination }}…</p>
+                    <small>While we compare your flights, discover private charter travel built around your schedule.</small>
+                </div>
             </div>
         </div>
     </div>

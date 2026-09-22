@@ -1122,8 +1122,18 @@ main .h5 {
 .public-flight-results-header .flight-deals-disclosure summary strong { font-size: 1rem; }
 .public-flight-results-header .flight-deals-disclosure summary em { font-size: var(--small-font-size, .78rem); }
 .public-flight-results-overview:empty { display: none; }
+.public-flight-search-modal .modal-dialog { max-width: 42rem; }
 .public-flight-search-modal .modal-content { border: 0; border-radius: 1.25rem; box-shadow: 0 1.5rem 5rem rgba(9, 15, 42, .28); overflow: hidden; }
 .public-flight-search-modal .modal-body { padding: 2.4rem; }
+.public-flight-search-modal .public-flight-search-promo { padding: 0; }
+.public-flight-search-promo-media { background: var(--karossy-navy); height: 18.5rem; overflow: hidden; position: relative; }
+.public-flight-search-promo-media img { height: 100%; object-fit: cover; width: 100%; }
+.public-flight-search-promo-shade { background: linear-gradient(90deg, rgba(7, 10, 27, .88) 0%, rgba(7, 10, 27, .42) 46%, rgba(7, 10, 27, .06) 75%), linear-gradient(0deg, rgba(7, 10, 27, .55), transparent 48%); inset: 0; position: absolute; }
+.public-flight-search-sponsored { background: rgba(12, 16, 34, .82); border-radius: .55rem; color: #fff; font-size: .68rem; font-weight: 800; left: 1.5rem; letter-spacing: .12em; padding: .55rem .8rem; position: absolute; text-transform: uppercase; top: 1.4rem; }
+.public-flight-search-promo-brand { bottom: 2.3rem; color: #fff; display: flex; flex-direction: column; left: 1.5rem; position: absolute; text-shadow: 0 2px 12px rgba(0, 0, 0, .45); }
+.public-flight-search-promo-brand strong { font-size: 2rem; font-weight: 900; letter-spacing: .09em; line-height: 1; }
+.public-flight-search-promo-brand small { color: #f0b43a; font-size: .72rem; font-weight: 900; letter-spacing: .18em; margin-top: .55rem; text-transform: uppercase; }
+.public-flight-search-promo-copy { padding: 1.65rem 2.4rem 2rem; }
 .public-flight-search-modal h2 { color: var(--karossy-navy); font-size: 1.25rem; font-weight: 750; margin: .75rem 0 .55rem; }
 .public-flight-search-modal p { color: #4f596b; font-size: .82rem; margin: 0 auto 1.2rem; max-width: 25rem; }
 .public-flight-search-modal small { color: #778195; display: block; font-size: var(--small-font-size, .78rem); margin-top: .9rem; }
@@ -1131,9 +1141,20 @@ main .h5 {
 .public-search-progress-icon i { animation: public-search-plane 1.8s ease-in-out infinite; }
 .public-search-progress-icon.is-hotel i { animation: public-search-hotel 1.45s ease-in-out infinite; }
 .public-search-progress { background: #e8ebf1; border-radius: 999px; height: .35rem; margin-inline: auto; max-width: 25rem; overflow: hidden; }
+.public-flight-search-promo-media .public-search-progress { background: rgba(255, 255, 255, .3); bottom: 0; height: .42rem; left: 0; max-width: none; position: absolute; right: 0; width: 100%; }
 .public-search-progress span { animation: public-search-progress 1.55s ease-in-out infinite; background: linear-gradient(90deg, var(--karossy-red-dark), var(--karossy-red), #ef3944); border-radius: inherit; display: block; height: 100%; width: 38%; }
 .flight-result-enter { animation: flight-result-enter .42s both ease-out; animation-delay: min(calc(var(--flight-result-index, 0) * 45ms), 450ms); }
 @keyframes public-search-progress { from { transform: translateX(-110%); } to { transform: translateX(365%); } }
+@media (max-width: 575.98px) {
+    .public-flight-search-modal .modal-dialog { margin: .85rem; }
+    .public-flight-search-promo-media { height: 13.25rem; }
+    .public-flight-search-sponsored { font-size: .58rem; left: 1rem; padding: .45rem .65rem; top: 1rem; }
+    .public-flight-search-promo-brand { bottom: 1.65rem; left: 1rem; }
+    .public-flight-search-promo-brand strong { font-size: 1.45rem; }
+    .public-flight-search-promo-brand small { font-size: .62rem; }
+    .public-flight-search-promo-copy { padding: 1.3rem 1.2rem 1.55rem; }
+    .public-flight-search-modal h2 { font-size: 1.2rem; }
+}
 @keyframes public-search-plane { 0%,100% { transform: translate(-.15rem,.12rem) rotate(-8deg); } 50% { transform: translate(.15rem,-.12rem) rotate(4deg); } }
 @keyframes public-search-hotel { 0%,100% { opacity: .7; transform: translateY(.1rem) scale(.94); } 50% { opacity: 1; transform: translateY(-.08rem) scale(1.05); } }
 @keyframes flight-result-enter { from { opacity: 0; transform: translateY(.8rem); } to { opacity: 1; transform: translateY(0); } }
