@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\BookingHoldSetting;
 use App\Models\TravelOffer;
 use App\Travel\Contracts\FlightProvider;
 use RuntimeException;
@@ -94,6 +95,8 @@ final class FlightSearchTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.offer.id', $offerId)
             ->assertJsonPath('data.offer.price.currency', 'NGN')
+            ->assertJsonPath('data.offer.book_on_hold.available', true)
+            ->assertJsonPath('data.offer.book_on_hold.reason', null)
             ->assertJsonPath('data.validation.available', true)
             ->assertJsonStructure([
                 'data' => [
@@ -102,6 +105,46 @@ final class FlightSearchTest extends TestCase
                 ],
                 'meta' => ['api_version'],
             ]);
+    }
+
+    public function test_mobile_review_hides_book_on_hold_when_admin_disables_it(): void
+    {
+        BookingHoldSetting::query()->create(['enabled' => false, 'timeout_hours' => 24]);
+
+        $search = $this->postJson('/api/v1/flights/search', [
+            'origin' => 'LOS',
+            'destination' => 'ABV',
+            'departure_date' => now()->addWeek()->toDateString(),
+            'trip_type' => 'one_way',
+            'cabin' => 'economy',
+            'adults' => 1,
+            'currency' => 'NGN',
+            'session_id' => (string) Str::uuid(),
+        ])->assertOk();
+
+        $this->getJson('/api/v1/flights/offers/'.$search->json('data.offers.0.id').'?currency=NGN')
+            ->assertOk()
+            ->assertJsonPath('data.offer.book_on_hold.available', false)
+            ->assertJsonPath('data.offer.book_on_hold.reason', 'Book on Hold is currently unavailable. Please choose Pay Now.');
+    }
+
+    public function test_mobile_review_hides_book_on_hold_for_a_same_day_flight(): void
+    {
+        $search = $this->postJson('/api/v1/flights/search', [
+            'origin' => 'LOS',
+            'destination' => 'ABV',
+            'departure_date' => now()->toDateString(),
+            'trip_type' => 'one_way',
+            'cabin' => 'economy',
+            'adults' => 1,
+            'currency' => 'NGN',
+            'session_id' => (string) Str::uuid(),
+        ])->assertOk();
+
+        $this->getJson('/api/v1/flights/offers/'.$search->json('data.offers.0.id').'?currency=NGN')
+            ->assertOk()
+            ->assertJsonPath('data.offer.book_on_hold.available', false)
+            ->assertJsonPath('data.offer.book_on_hold.reason', 'Book on Hold is unavailable for flights departing today. Please choose Pay Now.');
     }
 
     public function test_it_never_exposes_supplier_or_transport_errors_to_customers(): void

@@ -4,11 +4,15 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use App\Mail\BookingInvoice;
 use App\Models\CheckoutPaymentAttempt;
+use App\Models\BookingHoldSetting;
 use App\Models\HotelOffer;
 use App\Models\TravelOffer;
 use App\Payments\PaystackService;
 use App\Support\PhoneCountryCodes;
+use App\Travel\AirOrderService;
+use App\Travel\CheckoutCustomerResolver;
 use App\Travel\FlightRevalidationService;
 use App\Travel\HotelOrderService;
 use App\Travel\MobileCheckoutService;
@@ -16,13 +20,16 @@ use App\Travel\Exceptions\BookingCreationException;
 use App\Travel\Pricing\ExchangeRateService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Throwable;
 
 final class MobileCheckoutController extends Controller
 {
-    public function flight(Request $request, TravelOffer $offer, FlightRevalidationService $revalidation, ExchangeRateService $rates, PaystackService $paystack): JsonResponse
+    public function flight(Request $request, TravelOffer $offer, FlightRevalidationService $revalidation, ExchangeRateService $rates, PaystackService $paystack, AirOrderService $orders, CheckoutCustomerResolver $customerResolver): JsonResponse
     {
         $data = $request->validate($this->flightRules());
         try {
@@ -35,6 +42,10 @@ final class MobileCheckoutController extends Controller
             $primary = $data['travellers'][0];
             $phone = PhoneCountryCodes::normalize($data['contact']['phone_code'], $data['contact']['phone']);
 
+            if (($data['payment_method'] ?? 'online') === 'hold') {
+                return $this->holdFlight($request, $offer->fresh()->load('flightSearch'), $data, $primary, $phone, $currency, $rates, $orders, $customerResolver);
+            }
+
             return $this->initialize($request, $paystack, $currency, $amount, strtolower($data['contact']['email']), [
                 'travel_offer_id' => $offer->id,
                 'checkout_payload' => [
@@ -46,6 +57,86 @@ final class MobileCheckoutController extends Controller
         } catch (Throwable $exception) {
             report($exception);
             return response()->json(['message' => 'This fare could not be prepared for payment. Please retry or choose another flight.'], 422);
+        }
+    }
+
+    private function holdFlight(Request $request, TravelOffer $offer, array $data, array $primary, string $phone, string $currency, ExchangeRateService $rates, AirOrderService $orders, CheckoutCustomerResolver $customerResolver): JsonResponse
+    {
+        $settings = BookingHoldSetting::current();
+        $departure = $offer->flightSearch?->departure_date;
+
+        if (! $settings->enabled) {
+            return response()->json(['message' => 'Book on Hold is currently unavailable. Please choose Pay Now.'], 422);
+        }
+
+        if ($departure && now()->isSameDay($departure)) {
+            return response()->json(['message' => 'Book on Hold is unavailable for flights departing today. Please choose Pay Now.'], 422);
+        }
+
+        try {
+            $email = strtolower($data['contact']['email']);
+            $customer = $customerResolver->transientCustomer($primary, ['email' => $email, 'phone' => $phone]);
+            $order = $orders->create(
+                $offer,
+                $customer,
+                $data['travellers'],
+                addons: [],
+                sendConfirmation: false,
+                contact: ['email' => $email, 'phone' => $phone],
+                ownerUserId: $request->user()?->id,
+            );
+
+            $converted = $rates->convertMinor($order->total_minor, $order->currency, $currency);
+            $paymentAmount = (int) $converted['amount_minor'];
+            $due = now()->addHours(max(1, (int) $settings->timeout_hours));
+            if ($departure) {
+                $due = $due->min(Carbon::parse($departure)->startOfDay());
+            }
+
+            $order->update([
+                'status' => 'pending_payment',
+                'payment_mode' => 'hold',
+                'payment_due_at' => $due,
+                'expires_at' => $due,
+                'currency' => $currency,
+                'subtotal_minor' => $paymentAmount,
+                'fees_minor' => 0,
+                'total_minor' => $paymentAmount,
+            ]);
+            $order->payments()->create([
+                'gateway' => 'bank_transfer',
+                'status' => 'pending',
+                'currency' => $currency,
+                'amount_minor' => $paymentAmount,
+            ]);
+
+            $order = $order->fresh()->load(['bookings.travelOffer.flightSearch']);
+            $booking = $order->bookings->firstOrFail();
+            $paymentUrl = URL::signedRoute('checkout.hold.pay', ['order' => $order]);
+
+            try {
+                Mail::to($email)->send(new BookingInvoice($order, $booking, $settings, $paymentUrl));
+            } catch (Throwable $mailException) {
+                report($mailException);
+            }
+
+            return ApiResponse::success($request, [
+                'status' => 'pending_payment',
+                'booking_type' => 'flight',
+                'order_id' => $order->id,
+                'reference' => $order->reference,
+                'provider_locator' => $booking->provider_locator,
+                'payment_due_at' => $due->toIso8601String(),
+                'payment_url' => $paymentUrl,
+                'price' => ['currency' => $currency, 'total_minor' => $paymentAmount],
+                'message' => 'Your flight is on hold. Complete payment before the deadline.',
+            ], status: 201);
+        } catch (BookingCreationException $exception) {
+            report($exception);
+            return response()->json(['message' => $exception->publicMessage], 422);
+        } catch (Throwable $exception) {
+            report($exception);
+            return response()->json(['message' => 'The flight could not be placed on hold. Please retry or choose another flight.'], 422);
         }
     }
 
@@ -173,7 +264,7 @@ final class MobileCheckoutController extends Controller
     private function flightRules(): array
     {
         return [
-            'currency' => ['nullable', Rule::in(['NGN', 'USD'])], 'terms' => ['accepted'],
+            'currency' => ['nullable', Rule::in(['NGN', 'USD'])], 'payment_method' => ['nullable', Rule::in(['online', 'hold'])], 'terms' => ['accepted'],
             'travellers' => ['required', 'array', 'min:1', 'max:9'], 'travellers.*.type' => ['required', Rule::in(['ADT', 'CNN', 'INF'])],
             'travellers.*.title' => ['required', Rule::in(['Mr', 'Mrs', 'Ms', 'Miss', 'Dr'])],
             'travellers.*.first_name' => ['required', 'string', 'max:80'], 'travellers.*.last_name' => ['required', 'string', 'max:80'],

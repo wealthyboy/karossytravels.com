@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use App\Models\BookingHoldSetting;
 use App\Models\TravelOffer;
 use App\Travel\FlightRevalidationService;
 use App\Travel\Pricing\ExchangeRateService;
@@ -50,6 +51,16 @@ final class FlightOfferController extends Controller
         }
 
         $converted = $rates->convertMinor($offer->selling_total_minor, $offer->currency, $currency);
+        $holdSettings = BookingHoldSetting::current();
+        $departure = $offer->flightSearch?->departure_date;
+        $holdAvailable = $holdSettings->enabled && (! $departure || $departure->isFuture());
+        $holdUnavailableReason = null;
+
+        if (! $holdSettings->enabled) {
+            $holdUnavailableReason = 'Book on Hold is currently unavailable. Please choose Pay Now.';
+        } elseif ($departure && ! $departure->isFuture()) {
+            $holdUnavailableReason = 'Book on Hold is unavailable for flights departing today. Please choose Pay Now.';
+        }
 
         return ApiResponse::success($request, [
             'offer' => [
@@ -63,6 +74,10 @@ final class FlightOfferController extends Controller
                 ],
                 'refundable' => (bool) data_get($offer->fare_summary, 'refundable', false),
                 'expires_at' => $offer->expires_at->toIso8601String(),
+                'book_on_hold' => [
+                    'available' => $holdAvailable,
+                    'reason' => $holdUnavailableReason,
+                ],
             ],
             'validation' => [
                 'available' => (bool) ($validation['available'] ?? true),
