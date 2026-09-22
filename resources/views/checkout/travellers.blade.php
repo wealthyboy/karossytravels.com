@@ -75,7 +75,7 @@
     </div>
 </section>
 
-<div class="modal fade flight-revalidation-modal" id="publicBookingConfirmationModal" tabindex="-1" aria-labelledby="publicBookingProgressTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body text-center"><div data-booking-progress><span class="revalidation-icon"><i class="bi bi-shield-check"></i></span><h2 id="publicBookingProgressTitle" data-payment-progress-title>Checking the live fare</h2><p data-payment-progress-copy>Validating the latest price and availability. Please do not close this page.</p><div class="revalidation-progress" aria-hidden="true"><span></span></div><small data-payment-progress-note>Secure payment will open as soon as the exact total is confirmed.</small></div></div></div></div></div>
+<div class="modal fade flight-revalidation-modal" id="publicBookingConfirmationModal" tabindex="-1" aria-labelledby="publicBookingProgressTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body text-center"><div data-booking-progress><span class="revalidation-icon"><i class="bi bi-shield-check" data-payment-progress-icon></i></span><h2 id="publicBookingProgressTitle" data-payment-progress-title>Checking the live fare</h2><p data-payment-progress-copy>Validating the latest price and availability. Please do not close this page.</p><div class="revalidation-progress" role="progressbar" aria-label="Booking request in progress"><span></span></div><small data-payment-progress-note>Secure payment will open as soon as the exact total is confirmed.</small></div></div></div></div></div>
 
 @guest
 <div class="modal fade checkout-signin-modal" id="checkoutSignInModal" tabindex="-1" aria-labelledby="checkoutSignInTitle" aria-hidden="true">
@@ -139,6 +139,34 @@
         document.querySelector('[data-validation-summary]')?.classList.add('d-none');
     };
     const fieldName = name => name.split('.').reduce((result, part, index) => index === 0 ? part : `${result}[${part}]`, '');
+    const friendlyFieldMessage = (name, message = '') => {
+        const travellerMatch = name.match(/^travellers\.(\d+)\.(.+)$/);
+        const travellerNumber = travellerMatch ? Number(travellerMatch[1]) + 1 : null;
+        const field = travellerMatch?.[2] || name;
+        const labels = {
+            title: 'Select a title',
+            first_name: 'Enter the first name exactly as shown on the passport',
+            last_name: 'Enter the last name exactly as shown on the passport',
+            date_of_birth: 'Enter a valid date of birth',
+            gender: 'Select a gender',
+            nationality: 'Enter the two-letter nationality code',
+            passport_number: 'Enter a valid passport number',
+            passport_country: 'Enter the passport issuing country',
+            passport_expiry: 'Enter a valid future passport expiry date',
+            'contact.email': 'Enter a valid email address',
+            'contact.phone': 'Enter a valid mobile number',
+            terms: 'Accept the booking conditions before continuing',
+        };
+        const friendly = labels[field] || labels[name];
+        if (friendly) return travellerNumber ? `${friendly} for traveller ${travellerNumber}.` : `${friendly}.`;
+        return String(message || 'Please check this field.').replace(/travellers\.\d+\./gi, 'traveller ');
+    };
+    const firstFriendlyError = errors => {
+        const entry = Object.entries(errors || {})[0];
+        if (!entry) return null;
+        const [name, messages] = entry;
+        return friendlyFieldMessage(name, Array.isArray(messages) ? messages[0] : messages);
+    };
     const showErrors = (form, errors = {}) => Object.entries(errors).forEach(([name, messages]) => {
         const field = form.elements.namedItem(fieldName(name)) || form.elements.namedItem(name);
         if (!(field instanceof HTMLElement)) return;
@@ -148,7 +176,7 @@
         const error = document.createElement('div');
         error.className = 'invalid-feedback d-block';
         error.dataset.ajaxError = 'true';
-        error.textContent = Array.isArray(messages) ? messages[0] : messages;
+        error.textContent = friendlyFieldMessage(name, Array.isArray(messages) ? messages[0] : messages);
         (phoneControl || field).insertAdjacentElement('afterend', error);
     });
     const clientErrors = form => {
@@ -160,6 +188,7 @@
         const namePattern = /^[\p{L}][\p{L}\p{M}'’\-]*(?: [\p{L}][\p{L}\p{M}'’\-]*)*$/u;
         [...form.querySelectorAll('.traveller-card')].forEach((card, index) => {
             const value = field => String(form.elements.namedItem(`travellers[${index}][${field}]`)?.value || '').trim();
+            if (!value('title')) errors[`travellers.${index}.title`] = [`Select a title for traveller ${index + 1}.`];
             ['first_name', 'last_name'].forEach(field => {
                 if (!namePattern.test(value(field))) errors[`travellers.${index}.${field}`] = ['Use letters, spaces, apostrophes or hyphens exactly as shown on the passport.'];
             });
@@ -192,6 +221,7 @@
     const progressTitle = document.querySelector('[data-payment-progress-title]');
     const progressCopy = document.querySelector('[data-payment-progress-copy]');
     const progressNote = document.querySelector('[data-payment-progress-note]');
+    const progressIcon = document.querySelector('[data-payment-progress-icon]');
     const finalizationScreen = document.querySelector('[data-booking-finalization-screen]');
     const finalizationTitle = finalizationScreen?.querySelector('[data-finalization-title]');
     const finalizationCopy = finalizationScreen?.querySelector('[data-finalization-copy]');
@@ -416,20 +446,30 @@
         button.disabled = true;
         spinner?.classList.remove('d-none');
         errorBox.classList.add('d-none');
-        setProgress('Checking the live fare', 'Your details are saved on this page while we confirm the latest airline price and availability.', 'Secure payment will open automatically as soon as the exact total is confirmed.');
+        modalElement?.classList.toggle('is-hold-request', isHold);
+        if (progressIcon) progressIcon.className = isHold ? 'bi bi-clock-history' : 'bi bi-shield-check';
+        if (isHold) {
+            setProgress(
+                'Placing your flight on hold',
+                'We are contacting the airline and creating your reservation reference. No payment is being taken.',
+                'Please keep this page open while the airline generates your PNR.'
+            );
+        } else {
+            setProgress('Checking the live fare', 'Your details are saved on this page while we confirm the latest airline price and availability.', 'Secure payment will open automatically as soon as the exact total is confirmed.');
+        }
         paymentModal?.show();
         try {
             const saved = await post(form.action, new FormData(form));
             if (!saved.response.ok) {
                 showErrors(form, saved.body.errors);
-                throw new Error(saved.body.message || 'Please check the highlighted details.');
+                throw new Error(firstFriendlyError(saved.body.errors) || 'Please check the highlighted traveller details.');
             }
             const payload = new FormData(form);
             if (submitter?.name) payload.set(submitter.name, submitter.value);
             const initialized = await post(form.dataset.paymentUrl, payload);
             if (!initialized.response.ok) {
                 showErrors(form, initialized.body.errors);
-                const initializationError = new Error(Object.values(initialized.body.errors || {}).flat()[0] || initialized.body.message || 'Secure payment could not be started.');
+                const initializationError = new Error(firstFriendlyError(initialized.body.errors) || initialized.body.message || (isHold ? 'The flight could not be placed on hold. Please try again.' : 'Secure payment could not be started.'));
                 initializationError.paymentConfirmed = Boolean(initialized.body.payment_confirmed || initialized.body.payment_locked);
                 throw initializationError;
             }

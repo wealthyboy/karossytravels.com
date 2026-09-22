@@ -133,7 +133,9 @@ final class MobileCheckoutController extends Controller
             ], status: 201);
         } catch (BookingCreationException $exception) {
             report($exception);
-            return response()->json(['message' => $exception->publicMessage], 422);
+            return response()->json([
+                'message' => 'The airline could not place this flight on hold. No payment was taken. Please retry or choose another flight.',
+            ], 422);
         } catch (Throwable $exception) {
             report($exception);
             return response()->json(['message' => 'The flight could not be placed on hold. Please retry or choose another flight.'], 422);

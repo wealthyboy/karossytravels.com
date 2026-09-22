@@ -1126,7 +1126,7 @@ main .h5 {
 .public-flight-search-modal .modal-content { border: 0; border-radius: 1.25rem; box-shadow: 0 1.5rem 5rem rgba(9, 15, 42, .28); overflow: hidden; }
 .public-flight-search-modal .modal-body { padding: 2.4rem; }
 .public-flight-search-modal .public-flight-search-promo { padding: 0; }
-.public-flight-search-promo-media { background: var(--karossy-navy); height: 11.1rem; overflow: hidden; position: relative; }
+.public-flight-search-promo-media { background: var(--karossy-navy); height: 15rem; overflow: hidden; position: relative; }
 .public-flight-search-promo-media img { height: 100%; object-fit: cover; width: 100%; }
 .public-flight-search-promo-shade { background: linear-gradient(90deg, rgba(7, 10, 27, .88) 0%, rgba(7, 10, 27, .42) 46%, rgba(7, 10, 27, .06) 75%), linear-gradient(0deg, rgba(7, 10, 27, .55), transparent 48%); inset: 0; position: absolute; }
 .public-flight-search-sponsored { background: rgba(12, 16, 34, .82); border-radius: .55rem; color: #fff; font-size: .68rem; font-weight: 800; left: 1.5rem; letter-spacing: .12em; padding: .55rem .8rem; position: absolute; text-transform: uppercase; top: 1.4rem; }

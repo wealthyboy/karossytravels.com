@@ -91,11 +91,21 @@ final class StoreFlightTravellersRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'travellers.*.title.required' => 'Select a title for each traveller.',
+            'travellers.*.title.in' => 'Select a valid traveller title.',
             'travellers.*.date_of_birth.required' => 'Enter the traveller\'s date of birth.',
             'travellers.*.date_of_birth.date' => 'Enter a valid date of birth.',
             'travellers.*.date_of_birth.before' => 'The date of birth must be before today.',
             'travellers.*.first_name.regex' => 'First names may contain letters, spaces, apostrophes and hyphens only.',
             'travellers.*.last_name.regex' => 'Last names may contain letters, spaces, apostrophes and hyphens only.',
+            'travellers.*.gender.required' => 'Select a gender for each traveller.',
+            'travellers.*.nationality.required' => 'Enter the traveller\'s two-letter nationality code.',
+            'travellers.*.passport_number.required' => 'Enter the traveller\'s passport number.',
+            'travellers.*.passport_expiry.required' => 'Enter the traveller\'s passport expiry date.',
+            'contact.email.required' => 'Enter an email address for the booking confirmation.',
+            'contact.email.email' => 'Enter a valid email address for the booking confirmation.',
+            'contact.phone.required' => 'Enter a mobile number for booking updates.',
+            'contact.phone.regex' => 'Enter a valid mobile number for booking updates.',
         ];
     }
 }
