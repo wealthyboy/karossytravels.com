@@ -672,6 +672,50 @@ main .h5 {
 .revalidation-cancel { color: #566073; display: block; margin: 1.25rem auto 0; text-decoration: none; }
 .flight-revalidation-modal [data-revalidation-result] .btn { margin-top: .5rem; }
 @keyframes revalidation-progress { from { transform: translateX(-105%); } to { transform: translateX(345%); } }
+.booking-hold-is-processing { overflow: hidden; }
+.booking-hold-progress[hidden] { display: none !important; }
+.booking-hold-progress {
+    align-items: center;
+    background: rgba(7, 11, 31, .72);
+    backdrop-filter: blur(5px);
+    display: flex;
+    inset: 0;
+    justify-content: center;
+    opacity: 0;
+    padding: 1.25rem;
+    position: fixed;
+    transition: opacity .18s ease;
+    z-index: 30000;
+}
+.booking-hold-progress.is-visible { opacity: 1; }
+.booking-hold-progress-card {
+    background: #fff;
+    border-radius: 1.5rem;
+    box-shadow: 0 2rem 6rem rgba(4, 8, 30, .35);
+    max-width: 34rem;
+    padding: clamp(2rem, 5vw, 3rem);
+    text-align: center;
+    width: 100%;
+}
+.booking-hold-progress-icon {
+    align-items: center;
+    background: #fff0f1;
+    border-radius: 50%;
+    color: var(--karossy-red);
+    display: inline-flex;
+    font-size: 1.6rem;
+    height: 4.5rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+    width: 4.5rem;
+}
+.booking-hold-progress-card h2 { color: var(--karossy-navy); font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 800; margin: .6rem 0 .75rem; }
+.booking-hold-progress-card p { color: #5e6879; line-height: 1.6; margin: 0 auto; max-width: 28rem; }
+.booking-hold-progress-bar { background: #e8ebf1; border-radius: 999px; height: .6rem; margin: 1.8rem 0 .8rem; overflow: hidden; }
+.booking-hold-progress-bar span { animation: booking-hold-progress 1.35s ease-in-out infinite; background: linear-gradient(90deg, #9e0713, var(--karossy-red), #ef3944); border-radius: inherit; display: block; height: 100%; width: 42%; }
+.booking-hold-progress-card strong { color: var(--karossy-navy); display: block; font-size: .95rem; }
+.booking-hold-progress-card small { color: #7a8392; display: block; margin-top: .8rem; }
+@keyframes booking-hold-progress { from { transform: translateX(-110%); } to { transform: translateX(345%); } }
 .booking-is-finalizing { overflow: hidden; }
 .booking-finalization-screen[hidden] { display: none !important; }
 .booking-finalization-screen {

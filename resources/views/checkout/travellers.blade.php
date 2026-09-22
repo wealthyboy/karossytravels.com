@@ -75,6 +75,18 @@
     </div>
 </section>
 
+<section class="booking-hold-progress" data-booking-hold-progress hidden aria-live="polite" aria-busy="true">
+    <div class="booking-hold-progress-card">
+        <span class="booking-hold-progress-icon" aria-hidden="true"><i class="bi bi-clock-history"></i></span>
+        <span class="public-eyebrow">Book on Hold</span>
+        <h2>Creating your reservation</h2>
+        <p>We are contacting the airline and generating your PNR. No payment is being taken.</p>
+        <div class="booking-hold-progress-bar" role="progressbar" aria-label="Creating held booking"><span></span></div>
+        <strong>Placing your flight on hold…</strong>
+        <small>Please keep this page open. This can take a few moments.</small>
+    </div>
+</section>
+
 <div class="modal fade flight-revalidation-modal" id="publicBookingConfirmationModal" tabindex="-1" aria-labelledby="publicBookingProgressTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body text-center"><div data-booking-progress><span class="revalidation-icon"><i class="bi bi-shield-check" data-payment-progress-icon></i></span><h2 id="publicBookingProgressTitle" data-payment-progress-title>Checking the live fare</h2><p data-payment-progress-copy>Validating the latest price and availability. Please do not close this page.</p><div class="revalidation-progress" role="progressbar" aria-label="Booking request in progress"><span></span></div><small data-payment-progress-note>Secure payment will open as soon as the exact total is confirmed.</small></div></div></div></div></div>
 
 @guest
@@ -222,6 +234,7 @@
     const progressCopy = document.querySelector('[data-payment-progress-copy]');
     const progressNote = document.querySelector('[data-payment-progress-note]');
     const progressIcon = document.querySelector('[data-payment-progress-icon]');
+    const holdProgress = document.querySelector('[data-booking-hold-progress]');
     const finalizationScreen = document.querySelector('[data-booking-finalization-screen]');
     const finalizationTitle = finalizationScreen?.querySelector('[data-finalization-title]');
     const finalizationCopy = finalizationScreen?.querySelector('[data-finalization-copy]');
@@ -238,6 +251,18 @@
         if (progressTitle) progressTitle.textContent = title;
         if (progressCopy) progressCopy.textContent = copy;
         if (progressNote) progressNote.textContent = note;
+    };
+    const showHoldProgress = () => {
+        if (!holdProgress) return;
+        holdProgress.hidden = false;
+        document.body.classList.add('booking-hold-is-processing');
+        window.requestAnimationFrame(() => holdProgress.classList.add('is-visible'));
+    };
+    const hideHoldProgress = () => {
+        if (!holdProgress) return;
+        holdProgress.classList.remove('is-visible');
+        holdProgress.hidden = true;
+        document.body.classList.remove('booking-hold-is-processing');
     };
     const setFinalizationProgress = (value, status, copy = null) => {
         finalizationValue = Math.max(finalizationValue, Math.min(100, Math.round(value)));
@@ -334,6 +359,7 @@
         const checkoutPage = document.querySelector('[data-flight-checkout-page]');
         if (!confirmation || !checkoutPage) throw new Error('The booking was created, but its confirmation could not be displayed. Open My bookings to view it.');
         paymentModal?.hide();
+        hideHoldProgress();
         const revealConfirmation = () => {
             checkoutPage.replaceWith(confirmation);
             bindCopyReference(confirmation);
@@ -457,7 +483,8 @@
         } else {
             setProgress('Checking the live fare', 'Your details are saved on this page while we confirm the latest airline price and availability.', 'Secure payment will open automatically as soon as the exact total is confirmed.');
         }
-        paymentModal?.show();
+        if (isHold) showHoldProgress();
+        else paymentModal?.show();
         try {
             const saved = await post(form.action, new FormData(form));
             if (!saved.response.ok) {
@@ -485,6 +512,7 @@
             openPaystack(initialized.body);
         } catch (error) {
             paymentModal?.hide();
+            hideHoldProgress();
             errorBox.textContent = error.message;
             errorBox.classList.toggle('alert-danger', !error.paymentConfirmed);
             errorBox.classList.toggle('alert-warning', Boolean(error.paymentConfirmed));
