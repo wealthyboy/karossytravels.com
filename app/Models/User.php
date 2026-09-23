@@ -28,6 +28,16 @@ class User extends Authenticatable implements CanResetPasswordContract
             ->exists();
     }
 
+    public function hasRole(string $role): bool
+    {
+        return $this->roles()->where('name', $role)->exists();
+    }
+
+    public function isOwner(): bool
+    {
+        return $this->hasRole('super-admin');
+    }
+
     public function isAdmin(): bool
     {
         return $this->account_type === 'admin';

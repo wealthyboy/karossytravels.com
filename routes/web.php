@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\FlightSearchController;
 use App\Http\Controllers\Admin\FlightSearchPageController;
 use App\Http\Controllers\Admin\HolidayPackageController as AdminHolidayPackageController;
 use App\Http\Controllers\Admin\HotelOrderController;
+use App\Http\Controllers\Admin\HotelBookingSettingController;
 use App\Http\Controllers\Admin\HotelSearchPageController;
 use App\Http\Controllers\Admin\PartnerEnquiryController;
 use App\Http\Controllers\Admin\PermissionController;
@@ -158,6 +159,8 @@ Route::prefix('admin')->name('admin.')->middleware('admin.hidden')->group(functi
     Route::post('/settings/currency/refresh', [CurrencySettingController::class, 'refresh'])->middleware(['permission:settings.manage', 'throttle:6,1'])->name('settings.currency.refresh');
     Route::get('/settings/booking-hold', [BookingHoldSettingController::class, 'edit'])->middleware('permission:settings.manage')->name('settings.booking-hold.edit');
     Route::put('/settings/booking-hold', [BookingHoldSettingController::class, 'update'])->middleware('permission:settings.manage')->name('settings.booking-hold.update');
+    Route::get('/settings/hotels', [HotelBookingSettingController::class, 'edit'])->middleware('permission:settings.manage')->name('settings.hotel-booking.edit');
+    Route::put('/settings/hotels', [HotelBookingSettingController::class, 'update'])->middleware('permission:settings.manage')->name('settings.hotel-booking.update');
     Route::delete('permissions/bulk', [PermissionController::class, 'bulkDestroy'])->middleware('permission:team.manage')->name('permissions.bulk-destroy');
     Route::resource('permissions', PermissionController::class)
         ->except('show')

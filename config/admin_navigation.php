@@ -62,7 +62,7 @@ return [
         ['label' => 'Accounts', 'slug' => 'accounts', 'route' => 'admin.users.index', 'active' => 'admin.users.*'], ['label' => 'Roles', 'slug' => 'roles', 'route' => 'admin.roles.index', 'active' => 'admin.roles.*'], ['label' => 'Permissions', 'slug' => 'permissions', 'route' => 'admin.permissions.index', 'active' => 'admin.permissions.*'], ['label' => 'Audit Logs', 'slug' => 'audit-logs'],
     ]],
     ['label' => 'Settings', 'slug' => 'settings', 'icon' => 'bi-gear-fill', 'permission' => 'settings.manage', 'items' => [
-        ['label' => 'Currency', 'slug' => 'currency', 'route' => 'admin.settings.currency.edit'], ['label' => 'Book on Hold', 'slug' => 'booking-hold', 'route' => 'admin.settings.booking-hold.edit'], ['label' => 'Email', 'slug' => 'email'],
+        ['label' => 'Currency', 'slug' => 'currency', 'route' => 'admin.settings.currency.edit'], ['label' => 'Book on Hold', 'slug' => 'booking-hold', 'route' => 'admin.settings.booking-hold.edit'], ['label' => 'Hotel Settings', 'slug' => 'hotel-settings', 'route' => 'admin.settings.hotel-booking.edit'], ['label' => 'Email', 'slug' => 'email'],
     ]],
     // Logs removed per recent decision
 ];
