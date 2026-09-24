@@ -109,6 +109,7 @@
         <td class="passenger-name" style="font-size:14px; padding:10px 0; {{ $loop->last ? '' : 'border-bottom:1px solid #f4f4f5;' }}">
           {{ $traveller['title'] ?? '' }}
           {{ strtoupper($traveller['first_name'] ?? '') }}
+          {{ strtoupper($traveller['middle_name'] ?? '') }}
           {{ strtoupper($traveller['last_name'] ?? '') }}
         </td>
         <td class="passenger-type" align="right" style="color:#71717a; font-size:14px; padding:10px 0 10px 24px; text-align:right; white-space:nowrap; {{ $loop->last ? '' : 'border-bottom:1px solid #f4f4f5;' }}">

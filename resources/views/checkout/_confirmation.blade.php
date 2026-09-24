@@ -57,7 +57,7 @@
                     <div class="confirmation-section-title"><span><i class="bi bi-people"></i></span><div><h2>Travellers</h2><p>Names recorded on this reservation</p></div></div>
                     <div class="confirmation-travellers">
                         @foreach($travellers as $index => $traveller)
-                            <div><span>{{ $index + 1 }}</span><p><strong>{{ $traveller['title'] ?? '' }} {{ $traveller['first_name'] ?? '' }} {{ $traveller['last_name'] ?? '' }}</strong><small>{{ match($traveller['type'] ?? 'ADT') { 'ADT' => 'Adult', 'CNN' => 'Child', 'INF' => 'Infant', default => $traveller['type'] ?? 'Traveller' } }}@if(!empty($traveller['passport_number'])) · Passport ending {{ str($traveller['passport_number'])->take(-4) }}@endif</small></p><i class="bi bi-check-circle-fill"></i></div>
+                            <div><span>{{ $index + 1 }}</span><p><strong>{{ $traveller['title'] ?? '' }} {{ $traveller['first_name'] ?? '' }} {{ $traveller['middle_name'] ?? '' }} {{ $traveller['last_name'] ?? '' }}</strong><small>{{ match($traveller['type'] ?? 'ADT') { 'ADT' => 'Adult', 'CNN' => 'Child', 'INF' => 'Infant', default => $traveller['type'] ?? 'Traveller' } }}@if(!empty($traveller['passport_number'])) · Passport ending {{ str($traveller['passport_number'])->take(-4) }}@endif</small></p><i class="bi bi-check-circle-fill"></i></div>
                         @endforeach
                     </div>
                 </article>

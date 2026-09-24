@@ -22,7 +22,7 @@ final class TravelApiAtpcoBookingRequestBuilderTest extends TestCase
         ]);
         $customer = new Customer(['email' => 'traveler@example.com', 'phone' => '+65 1234 5678']);
         $travellers = [[
-            'first_name' => 'Ricky', 'last_name' => 'Jones', 'type' => 'ADT',
+            'first_name' => 'Ricky', 'middle_name' => 'Michael', 'last_name' => 'Jones', 'type' => 'ADT',
             'date_of_birth' => '1960-02-08', 'gender' => 'male',
             'passport_number' => 'YG20770658', 'passport_expiry' => '2030-04-20',
             'passport_country' => 'SG', 'nationality' => 'SG',
@@ -32,6 +32,8 @@ final class TravelApiAtpcoBookingRequestBuilderTest extends TestCase
 
         $this->assertSame(['ticketingPolicy' => 'TODAY'], $payload['agency']);
         $this->assertSame('Passenger1', $payload['travelers'][0]['id']);
+        $this->assertSame('RICKY MICHAEL', $payload['travelers'][0]['givenName']);
+        $this->assertSame('RICKY MICHAEL', $payload['travelers'][0]['identityDocuments'][0]['givenName']);
         $this->assertSame('CTCE', $payload['travelers'][0]['specialServices'][1]['code']);
         $this->assertSame(['NO', 'UC', 'US', 'UN', 'UU', 'LL', 'HL'], $payload['flightDetails']['haltOnFlightStatusCodes']);
         $this->assertSame('TOTTH', $payload['flightDetails']['flightPricing'][0]['qualifiers']['specificFares'][0]['fareBasisCode']);

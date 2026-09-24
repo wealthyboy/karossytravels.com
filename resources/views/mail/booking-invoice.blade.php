@@ -90,7 +90,7 @@
         <div class="panel-title">Passengers</div>
         <table class="details" role="presentation" cellspacing="0" cellpadding="0">
           @foreach($travellers as $traveller)
-            <tr><td>{{ trim(($traveller['title'] ?? '').' '.($traveller['first_name'] ?? '').' '.($traveller['last_name'] ?? '')) }}</td><td>{{ match($traveller['type'] ?? 'ADT') { 'ADT' => 'Adult', 'CNN' => 'Child', 'INF' => 'Infant', default => $traveller['type'] ?? 'Traveller' } }}</td></tr>
+            <tr><td>{{ trim(($traveller['title'] ?? '').' '.($traveller['first_name'] ?? '').' '.($traveller['middle_name'] ?? '').' '.($traveller['last_name'] ?? '')) }}</td><td>{{ match($traveller['type'] ?? 'ADT') { 'ADT' => 'Adult', 'CNN' => 'Child', 'INF' => 'Infant', default => $traveller['type'] ?? 'Traveller' } }}</td></tr>
           @endforeach
         </table>
       </div>

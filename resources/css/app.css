@@ -1206,20 +1206,28 @@ main .h5 {
 .results-heading { align-items: end; display: flex; justify-content: space-between; margin-bottom: 1.5rem; }
 .results-heading h1,
 .booking-heading h1 { font-size: 1.75rem; font-weight: 750; letter-spacing: -.035em; margin: .35rem 0 .2rem; }
-.passport-scanner { align-items: flex-end; display: flex; flex-direction: column; gap: .3rem; }
-.passport-scan-button { align-items: center; display: inline-flex; font-size: var(--small-font-size, .78rem); font-weight: 750; gap: .45rem; min-height: 2.5rem; padding: .5rem .8rem; }
+.passport-scanner { align-items: center; background: #f1f6ff; border: 1.5px dashed #8cb6f4; border-radius: 1rem; display: grid; gap: 1rem; grid-template-columns: auto minmax(0, 1fr) auto; margin: 0 0 1.25rem; padding: 1rem 1.1rem; }
+.passport-upload-icon { align-items: center; background: #fff; border-radius: .85rem; box-shadow: 0 .45rem 1rem rgba(21,63,126,.1); color: #0754bf; display: flex; font-size: 1.65rem; height: 3.5rem; justify-content: center; width: 3.5rem; }
+.passport-upload-copy { min-width: 0; }
+.passport-upload-copy > strong { color: #0e1726; display: block; font-size: .95rem; font-weight: 750; line-height: 1.25; }
+.passport-upload-copy > span { color: #65758b; display: block; font-size: .8rem; line-height: 1.4; margin-top: .2rem; }
+.passport-scan-button { align-items: center; background: #0754bf; border-color: #0754bf; border-radius: .75rem; display: inline-flex; font-size: .85rem; font-weight: 750; gap: .45rem; justify-content: center; min-height: 2.75rem; min-width: 7rem; padding: .6rem 1rem; }
+.passport-scan-button:hover, .passport-scan-button:focus { background: #06459c; border-color: #06459c; }
 .passport-scanner.is-scanning .passport-scan-button > i,
 .passport-scanner.is-scanning .passport-scan-button > span:first-of-type { display: none; }
 .passport-scanner.is-scanning .passport-scan-button .spinner-border { display: inline-block !important; }
-.passport-scan-status { color: #748094; font-size: var(--small-font-size, .78rem); max-width: 17rem; text-align: right; }
+.passport-scan-status { color: #748094; display: block; font-size: .7rem; line-height: 1.35; margin-top: .35rem; }
 .passport-scan-status.is-success { color: #147a45; }
+.passport-scan-status.is-warning { color: #9a6200; font-weight: 650; }
 .passport-scan-status.is-error { color: var(--karossy-red); }
 @media (max-width: 575.98px) {
     .traveller-card .booking-card-title { align-items: stretch; flex-direction: column; gap: .85rem; }
     .traveller-card .booking-card-title > div:first-child { width: 100%; }
-    .passport-scanner { align-items: stretch; width: 100%; }
-    .passport-scan-button { justify-content: center; min-height: 3rem; width: 100%; }
-    .passport-scan-status { max-width: none; text-align: center; }
+    .passport-scanner { gap: .75rem; grid-template-columns: auto minmax(0, 1fr); padding: .85rem; width: 100%; }
+    .passport-upload-icon { font-size: 1.35rem; height: 3rem; width: 3rem; }
+    .passport-upload-copy > strong { font-size: .86rem; }
+    .passport-upload-copy > span { font-size: .73rem; }
+    .passport-scan-button { grid-column: 1 / -1; min-height: 2.8rem; width: 100%; }
 }
 .results-heading p,
 .booking-heading p { color: #747c89; font-size: .9rem; margin: 0; }

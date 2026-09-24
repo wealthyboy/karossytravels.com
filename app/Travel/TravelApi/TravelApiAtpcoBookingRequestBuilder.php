@@ -72,7 +72,7 @@ final class TravelApiAtpcoBookingRequestBuilder
         return collect($travellers)->values()->map(function (array $t, int $index) use ($customer, $phone): array {
             $traveler = [
                 'id' => 'Passenger'.($index + 1),
-                'givenName'     => strtoupper($t['first_name']),
+                'givenName'     => strtoupper(trim($t['first_name'].' '.($t['middle_name'] ?? ''))),
                 'surname'       => strtoupper($t['last_name']),
                 'birthDate'     => $t['date_of_birth'],
                 'passengerCode' => $t['type'],
@@ -104,7 +104,7 @@ final class TravelApiAtpcoBookingRequestBuilder
                         'female', 'f', 'fe' => 'FEMALE',
                         default => 'UNDISCLOSED',
                     },
-                    'givenName' => strtoupper($t['first_name']),
+                    'givenName' => strtoupper(trim($t['first_name'].' '.($t['middle_name'] ?? ''))),
                     'surname' => strtoupper($t['last_name']),
                 ]];
             }

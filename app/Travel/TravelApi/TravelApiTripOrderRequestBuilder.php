@@ -39,7 +39,7 @@ final class TravelApiTripOrderRequestBuilder
                 'contactInfoRefId' => 'CI-1',
                 'birthdate' => $traveller['date_of_birth'],
                 'genderCode' => match ($traveller['gender']) { 'male' => 'M', 'female' => 'F', default => 'U' },
-                'givenName' => strtoupper($traveller['first_name']),
+                'givenName' => strtoupper(trim($traveller['first_name'].' '.($traveller['middle_name'] ?? ''))),
                 'surname' => strtoupper($traveller['last_name']),
                 'identityDocuments' => [[
                     'documentNumber' => strtoupper($traveller['passport_number']),
@@ -47,7 +47,7 @@ final class TravelApiTripOrderRequestBuilder
                     'issuingCountryCode' => strtoupper($traveller['passport_country']),
                     'citizenshipCountryCode' => strtoupper($traveller['nationality']),
                     'expiryDate' => $traveller['passport_expiry'],
-                    'givenName' => strtoupper($traveller['first_name']),
+                    'givenName' => strtoupper(trim($traveller['first_name'].' '.($traveller['middle_name'] ?? ''))),
                     'surname' => strtoupper($traveller['last_name']),
                     'birthdate' => $traveller['date_of_birth'],
                     'genderCode' => match ($traveller['gender']) { 'male' => 'M', 'female' => 'F', default => 'U' },

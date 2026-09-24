@@ -26,12 +26,25 @@
             @foreach($types as $index => $type)
                 @php($typeLabel = $type === 'ADT' ? 'Adult' : ($type === 'CNN' ? 'Child' : 'Infant'))
                 <div class="booking-card traveller-card @if(!$loop->first) mt-1 @endif">
-                    <div class="booking-card-title"><div><span class="traveller-number">{{ $index + 1 }}</span><div><h2>{{ $typeLabel }} traveller</h2><p>{{ $loop->first ? 'Primary passenger' : 'Passenger '.($index + 1) }}</p></div></div><div class="passport-scanner" data-passport-scanner><input class="visually-hidden" type="file" accept="image/*" capture="environment" data-passport-image><button class="btn btn-outline-dark passport-scan-button" type="button" data-scan-passport><i class="bi bi-passport"></i><span>Scan passport</span><span class="spinner-border spinner-border-sm d-none"></span></button><small class="passport-scan-status" data-passport-scan-status>Processed privately on this device</small></div></div>
+                    <div class="booking-card-title"><div><span class="traveller-number">{{ $index + 1 }}</span><div><h2>{{ $typeLabel }} traveller</h2><p>{{ $loop->first ? 'Primary passenger' : 'Passenger '.($index + 1) }}</p></div></div></div>
+                    <div class="passport-scanner" data-passport-scanner>
+                        <input class="visually-hidden" type="file" accept="image/*" data-passport-image>
+                        <div class="passport-upload-icon" aria-hidden="true"><i class="bi bi-passport"></i></div>
+                        <div class="passport-upload-copy">
+                            <strong>Upload passport to auto-fill</strong>
+                            <span>We will extract the name, date of birth, nationality and passport details for this traveller.</span>
+                            <small class="passport-scan-status" data-passport-scan-status aria-live="polite">Processed privately on this device</small>
+                        </div>
+                        <button class="btn btn-primary passport-scan-button" type="button" data-scan-passport>
+                            <i class="bi bi-plus-lg"></i><span>Upload</span><span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+                        </button>
+                    </div>
                     <input type="hidden" name="travellers[{{ $index }}][type]" value="{{ $type }}">
                     <div class="row g-3">
-                        <div class="col-md-3"><label class="form-label">Title</label><select name="travellers[{{ $index }}][title]" class="form-select @error("travellers.$index.title") is-invalid @enderror"><option value="">Select title</option>@foreach(['Mr','Mrs','Ms','Miss','Dr'] as $title)<option value="{{ $title }}" @selected(old("travellers.$index.title") === $title)>{{ $title }}</option>@endforeach</select></div>
-                        <div class="col-md-4"><label class="form-label">First name</label><input name="travellers[{{ $index }}][first_name]" value="{{ old("travellers.$index.first_name") }}" class="form-control @error("travellers.$index.first_name") is-invalid @enderror" autocomplete="off" placeholder="As on passport"></div>
-                        <div class="col-md-5"><label class="form-label">Last name</label><input name="travellers[{{ $index }}][last_name]" value="{{ old("travellers.$index.last_name") }}" class="form-control @error("travellers.$index.last_name") is-invalid @enderror" autocomplete="off" placeholder="As on passport"></div>
+                        <div class="col-md-2"><label class="form-label">Title</label><select name="travellers[{{ $index }}][title]" class="form-select @error("travellers.$index.title") is-invalid @enderror"><option value="">Select title</option>@foreach(['Mr','Mrs','Ms','Miss','Dr'] as $title)<option value="{{ $title }}" @selected(old("travellers.$index.title") === $title)>{{ $title }}</option>@endforeach</select></div>
+                        <div class="col-md-3"><label class="form-label">First name</label><input name="travellers[{{ $index }}][first_name]" value="{{ old("travellers.$index.first_name") }}" class="form-control @error("travellers.$index.first_name") is-invalid @enderror" autocomplete="given-name" placeholder="As on passport"></div>
+                        <div class="col-md-3"><label class="form-label">Middle name <span class="text-muted fw-normal">(optional)</span></label><input name="travellers[{{ $index }}][middle_name]" value="{{ old("travellers.$index.middle_name") }}" class="form-control @error("travellers.$index.middle_name") is-invalid @enderror" autocomplete="additional-name" placeholder="As on passport"></div>
+                        <div class="col-md-4"><label class="form-label">Last name</label><input name="travellers[{{ $index }}][last_name]" value="{{ old("travellers.$index.last_name") }}" class="form-control @error("travellers.$index.last_name") is-invalid @enderror" autocomplete="family-name" placeholder="As on passport"></div>
                         <div class="col-md-4"><label class="form-label">Date of birth</label><input name="travellers[{{ $index }}][date_of_birth]" value="{{ old("travellers.$index.date_of_birth") }}" class="form-control @error("travellers.$index.date_of_birth") is-invalid @enderror" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" data-checkout-date-of-birth data-traveller-type="{{ $type }}" data-max-date="{{ $type === 'ADT' ? now()->subYears(18)->toDateString() : now()->subDay()->toDateString() }}"></div>
                         <div class="col-md-4"><label class="form-label">Gender</label><select name="travellers[{{ $index }}][gender]" class="form-select @error("travellers.$index.gender") is-invalid @enderror"><option value="">Select</option>@foreach(['male'=>'Male','female'=>'Female','unspecified'=>'Unspecified'] as $value=>$label)<option value="{{ $value }}" @selected(old("travellers.$index.gender") === $value)>{{ $label }}</option>@endforeach</select></div>
                         <div class="col-md-4"><label class="form-label">Nationality code</label><input name="travellers[{{ $index }}][nationality]" value="{{ old("travellers.$index.nationality", 'NG') }}" class="form-control text-uppercase @error("travellers.$index.nationality") is-invalid @enderror" maxlength="2" placeholder="NG" data-nationality-code="{{ $index }}"><input type="hidden" name="travellers[{{ $index }}][passport_country]" value="{{ old("travellers.$index.passport_country", old("travellers.$index.nationality", 'NG')) }}" data-passport-country="{{ $index }}"></div>
@@ -158,6 +171,7 @@
         const labels = {
             title: 'Select a title',
             first_name: 'Enter the first name exactly as shown on the passport',
+            middle_name: 'Enter the middle name using letters, spaces, apostrophes or hyphens only',
             last_name: 'Enter the last name exactly as shown on the passport',
             date_of_birth: 'Enter a valid date of birth',
             gender: 'Select a gender',
@@ -204,6 +218,7 @@
             ['first_name', 'last_name'].forEach(field => {
                 if (!namePattern.test(value(field))) errors[`travellers.${index}.${field}`] = ['Use letters, spaces, apostrophes or hyphens exactly as shown on the passport.'];
             });
+            if (value('middle_name') && !namePattern.test(value('middle_name'))) errors[`travellers.${index}.middle_name`] = ['Use letters, spaces, apostrophes or hyphens exactly as shown on the passport.'];
             ['gender', 'nationality', 'passport_number', 'passport_country'].forEach(field => {
                 if (!value(field)) errors[`travellers.${index}.${field}`] = ['This field is required.'];
             });

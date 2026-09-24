@@ -28,8 +28,49 @@ const checkDigit = value => {
     return [...value].reduce((total, character, index) => total + characterValue(character) * weights[index % 3], 0) % 10;
 };
 
-const numericMrz = value => value.replaceAll('O', '0').replaceAll('Q', '0').replaceAll('I', '1').replaceAll('L', '1');
+const numericMrz = value => value
+    .replace(/[OQD]/g, '0')
+    .replace(/[IL]/g, '1')
+    .replaceAll('Z', '2')
+    .replaceAll('S', '5')
+    .replaceAll('G', '6')
+    .replaceAll('B', '8');
 const cleanName = value => value.replaceAll('<', ' ').replace(/\s+/g, ' ').trim();
+
+const mrzGivenNameParts = value => {
+    const exactParts = value.split('<').map(cleanName).filter(Boolean);
+    if (exactParts.length > 1) return exactParts;
+
+    // On low-contrast passport paper, OCR can turn the MRZ separators into
+    // C/S and the trailing <<<<<< filler into a long run of L characters.
+    // Use this only for an unverified fallback; verified MRZ text is untouched.
+    const filler = value.match(/([A-Z])\1{3,}.*$/);
+    if (!filler) return exactParts;
+    const withoutFiller = value.slice(0, filler.index).replace(/[CSLK]$/, '');
+    const possibleSeparators = [...withoutFiller]
+        .map((character, index) => ({ character, index }))
+        .filter(({ character, index }) => /[CSLK]/.test(character) && index >= 3 && index <= withoutFiller.length - 3);
+    const separator = possibleSeparators.sort((a, b) => Math.abs(a.index - withoutFiller.length / 2) - Math.abs(b.index - withoutFiller.length / 2))[0];
+    if (!separator) return [cleanName(withoutFiller)].filter(Boolean);
+
+    return [
+        cleanName(withoutFiller.slice(0, separator.index)),
+        cleanName(withoutFiller.slice(separator.index + 1)),
+    ].filter(Boolean);
+};
+
+// OCR regularly reads digits in an MRZ as similar-looking letters. Keep the
+// original value when its checksum is valid, otherwise try the digit-safe
+// version and only accept it when the passport's own check digit confirms it.
+const checkedMrzValue = (value, rawCheckDigit, numeric = false) => {
+    const check = numericMrz(rawCheckDigit);
+    if (!/^\d$/.test(check)) return null;
+    const candidates = numeric
+        ? [numericMrz(value)]
+        : [value, `${value.slice(0, 1)}${numericMrz(value.slice(1))}`];
+
+    return [...new Set(candidates)].find(candidate => checkDigit(candidate) === Number(check)) || null;
+};
 
 const mrzDate = (value, type, travellerType) => {
     const digits = numericMrz(value);
@@ -52,6 +93,7 @@ const parseMrz = (text, travellerType) => {
     const lines = text.toUpperCase().split(/\r?\n/)
         .map(line => line.replace(/[^A-Z0-9<]/g, ''))
         .filter(line => line.length >= 30)
+        .flatMap(line => /^P</.test(line) && line.length >= 80 ? [line.slice(0, 44), line.slice(44, 88)] : [line])
         .map(line => {
             if (/^<[A-Z]{3}/.test(line)) return `P${line}`;
             if (/^P[A-Z]{3}/.test(line)) return `P<${line.slice(1)}`;
@@ -61,35 +103,39 @@ const parseMrz = (text, travellerType) => {
     if (firstIndex < 0 || !lines[firstIndex + 1]) throw new Error('The passport code could not be found.');
     const first = lines[firstIndex].padEnd(44, '<').slice(0, 44);
     const second = lines[firstIndex + 1].padEnd(44, '<').slice(0, 44);
-    const passportNumber = second.slice(0, 9).replaceAll('<', '');
-    const passportCheck = numericMrz(second[9]);
-    const birthRaw = numericMrz(second.slice(13, 19));
-    const birthCheck = numericMrz(second[19]);
-    const expiryRaw = numericMrz(second.slice(21, 27));
-    const expiryCheck = numericMrz(second[27]);
-    if (Number(passportCheck) !== checkDigit(second.slice(0, 9))
-        || Number(birthCheck) !== checkDigit(birthRaw)
-        || Number(expiryCheck) !== checkDigit(expiryRaw)) {
-        throw new Error('The passport code was not clear enough to read safely.');
-    }
+    const passportRaw = second.slice(0, 9);
+    const checkedPassport = checkedMrzValue(passportRaw, second[9]);
+    const checkedBirth = checkedMrzValue(second.slice(13, 19), second[19], true);
+    const checkedExpiry = checkedMrzValue(second.slice(21, 27), second[27], true);
+    const passportValue = checkedPassport || `${passportRaw.slice(0, 1)}${numericMrz(passportRaw.slice(1))}`;
+    const birthRaw = checkedBirth || numericMrz(second.slice(13, 19));
+    const expiryRaw = checkedExpiry || numericMrz(second.slice(21, 27));
+    const birthDate = mrzDate(birthRaw, 'birth', travellerType);
+    const expiryDate = mrzDate(expiryRaw, 'expiry', travellerType);
+    if (!passportValue.replaceAll('<', '') || !birthDate || !expiryDate) throw new Error('The passport details could not be read from this image.');
+    const passportNumber = passportValue.replaceAll('<', '');
     const [surname = '', givenNames = ''] = first.slice(5).split('<<');
+    const verified = Boolean(checkedPassport && checkedBirth && checkedExpiry);
+    const givenNameParts = mrzGivenNameParts(givenNames);
     const nationality = countries.alpha3ToAlpha2(second.slice(10, 13)) || '';
     const issuingCountry = countries.alpha3ToAlpha2(first.slice(2, 5)) || '';
     const genderCode = second[20];
     return {
-        first_name: cleanName(givenNames),
+        first_name: givenNameParts.shift() || cleanName(givenNames),
+        middle_name: givenNameParts.join(' '),
         last_name: cleanName(surname),
-        date_of_birth: mrzDate(birthRaw, 'birth', travellerType),
+        date_of_birth: birthDate,
         gender: genderCode === 'M' ? 'male' : genderCode === 'F' ? 'female' : 'unspecified',
         nationality,
         passport_number: passportNumber,
         passport_country: issuingCountry,
-        passport_expiry: mrzDate(expiryRaw, 'expiry', travellerType),
+        passport_expiry: expiryDate,
         title: genderCode === 'M' ? 'Mr' : genderCode === 'F' ? 'Ms' : '',
+        __verified: verified,
     };
 };
 
-const passportCrop = (file, startRatio, endRatio) => new Promise((resolve, reject) => {
+const passportCrop = (file, startRatio, endRatio, threshold = false) => new Promise((resolve, reject) => {
     const image = new Image();
     const url = URL.createObjectURL(file);
     image.onload = () => {
@@ -104,7 +150,9 @@ const passportCrop = (file, startRatio, endRatio) => new Promise((resolve, rejec
         const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
         for (let index = 0; index < pixels.data.length; index += 4) {
             const grey = pixels.data[index] * .299 + pixels.data[index + 1] * .587 + pixels.data[index + 2] * .114;
-            const contrasted = Math.max(0, Math.min(255, (grey - 128) * 1.45 + 128));
+            const contrasted = threshold
+                ? (grey > 155 ? 255 : 0)
+                : Math.max(0, Math.min(255, (grey - 128) * 1.7 + 128));
             pixels.data[index] = pixels.data[index + 1] = pixels.data[index + 2] = contrasted;
         }
         context.putImageData(pixels, 0, 0);
@@ -118,23 +166,28 @@ const passportCrop = (file, startRatio, endRatio) => new Promise((resolve, rejec
 const recognizePassport = async (file, travellerType, status) => {
     const worker = await scannerWorker();
     const crops = [
-        [.48, .82],
-        [.38, .92],
-        [.48, 1],
+        [.80, 1, false],
+        [.75, 1, true],
+        [.68, 1, false],
+        [.48, 1, false],
     ];
     let lastError = new Error('The passport code could not be found.');
+    let fallback = null;
 
     for (let index = 0; index < crops.length; index += 1) {
         status.textContent = index === 0 ? 'Reading passport code…' : `Trying another passport area (${index + 1}/${crops.length})…`;
-        const image = await passportCrop(file, crops[index][0], crops[index][1]);
+        const image = await passportCrop(file, crops[index][0], crops[index][1], crops[index][2]);
         const result = await worker.recognize(image);
         try {
-            return parseMrz(result.data.text, travellerType);
+            const parsed = parseMrz(result.data.text, travellerType);
+            if (parsed.__verified) return parsed;
+            fallback ??= parsed;
         } catch (error) {
             lastError = error;
         }
     }
 
+    if (fallback) return fallback;
     throw lastError;
 };
 
@@ -168,10 +221,14 @@ document.querySelectorAll('[data-passport-scanner]').forEach(scanner => {
         document.addEventListener('passport-scan-progress', progressHandler);
         try {
             const travellerType = card.querySelector('[name$="[type]"]')?.value || 'ADT';
-            const fields = await recognizePassport(file, travellerType, status);
-            Object.entries(fields).forEach(([field, value]) => setField(card, field, value));
-            status.className = 'passport-scan-status is-success';
-            status.textContent = 'Passport details filled. Please review every field carefully.';
+            const extracted = await recognizePassport(file, travellerType, status);
+            const verified = extracted.__verified;
+            delete extracted.__verified;
+            Object.entries(extracted).forEach(([field, value]) => setField(card, field, value));
+            status.className = `passport-scan-status ${verified ? 'is-success' : 'is-warning'}`;
+            status.textContent = verified
+                ? 'Passport details filled. Please review every field carefully.'
+                : 'Passport details filled, but some characters need your review before continuing.';
         } catch (error) {
             status.className = 'passport-scan-status is-error';
             status.textContent = `${error.message} Retake the photo with the two code lines fully visible and well lit.`;

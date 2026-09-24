@@ -22,7 +22,7 @@
                 <div class="payment-security"><span><i class="bi bi-shield-check"></i></span><div><strong>Live fare protection</strong><small>Your itinerary and price will be checked again immediately before the PNR is created.</small></div><i class="bi bi-lock-fill"></i></div>
                 <div class="booking-review-list">
                     @foreach($travellers as $index => $traveller)
-                        <div class="booking-review-person"><span class="traveller-number">{{ $index + 1 }}</span><div><strong>{{ $traveller['title'] }} {{ $traveller['first_name'] }} {{ $traveller['last_name'] }}</strong><small>{{ $traveller['type'] === 'ADT' ? 'Adult' : ($traveller['type'] === 'CNN' ? 'Child' : 'Infant') }} · Passport ending {{ str($traveller['passport_number'])->take(-4) }}</small></div><i class="bi bi-check-circle-fill"></i></div>
+                        <div class="booking-review-person"><span class="traveller-number">{{ $index + 1 }}</span><div><strong>{{ $traveller['title'] }} {{ $traveller['first_name'] }} {{ $traveller['middle_name'] ?? '' }} {{ $traveller['last_name'] }}</strong><small>{{ $traveller['type'] === 'ADT' ? 'Adult' : ($traveller['type'] === 'CNN' ? 'Child' : 'Infant') }} · Passport ending {{ str($traveller['passport_number'])->take(-4) }}</small></div><i class="bi bi-check-circle-fill"></i></div>
                     @endforeach
                 </div>
             </div>

@@ -22,6 +22,7 @@ final class StoreFlightTravellersRequest extends FormRequest
             'travellers.*.type' => ['required', Rule::in(['ADT', 'CNN', 'INF'])],
             'travellers.*.title' => ['required', Rule::in(['Mr', 'Mrs', 'Ms', 'Miss', 'Dr'])],
             'travellers.*.first_name' => ['required', 'string', 'max:80', "regex:/^[\\pL][\\pL\\pM'’\\-]*(?: [\\pL][\\pL\\pM'’\\-]*)*$/u"],
+            'travellers.*.middle_name' => ['nullable', 'string', 'max:80', "regex:/^[\\pL][\\pL\\pM'’\\-]*(?: [\\pL][\\pL\\pM'’\\-]*)*$/u"],
             'travellers.*.last_name' => ['required', 'string', 'max:80', "regex:/^[\\pL][\\pL\\pM'’\\-]*(?: [\\pL][\\pL\\pM'’\\-]*)*$/u"],
             'travellers.*.date_of_birth' => ['required', 'date', 'before:today'],
             'travellers.*.gender' => ['required', Rule::in(['male', 'female', 'unspecified'])],
@@ -40,7 +41,7 @@ final class StoreFlightTravellersRequest extends FormRequest
     {
         $travellers = collect($this->input('travellers', []))->map(function ($traveller): array {
             $traveller = is_array($traveller) ? $traveller : [];
-            foreach (['first_name', 'last_name'] as $key) {
+            foreach (['first_name', 'middle_name', 'last_name'] as $key) {
                 if (isset($traveller[$key])) {
                     $traveller[$key] = preg_replace('/\\s+/u', ' ', trim((string) $traveller[$key]));
                 }
@@ -97,6 +98,7 @@ final class StoreFlightTravellersRequest extends FormRequest
             'travellers.*.date_of_birth.date' => 'Enter a valid date of birth.',
             'travellers.*.date_of_birth.before' => 'The date of birth must be before today.',
             'travellers.*.first_name.regex' => 'First names may contain letters, spaces, apostrophes and hyphens only.',
+            'travellers.*.middle_name.regex' => 'Middle names may contain letters, spaces, apostrophes and hyphens only.',
             'travellers.*.last_name.regex' => 'Last names may contain letters, spaces, apostrophes and hyphens only.',
             'travellers.*.gender.required' => 'Select a gender for each traveller.',
             'travellers.*.nationality.required' => 'Enter the traveller\'s two-letter nationality code.',
