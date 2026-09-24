@@ -128,18 +128,15 @@
       </tr>
     </table>
 
-    <!-- Settlement and ticketing note -->
+    <!-- Ticketing note for customer checkout bookings -->
+    @if(! in_array($order->channel, ['admin', 'b2b'], true))
     <div class="note">
-      @if(in_array($order->channel, ['admin', 'b2b'], true))
-      <strong>Settlement note:</strong> This reservation was created through the Karossy operations portal.
-      Settlement will be handled using the agreed account process.
-      @else
       <strong>Ticketing note:</strong> Your airline reservation is confirmed. Ticket issuance and any outstanding
       settlement will be handled through the approved Karossy checkout process.
-      @endif
       If you have any questions,
       please contact <a href="mailto:{{ config('travel.support.email') }}">{{ config('travel.support.email') }}</a>.
     </div>
+    @endif
 
     <!-- Booking details table -->
     <table class="details">
