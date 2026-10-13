@@ -246,6 +246,7 @@ const initialiseSearchableSelect = (select) => {
     input.setAttribute('role', 'combobox');
     input.setAttribute('aria-autocomplete', 'list');
     input.setAttribute('aria-expanded', 'false');
+    if (select.hasAttribute('aria-label')) input.setAttribute('aria-label', select.getAttribute('aria-label'));
     if (wasRequired) input.required = true;
 
     const toggle = document.createElement('button');
@@ -261,6 +262,8 @@ const initialiseSearchableSelect = (select) => {
     select.parentNode.insertBefore(control, select);
     control.append(select, input, toggle, results);
     select.classList.add('searchable-select-source');
+    select.tabIndex = -1;
+    select.setAttribute('aria-hidden', 'true');
     select.required = false;
 
     if (select.value) {
@@ -338,13 +341,14 @@ const initialiseSearchableSelect = (select) => {
         const typed = input.value.trim().toLowerCase();
         const exact = options.find((option) => option.label.toLowerCase() === typed);
         select.value = exact?.value || '';
+        if (exact) select.dispatchEvent(new Event('change', { bubbles: true }));
         input.setCustomValidity(wasRequired && !exact ? 'Choose an option from the list.' : '');
         label.classList.toggle('is-invalid', wasRequired && input.value !== '' && !exact);
         render(input.value);
     };
 
     input.addEventListener('input', syncTypedValue);
-    input.addEventListener('focus', () => render(input.value));
+    input.addEventListener('focus', () => render(select.value ? '' : input.value));
     input.addEventListener('keydown', (event) => {
         if (event.key === 'ArrowDown') {
             event.preventDefault();
@@ -367,6 +371,7 @@ const initialiseSearchableSelect = (select) => {
             const exact = options.find((option) => option.label.toLowerCase() === input.value.trim().toLowerCase());
             if (exact) {
                 select.value = exact.value;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
                 input.value = exact.label;
                 input.setCustomValidity('');
                 label.classList.remove('is-invalid');
@@ -380,7 +385,7 @@ const initialiseSearchableSelect = (select) => {
     toggle.addEventListener('click', () => {
         if (results.classList.contains('d-none')) {
             input.focus();
-            render(input.value);
+            render(select.value ? '' : input.value);
         } else {
             close();
             input.focus();

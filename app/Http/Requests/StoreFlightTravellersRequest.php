@@ -101,7 +101,7 @@ final class StoreFlightTravellersRequest extends FormRequest
             'travellers.*.middle_name.regex' => 'Middle names may contain letters, spaces, apostrophes and hyphens only.',
             'travellers.*.last_name.regex' => 'Last names may contain letters, spaces, apostrophes and hyphens only.',
             'travellers.*.gender.required' => 'Select a gender for each traveller.',
-            'travellers.*.nationality.required' => 'Enter the traveller\'s two-letter nationality code.',
+            'travellers.*.nationality.required' => 'Select the traveller\'s nationality.',
             'travellers.*.passport_number.required' => 'Enter the traveller\'s passport number.',
             'travellers.*.passport_expiry.required' => 'Enter the traveller\'s passport expiry date.',
             'contact.email.required' => 'Enter an email address for the booking confirmation.',

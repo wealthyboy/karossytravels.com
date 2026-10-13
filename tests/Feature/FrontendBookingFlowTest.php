@@ -191,6 +191,50 @@ final class FrontendBookingFlowTest extends TestCase
             ->assertSee('Create account');
     }
 
+    public function test_checkout_nationality_is_a_searchable_country_dropdown_with_iso_values(): void
+    {
+        $offer = $this->createOfferForGuestRedirect();
+        $response = $this->get(route('checkout.travellers', $offer))->assertOk();
+        $document = new \DOMDocument;
+        @$document->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($document);
+        $select = '//select[@name="travellers[0][nationality]"]';
+
+        $this->assertSame(1, $xpath->query($select.'[@data-searchable-select]')->length);
+        $this->assertSame(count(\App\Support\CountryOptions::all()) + 1, $xpath->query($select.'/option')->length);
+        $this->assertGreaterThan(240, $xpath->query($select.'/option')->length);
+        $this->assertSame('Nigeria', trim($xpath->query($select.'/option[@value="NG" and @selected]')->item(0)->textContent));
+        $this->assertSame('United Kingdom', trim($xpath->query($select.'/option[@value="GB"]')->item(0)->textContent));
+        $this->assertSame('United States of America', trim($xpath->query($select.'/option[@value="US"]')->item(0)->textContent));
+        $this->assertSame(0, $xpath->query('//input[@name="travellers[0][nationality]"]')->length);
+    }
+
+    public function test_checkout_restores_nationality_without_replacing_a_different_passport_country(): void
+    {
+        $offer = $this->createOfferForGuestRedirect();
+        $response = $this->withSession(['_old_input' => ['travellers' => [[
+            'nationality' => 'GB', 'passport_country' => 'US',
+        ]]]])->get(route('checkout.travellers', $offer))->assertOk();
+        $document = new \DOMDocument;
+        @$document->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($document);
+
+        $this->assertSame(1, $xpath->query('//select[@name="travellers[0][nationality]"]/option[@value="GB" and @selected]')->length);
+        $this->assertSame(1, $xpath->query('//input[@name="travellers[0][passport_country]" and @value="US"]')->length);
+    }
+
+    public function test_checkout_keeps_a_missing_nationality_unselected_after_validation(): void
+    {
+        $offer = $this->createOfferForGuestRedirect();
+        $response = $this->withSession(['_old_input' => ['travellers' => [['nationality' => '']]]])
+            ->get(route('checkout.travellers', $offer))->assertOk();
+        $document = new \DOMDocument;
+        @$document->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($document);
+
+        $this->assertSame(0, $xpath->query('//select[@name="travellers[0][nationality]"]/option[@selected]')->length);
+    }
+
     public function test_logged_in_account_does_not_prefill_passenger_identity_and_phone_prefix_is_not_duplicated(): void
     {
         $user = User::factory()->create([

@@ -2645,6 +2645,9 @@ body { max-width: 100%; overflow-x: clip; }
 .searchable-select-option:hover,
 .searchable-select-option.active { background: #fff1f2; color: var(--karossy-red-dark); }
 .searchable-select-empty { color: #7d8795; font-size: var(--small-font-size, .78rem); padding: .8rem .75rem; text-align: center; }
+.checkout-nationality .searchable-select-input { background: #fff; border: 1px solid #dee2e6; border-radius: 4.65rem; color: var(--karossy-navy); font-size: .9rem; line-height: 1.25; min-height: 2.85rem; outline: 0; padding: .65rem 2.7rem .65rem 1rem; width: 100%; }
+.checkout-nationality.is-invalid .searchable-select-input,
+.checkout-nationality .searchable-select-source.is-invalid + .searchable-select-input { border-color: #dc3545; }
 .visa-search-form > .btn,
 .home-visa-search > .btn { min-height: 3.45rem; white-space: nowrap; }
 .visa-counter { align-items: center; border: 1px solid #cfd6e1; border-radius: .8rem; display: grid; grid-template-columns: 2.7rem 1fr 2.7rem; min-height: 3.45rem; overflow: hidden; }
