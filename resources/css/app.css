@@ -1961,7 +1961,6 @@ main .h5 {
 .public-header > .navbar .public-menu-toggle { border-color: rgba(255,255,255,.2); }
 
 .public-hero { background: linear-gradient(112deg, #ffc9ce 0%, #ffdde1 48%, #f5f1f4 75%, #fff 100%); min-height: 35rem; overflow: visible; padding: 3.2rem 0 5.5rem; position: relative; z-index: 2; }
-.public-hero::after { background: linear-gradient(90deg, var(--karossy-red-dark), var(--karossy-red), #ef3944); bottom: 0; content: ''; height: .55rem; left: 0; position: absolute; right: 0; }
 .public-hero-pixels { background-image: linear-gradient(rgba(255,255,255,.36) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.36) 1px, transparent 1px); background-size: 52px 52px; height: 26rem; opacity: .7; position: absolute; right: -3rem; top: -2rem; transform: rotate(8deg); width: 46%; }
 .public-hero-pixels::after { background: radial-gradient(circle, rgba(204,0,11,.13), transparent 65%); content: ''; inset: -6rem; position: absolute; }
 .public-hero-copy { max-width: 43rem; position: relative; z-index: 2; }
@@ -2500,7 +2499,6 @@ body { max-width: 100%; overflow-x: clip; }
     right: 0;
     top: 0;
 }
-.public-hero::after { height: .32rem; }
 .public-hero-pixels {
     background-image: linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px);
     background-size: 64px 64px;
@@ -2514,7 +2512,7 @@ body { max-width: 100%; overflow-x: clip; }
 .public-hero-pixels::after { background: none; }
 .public-hero-intro { align-items: center; display: grid; gap: 2.5rem; grid-template-columns: minmax(0, 1.42fr) minmax(18rem, .58fr); }
 .public-hero-copy { max-width: 48rem; }
-.public-hero .public-eyebrow { color: #ff9aa2; }
+.public-hero .public-eyebrow { color: #f7941de6; }
 .public-hero h1 { color: #fff; font-size: clamp(2.65rem, 4.15vw, 4rem); font-weight: 800; line-height: 1; margin: .75rem 0 .85rem; white-space: nowrap; }
 .public-hero h1 em { color: #fff; font-style: normal; }
 .public-hero-copy > p { color: #e2eff7; font-size: clamp(.86rem, 1.05vw, 1rem); line-height: 1.5; max-width: 40rem; white-space: normal; }
@@ -3344,7 +3342,6 @@ body { max-width: 100%; overflow-x: clip; }
     .public-hero-background { background: var(--hero-background-gradient); bottom: 34%; left: 0; position: absolute; right: 0; top: 0; z-index: 0; }
     .public-hero-pixels { clip-path: inset(0 0 34% 0); }
     .public-hero > .public-container { position: relative; z-index: 2; }
-    .public-hero::after { bottom: 34%; }
 }
 
 @media (min-width: 992px) {
@@ -3352,7 +3349,6 @@ body { max-width: 100%; overflow-x: clip; }
     .public-hero-background { background: var(--hero-background-gradient); bottom: 34%; left: 0; position: absolute; right: 0; top: 0; z-index: 0; }
     .public-hero-pixels { clip-path: inset(0 0 34% 0); }
     .public-hero > .public-container { position: relative; z-index: 2; }
-    .public-hero::after { bottom: 34%; }
     .public-search-card { margin-bottom: 0 !important; }
     .public-trust-strip { clear: both; margin-top: calc(-4.6rem - var(--hero-background-overlap)); position: relative; z-index: 3; }
     .public-trust-strip .public-container { padding-top: var(--hero-background-overlap); }
