@@ -15,8 +15,8 @@ final class TravelApiFlightSearchRequestBuilder
         $segments = $this->segments($criteria);
         $passengers = [['Code' => 'ADT', 'Quantity' => (int) $criteria['adults']]];
 
-        if (($criteria['children'] ?? 0) > 0) {
-            $passengers[] = ['Code' => 'CNN', 'Quantity' => (int) $criteria['children']];
+        foreach (array_values((array) ($criteria['children_ages'] ?? [])) as $age) {
+            $passengers[] = ['Code' => 'CNN', 'Quantity' => 1, 'Age' => (int) $age];
         }
         if (($criteria['infants'] ?? 0) > 0) {
             $passengers[] = ['Code' => 'INF', 'Quantity' => (int) $criteria['infants']];

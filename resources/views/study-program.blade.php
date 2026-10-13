@@ -1,6 +1,7 @@
 @extends('layouts.public')
 
 @section('title', 'Student Study Program')
+@section('meta_description', 'Plan your study abroad journey from Nigeria with programme guidance, visa assistance, flights and arrival support from Karossy Travels.')
 
 @section('content')
 <section class="study-program-hero">

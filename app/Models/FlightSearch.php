@@ -14,7 +14,7 @@ final class FlightSearch extends Model
 
     protected function casts(): array
     {
-        return ['departure_date' => 'date', 'return_date' => 'date', 'segments' => 'array'];
+        return ['departure_date' => 'date', 'return_date' => 'date', 'segments' => 'array', 'children_ages' => 'array'];
     }
 
     public function offers(): HasMany

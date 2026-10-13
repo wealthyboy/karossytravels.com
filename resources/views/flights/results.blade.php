@@ -1,6 +1,8 @@
 @extends('layouts.public')
 
 @section('title', 'Flight results')
+@section('meta_description', 'Compare live domestic and international flight options, fares and schedules with Karossy Travels.')
+@section('robots', 'noindex,follow')
 
 @section('content')
 @php

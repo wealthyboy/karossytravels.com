@@ -40,6 +40,8 @@ final class FlightSearchRequest extends FormRequest
             'cabin' => ['required', Rule::in(['economy', 'premium_economy', 'business', 'first'])],
             'adults' => ['required', 'integer', 'min:1', 'max:9'],
             'children' => ['sometimes', 'integer', 'min:0', 'max:8'],
+            'children_ages' => [Rule::requiredIf(fn (): bool => (int) $this->input('children', 0) > 0), 'array'],
+            'children_ages.*' => ['integer', 'min:0', 'max:17'],
             'infants' => ['sometimes', 'integer', 'min:0', 'max:4', 'lte:adults'],
             'currency' => ['sometimes', 'string', 'size:3', 'regex:/^[A-Za-z]{3}$/'],
             'session_id' => ['required', 'uuid'],
@@ -54,6 +56,7 @@ final class FlightSearchRequest extends FormRequest
             'destination' => strtoupper((string) $this->input('destination')),
             'currency' => strtoupper((string) $this->input('currency', app(DisplayCurrencyResolver::class)->resolve($this))),
             'children' => $this->input('children', 0),
+            'children_ages' => array_values((array) $this->input('children_ages', [])),
             'infants' => $this->input('infants', 0),
             'segments' => collect($this->input('segments', []))->map(fn (array $segment): array => [
                 ...$segment,
@@ -63,5 +66,16 @@ final class FlightSearchRequest extends FormRequest
         ]);
 
         return [];
+    }
+
+    protected function passedValidation(): void
+    {
+        $children = (int) $this->input('children', 0);
+        $ages = (array) $this->input('children_ages', []);
+        if ($children > 0 && count($ages) !== $children) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'children_ages' => 'Select an age for every child.',
+            ]);
+        }
     }
 }

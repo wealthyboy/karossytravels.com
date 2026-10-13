@@ -1,6 +1,7 @@
 @extends('layouts.public')
 
 @section('title', 'Manage booking')
+@section('meta_description', 'Securely manage your Karossy Travels booking, check your itinerary and view your booking status using your reference and email.')
 
 @section('content')
 <section class="manage-booking-page">

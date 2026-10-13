@@ -565,6 +565,9 @@ document.querySelectorAll('[data-traveller-picker]').forEach((picker) => {
     const summary = picker.querySelector('[data-traveller-summary]');
     const cabin = picker.querySelector('[data-cabin-select]');
     const rows = [...picker.querySelectorAll('[data-traveller-counter]')];
+    const childAgesContainer = picker.querySelector('[data-child-ages-container]');
+    const childAgesList = picker.querySelector('[data-child-ages-list]');
+    const initialChildAges = JSON.parse(picker.closest('[data-flight-search]')?.querySelector('[data-initial-child-ages]')?.textContent || '[]');
 
     const rowValue = (row) => Number(row.querySelector('[data-counter-value]').textContent);
     const update = () => {
@@ -578,6 +581,33 @@ document.querySelectorAll('[data-traveller-picker]').forEach((picker) => {
         });
         const total = values.adults + values.children + values.lap_infants + values.seat_infants;
         summary.textContent = `${total} ${total === 1 ? 'traveller' : 'travellers'}, ${cabin.options[cabin.selectedIndex].text}`;
+        if (childAgesContainer && childAgesList) {
+            const existing = [...childAgesList.querySelectorAll('select')].map((select) => select.value);
+            childAgesList.innerHTML = '';
+            childAgesContainer.classList.toggle('d-none', values.children === 0);
+            for (let index = 0; index < values.children; index += 1) {
+                const label = document.createElement('label');
+                label.className = 'traveller-child-age';
+                label.innerHTML = `<span>Child ${index + 1} age</span>`;
+                const select = document.createElement('select');
+                select.name = 'children_ages[]';
+                select.required = true;
+                select.setAttribute('aria-label', `Child ${index + 1} age`);
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = 'Select age';
+                select.append(placeholder);
+                for (let age = 0; age <= 17; age += 1) {
+                    const option = document.createElement('option');
+                    option.value = String(age);
+                    option.textContent = age === 0 ? 'Under 1' : String(age);
+                    select.append(option);
+                }
+                select.value = existing[index] ?? initialChildAges[index] ?? '';
+                label.append(select);
+                childAgesList.append(label);
+            }
+        }
     };
     const close = () => { popover.classList.add('d-none'); toggle.setAttribute('aria-expanded', 'false'); };
 

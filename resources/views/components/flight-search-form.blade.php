@@ -4,6 +4,9 @@
     @if(!empty($criteria['segments']))
         <script type="application/json" data-initial-multi-city-segments>@json($criteria['segments'])</script>
     @endif
+    @if(!empty($criteria['children_ages']))
+        <script type="application/json" data-initial-child-ages>@json(array_values($criteria['children_ages']))</script>
+    @endif
     <div class="flight-trip-tabs" role="group" aria-label="Trip type">
         <input class="btn-check trip-type-input" type="radio" name="trip_type_ui" id="trip-round" value="round_trip" @checked(($criteria['trip_type'] ?? 'round_trip') === 'round_trip')>
         <label for="trip-round">Round trip</label>
@@ -36,9 +39,14 @@
                 <button class="flight-travellers-control" type="button" data-traveller-toggle aria-expanded="false"><i class="bi bi-person"></i><span><small>Travellers, Cabin class</small><strong data-traveller-summary>1 traveller, Economy</strong></span><i class="bi bi-chevron-down"></i></button>
                 <div class="traveller-popover d-none" data-traveller-popover>
                     <h3>Travelers and Cabin class</h3>
-                    @foreach([['adults','Adults',null,(int) ($criteria['adults'] ?? 1),9],['children','Children','Ages 2 to 17',(int) ($criteria['children'] ?? 0),8],['lap_infants','Infants on lap','Younger than 2',(int) ($criteria['infants'] ?? 0),4],['seat_infants','Infants in seat','Younger than 2',0,4]] as [$field,$label,$help,$value,$max])
+                    @foreach([['adults','Adults',null,(int) ($criteria['adults'] ?? 1),9],['children','Children',null,(int) ($criteria['children'] ?? 0),8],['lap_infants','Infants on lap','Younger than 2',(int) ($criteria['infants'] ?? 0),4],['seat_infants','Infants in seat','Younger than 2',0,4]] as [$field,$label,$help,$value,$max])
                         <div class="traveller-counter" data-traveller-counter data-field="{{ $field }}" data-min="{{ $field === 'adults' ? 1 : 0 }}" data-max="{{ $max }}"><div><strong>{{ $label }}</strong>@if($help)<small>{{ $help }}</small>@endif</div><div><button type="button" data-counter-minus aria-label="Remove {{ strtolower($label) }}"><i class="bi bi-dash-lg"></i></button><span data-counter-value>{{ $value }}</span><button type="button" data-counter-plus aria-label="Add {{ strtolower($label) }}"><i class="bi bi-plus-lg"></i></button></div><input type="hidden" data-counter-input @if($field !== 'seat_infants') name="{{ $field === 'lap_infants' ? 'infants' : $field }}" @endif value="{{ $value }}"></div>
                     @endforeach
+                    <div class="traveller-child-ages d-none" data-child-ages-container>
+                        <strong>Child ages</strong>
+                        <small>Tell us the age of each child for accurate fares.</small>
+                        <div data-child-ages-list></div>
+                    </div>
                     <label class="traveller-cabin"><span>Cabin class</span><select name="cabin" data-cabin-select>@foreach(['economy' => 'Economy', 'premium_economy' => 'Premium economy', 'business' => 'Business', 'first' => 'First'] as $value => $label)<option value="{{ $value }}" @selected(($criteria['cabin'] ?? 'economy') === $value)>{{ $label }}</option>@endforeach</select><i class="bi bi-chevron-down"></i></label>
                     <button class="btn btn-karossy traveller-done" type="button" data-traveller-done>Done</button>
                 </div>

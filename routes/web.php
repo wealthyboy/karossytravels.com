@@ -51,6 +51,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
 
 Route::get('/', HomeController::class)->name('home');
+Route::get('/book-flights', fn () => redirect()->to(route('home', ['service' => 'flights']).'#travel-search', 301))->name('book-flights');
+Route::get('/book-hotels', fn () => redirect()->to(route('home', ['service' => 'hotels']).'#travel-search', 301))->name('book-hotels');
 Route::get('/visas', [VisaServiceController::class, 'index'])->name('visas.index');
 Route::get('/visas/results', [VisaServiceController::class, 'results'])->name('visas.results');
 Route::post('/visas/applications/{application}/payment/verify', [VisaServiceController::class, 'verify'])->middleware('throttle:20,1')->name('visas.payment.verify');

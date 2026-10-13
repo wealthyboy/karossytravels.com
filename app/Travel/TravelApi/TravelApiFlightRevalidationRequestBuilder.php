@@ -17,8 +17,8 @@ final class TravelApiFlightRevalidationRequestBuilder
         $journeys = $this->journeys($offer);
         $passengers = [['Code' => 'ADT', 'Quantity' => (int) $search->adults]];
 
-        if ($search->children > 0) {
-            $passengers[] = ['Code' => 'CNN', 'Quantity' => (int) $search->children];
+        foreach (array_values((array) ($search->children_ages ?? [])) as $age) {
+            $passengers[] = ['Code' => 'CNN', 'Quantity' => 1, 'Age' => (int) $age];
         }
         if ($search->infants > 0) {
             $passengers[] = ['Code' => 'INF', 'Quantity' => (int) $search->infants];

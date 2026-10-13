@@ -58,6 +58,22 @@ final class TravelApiFlightMappingTest extends TestCase
         $this->assertSame('50ITINS', $request['TPA_Extensions']['IntelliSellTransaction']['RequestType']['Name']);
     }
 
+    public function test_it_sends_each_child_age_to_sabre_as_a_cnn_passenger(): void
+    {
+        $request = (new TravelApiFlightSearchRequestBuilder(['pcc' => 'TEST']))->build([
+            'origin' => 'LOS', 'destination' => 'LHR', 'departure_date' => '2026-09-11',
+            'trip_type' => 'one_way', 'cabin' => 'economy', 'adults' => 2,
+            'children' => 2, 'children_ages' => [0, 7], 'infants' => 0,
+        ])['OTA_AirLowFareSearchRQ'];
+
+        $passengers = $request['TravelerInfoSummary']['AirTravelerAvail'][0]['PassengerTypeQuantity'];
+        $this->assertSame([
+            ['Code' => 'ADT', 'Quantity' => 2],
+            ['Code' => 'CNN', 'Quantity' => 1, 'Age' => 0],
+            ['Code' => 'CNN', 'Quantity' => 1, 'Age' => 7],
+        ], $passengers);
+    }
+
     public function test_it_resolves_grouped_itinerary_references_into_an_offer(): void
     {
         $response = ['groupedItineraryResponse' => [

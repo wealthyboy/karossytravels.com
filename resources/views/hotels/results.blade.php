@@ -1,6 +1,8 @@
 @extends('layouts.public')
 
 @section('title', 'Hotel results')
+@section('meta_description', 'Find and compare hotel rooms, rates and stays for your next trip with Karossy Travels.')
+@section('robots', 'noindex,follow')
 
 @section('content')
 <section class="results-search-strip">

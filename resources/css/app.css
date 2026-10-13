@@ -467,6 +467,11 @@ main .h5 {
 .flight-swap-button { align-self: center; background: #fff; border: 1px solid #cfd5df; border-radius: 50%; color: var(--karossy-red); height: 2.4rem; left: 50%; margin: 0; position: absolute; top: 50%; transform: translate(-50%, -50%); width: 2.4rem; z-index: 2; }
 .traveller-selects { display: flex; gap: .35rem; }
 .flight-traveller-picker { position: relative; }
+.traveller-child-ages { margin: .75rem 0 .25rem; padding-top: .75rem; border-top: 1px solid rgba(25, 34, 45, .12); }
+.traveller-child-ages > strong, .traveller-child-ages > small { display: block; }
+.traveller-child-ages > small { color: #6b7280; margin: .2rem 0 .55rem; }
+.traveller-child-age { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin: .45rem 0; font-size: .88rem; }
+.traveller-child-age select { min-width: 9rem; padding: .45rem .65rem; border: 1px solid #d7dce3; border-radius: .45rem; background: #fff; }
 .flight-travellers-control > span > strong { display: block; font-size: .82rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .flight-travellers-control > i:last-child { color: #707886; font-size: var(--small-font-size, .78rem); }
 .traveller-popover { background: #fff; border: 1px solid #eceef2; border-radius: 1.1rem; box-shadow: 0 1.25rem 3.5rem rgba(23,20,63,.18); padding: 1.2rem; position: absolute; right: 0; top: calc(100% + .65rem); width: 24rem; z-index: 25; }
@@ -1864,13 +1869,30 @@ main .h5 {
 }
 
 /* Public storefront */
-.public-site { background: #fff; color: var(--karossy-navy); overflow-x: hidden; }
+.public-site {
+    --karossy-cta-red: #c71f27;
+    --karossy-cta-red-hover: #a51920;
+    --karossy-cta-red-active: #87141a;
+    background: #fff;
+    color: var(--karossy-navy);
+    overflow-x: hidden;
+}
+.public-site .btn-karossy {
+    --bs-btn-bg: var(--karossy-cta-red);
+    --bs-btn-border-color: var(--karossy-cta-red);
+    --bs-btn-hover-bg: var(--karossy-cta-red-hover);
+    --bs-btn-hover-border-color: var(--karossy-cta-red-hover);
+    --bs-btn-active-bg: var(--karossy-cta-red-active);
+    --bs-btn-active-border-color: var(--karossy-cta-red-active);
+    --bs-btn-focus-shadow-rgb: 199, 31, 39;
+    --bs-btn-disabled-bg: var(--karossy-cta-red);
+    --bs-btn-disabled-border-color: var(--karossy-cta-red);
+}
 .public-container { max-width: 1240px; }
 .public-header { background: rgba(255,255,255,.97); border-bottom: 1px solid #eceef2; position: relative; z-index: 30; }
 .public-header .navbar { min-height: 4.75rem; padding-block: .65rem; }
-.public-brand { align-items: center; color: var(--karossy-navy); display: inline-flex; gap: .65rem; text-decoration: none; }
-.public-brand-mark { align-items: center; background: #f7f7fa; border: 1px solid #e4e5eb; border-radius: .8rem; box-shadow: 0 .2rem .65rem rgba(23,20,63,.07); display: inline-flex; height: 2.65rem; justify-content: center; overflow: hidden; width: 2.65rem; }
-.public-brand-mark img { height: 2rem; object-fit: contain; width: 2rem; }
+.public-brand { align-items: center; color: var(--karossy-navy); display: inline-flex; flex-shrink: 0; text-decoration: none; }
+.public-brand-logo { display: block; height: auto; object-fit: contain; width: 11.25rem; }
 .public-brand strong { display: block; font-size: 1.05rem; font-weight: 800; letter-spacing: .025em; line-height: 1; }
 .public-brand small { color: #777f8e; display: block; font-size: var(--small-font-size, .78rem); letter-spacing: .06em; margin-top: .28rem; text-transform: uppercase; }
 .public-desktop-service-nav { align-items: center; display: flex; gap: .05rem; margin-left: 1.35rem; }
@@ -1923,11 +1945,6 @@ main .h5 {
     border-bottom-color: rgba(255,255,255,.08);
 }
 .public-header > .navbar .public-brand { color: #fff; }
-.public-header > .navbar .public-brand-mark {
-    background: rgba(255,255,255,.96);
-    border-color: rgba(255,255,255,.22);
-    box-shadow: 0 .35rem 1rem rgba(0,0,0,.18);
-}
 .public-header > .navbar .public-brand small { color: rgba(255,255,255,.62); }
 .public-header > .navbar .public-primary-nav .nav-link { color: rgba(255,255,255,.78); }
 .public-header > .navbar .public-primary-nav .nav-link.active,
@@ -2122,13 +2139,8 @@ main .h5 {
 .public-error-card > small a { color: var(--karossy-red); font-weight: 650; }
 .public-footer { background: #071e4f; color: rgba(255,255,255,.68); padding: 4rem 0 1.25rem; }
 .public-footer-grid { display: grid; gap: 3rem; grid-template-columns: 1.5fr repeat(3, 1fr); }
-.public-footer-brand { align-items: center; color: #fff; display: inline-flex; gap: .75rem; text-decoration: none; }
-.public-footer-brand > span:first-child { align-items: center; background: #fff; border-radius: .8rem; display: flex; height: 3rem; justify-content: center; overflow: hidden; width: 3rem; }
-.public-footer-brand img { height: 2.4rem; object-fit: contain; width: 2.4rem; }
-.public-footer-brand strong,
-.public-footer-brand small { display: block; }
-.public-footer-brand strong { font-size: 1.1rem; font-weight: 800; letter-spacing: .035em; line-height: 1; }
-.public-footer-brand small { color: rgba(255,255,255,.58); font-size: var(--small-font-size, .78rem); letter-spacing: .08em; margin-top: .28rem; text-transform: uppercase; }
+.public-footer-brand { align-items: center; color: #fff; display: inline-flex; text-decoration: none; }
+.public-footer-logo { display: block; height: auto; object-fit: contain; width: 11.25rem; }
 .public-footer-brand-column > p { font-size: .82rem; line-height: 1.75; margin: 1.25rem 0; max-width: 22rem; }
 .public-footer-contact { display: grid; gap: .4rem; }
 .public-footer-contact a { align-items: center; color: rgba(255,255,255,.72); display: inline-flex; font-size: var(--small-font-size, .78rem); gap: .5rem; text-decoration: none; width: max-content; }
@@ -2474,9 +2486,8 @@ body { max-width: 100%; overflow-x: clip; }
 
 /* Homepage hero concept — contained here so the visual direction is easy to revert. */
 .public-hero {
-    background:
-        radial-gradient(circle at 82% 18%, rgba(214, 25, 39, .3), transparent 27rem),
-        linear-gradient(118deg, #11102f 0%, #17143d 56%, #24143a 100%);
+    --hero-background-gradient: linear-gradient(118deg, #071c47 0%, #0c2e6c 58%, #123e82 100%);
+    background: var(--hero-background-gradient);
     min-height: 32rem;
     padding: 2.7rem 0 3rem;
 }
@@ -2500,13 +2511,13 @@ body { max-width: 100%; overflow-x: clip; }
     transform: rotate(9deg);
     width: 52%;
 }
-.public-hero-pixels::after { background: radial-gradient(circle, rgba(221, 13, 29, .2), transparent 62%); }
+.public-hero-pixels::after { background: none; }
 .public-hero-intro { align-items: center; display: grid; gap: 2.5rem; grid-template-columns: minmax(0, 1.42fr) minmax(18rem, .58fr); }
 .public-hero-copy { max-width: 48rem; }
 .public-hero .public-eyebrow { color: #ff9aa2; }
 .public-hero h1 { color: #fff; font-size: clamp(2.65rem, 4.15vw, 4rem); font-weight: 800; line-height: 1; margin: .75rem 0 .85rem; white-space: nowrap; }
-.public-hero h1 em { color: #ff4d59; font-style: normal; }
-.public-hero-copy > p { color: #c9c7d8; font-size: clamp(.86rem, 1.05vw, 1rem); line-height: 1.5; max-width: none; white-space: nowrap; }
+.public-hero h1 em { color: #fff; font-style: normal; }
+.public-hero-copy > p { color: #e2eff7; font-size: clamp(.86rem, 1.05vw, 1rem); line-height: 1.5; max-width: 40rem; white-space: normal; }
 .public-hero-assurance { display: flex; flex-wrap: wrap; gap: .7rem 1.35rem; margin-top: 1.15rem; }
 .public-hero-assurance span { align-items: center; color: #eeedf5; display: inline-flex; font-size: var(--small-font-size, .78rem); font-weight: 650; gap: .4rem; }
 .public-hero-assurance i { color: #ff5a65; font-size: .9rem; }
@@ -2515,18 +2526,18 @@ body { max-width: 100%; overflow-x: clip; }
 .hero-orbit-one { height: 20rem; right: 0; top: -2rem; width: 20rem; }
 .hero-orbit-two { height: 13rem; right: 3.5rem; top: 1.5rem; width: 13rem; }
 .hero-plane { color: #ff4d59; filter: drop-shadow(0 .7rem 1.5rem rgba(211,0,16,.45)); font-size: 2.1rem; position: absolute; right: 2.2rem; top: 1rem; transform: rotate(34deg); }
-.hero-route-card { backdrop-filter: blur(16px); background: linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,.06)); border: 1px solid rgba(255,255,255,.2); border-radius: 1.25rem; box-shadow: 0 1.5rem 4rem rgba(0,0,0,.22); left: 0; padding: 1.2rem; position: absolute; top: 1.1rem; width: min(100%, 23rem); }
+.hero-route-card { backdrop-filter: blur(16px); background: linear-gradient(135deg, rgba(17,61,92,.36), rgba(17,61,92,.16)); border: 1px solid rgba(255,255,255,.25); border-radius: 1.25rem; box-shadow: 0 1.5rem 4rem rgba(10,44,74,.2); left: 0; padding: 1.2rem; position: absolute; top: 1.1rem; width: min(100%, 23rem); }
 .hero-route-card > div { opacity: 1; transform: translateY(0); transition: opacity .22s ease, transform .22s ease; }
 .hero-route-card.is-changing > div { opacity: 0; transform: translateY(.35rem); }
-.hero-route-card > small { color: #a9a6bd; font-size: var(--small-font-size, .78rem); font-weight: 750; letter-spacing: .13em; }
+.hero-route-card > small { color: #d3e9f4; font-size: var(--small-font-size, .78rem); font-weight: 750; letter-spacing: .13em; }
 .hero-route-card > div { align-items: center; display: grid; gap: .8rem; grid-template-columns: 1fr auto 1.25fr; margin-top: 1rem; }
 .hero-route-card span strong, .hero-route-card span small { display: block; }
 .hero-route-card span strong { color: #fff; font-size: 1.15rem; }
-.hero-route-card span small { color: #aaa7bb; font-size: var(--small-font-size, .78rem); margin-top: .15rem; }
+.hero-route-card span small { color: #dbeaf5; font-size: var(--small-font-size, .78rem); margin-top: .15rem; }
 .hero-route-card b { align-items: center; display: flex; gap: .3rem; }
 .hero-route-card b::before, .hero-route-card b::after { border-top: 1px dashed rgba(255,255,255,.35); content: ''; width: 1.2rem; }
 .hero-route-card b i { color: #ff4d59; font-size: .8rem; transform: rotate(45deg); }
-.hero-route-card p { border-top: 1px solid rgba(255,255,255,.12); color: #d4d2df; font-size: var(--small-font-size, .78rem); margin: 1.1rem 0 0; padding-top: .85rem; }
+.hero-route-card p { border-top: 1px solid rgba(255,255,255,.12); color: #e2eff7; font-size: var(--small-font-size, .78rem); margin: 1.1rem 0 0; padding-top: .85rem; }
 .hero-route-card p i { color: #ff4d59; margin-right: .35rem; }
 .public-search-card { border: 1px solid rgba(255,255,255,.75); border-radius: 1.35rem; box-shadow: 0 2rem 5rem rgba(5, 4, 25, .34); margin-top: 1.75rem; }
 .public-service-tabs { background: #fafafd; border-radius: 1.35rem 1.35rem 0 0; gap: .2rem; justify-content: flex-start; padding: .75rem 1rem; }
@@ -3116,8 +3127,11 @@ body { max-width: 100%; overflow-x: clip; }
 .home-study-card strong { color: var(--karossy-navy); font-size: var(--small-font-size, .78rem); line-height: 1.3; margin-top: .2rem; }
 .home-study-card-one { bottom: 25%; left: 7%; }
 .home-study-card-two { bottom: 8%; right: 6%; }
-.home-about > .public-container { align-items: end; display: grid; gap: 4rem; grid-template-columns: .8fr 1fr; }
-.home-about p { font-size: 1rem; line-height: 1.8; margin: 0; }
+.home-about > .public-container { display: block; }
+.home-about-heading { text-align: left; }
+.home-about h2 { font-size: clamp(1.35rem, 2.1vw, 2rem); margin: .45rem 0 1.5rem; }
+.home-about-copy { display: grid; gap: 1.25rem; max-width: none; }
+.home-about-copy p { font-size: 1rem; line-height: 1.8; margin: 0; max-width: none; }
 
 /* Final flight results typography: one coherent scale. */
 .public-live-flight-results .flight-results-toolbar h2 { font-size: 1.45rem; }
@@ -3166,11 +3180,8 @@ body { max-width: 100%; overflow-x: clip; }
     .home-charter-partner { margin-bottom: 1.25rem; }
     .home-charter-copy h2 { font-size: clamp(2rem,10vw,3rem); }
     .public-container { padding-left: 1rem; padding-right: 1rem; }
-    .public-brand { gap: .45rem; min-width: 0; }
-    .public-brand-mark { flex: 0 0 2.35rem; height: 2.35rem; width: 2.35rem; }
-    .public-brand-mark img { height: 1.7rem; width: 1.7rem; }
-    .public-brand strong { font-size: .85rem; }
-    .public-brand small { font-size: var(--small-font-size, .78rem); letter-spacing: .035em; }
+    .public-brand { min-width: 0; }
+    .public-brand-logo { width: 9.75rem; }
     .public-header-actions { flex: 0 0 auto; gap: .05rem; }
     .public-header-action { min-height: 2.4rem; padding-inline: .3rem; }
     .public-header-action > i:first-child { font-size: .9rem; }
@@ -3273,8 +3284,8 @@ body { max-width: 100%; overflow-x: clip; }
     .public-search-card .btn-karossy:focus-visible,
     .public-search-card .btn-karossy:active,
     .public-search-card .btn-karossy.active {
-        background-color: var(--karossy-red) !important;
-        border-color: var(--karossy-red) !important;
+        background-color: var(--karossy-cta-red) !important;
+        border-color: var(--karossy-cta-red) !important;
         box-shadow: none;
         color: #fff !important;
         transform: none;
@@ -3327,10 +3338,10 @@ body { max-width: 100%; overflow-x: clip; }
     .home-holiday-grid > a { height: 20rem; }
 }
 
-/* Keep the search card and highlights in flow while shortening only the desktop navy background. */
+/* Keep the search card and highlights in flow over the full-width hero gradient. */
 @media (max-width: 991.98px) {
     .public-hero { background: transparent; }
-    .public-hero-background { background: linear-gradient(118deg, #11102f 0%, #17143d 56%, #24143a 100%); bottom: 34%; left: 0; position: absolute; right: 0; top: 0; z-index: 0; }
+    .public-hero-background { background: var(--hero-background-gradient); bottom: 34%; left: 0; position: absolute; right: 0; top: 0; z-index: 0; }
     .public-hero-pixels { clip-path: inset(0 0 34% 0); }
     .public-hero > .public-container { position: relative; z-index: 2; }
     .public-hero::after { bottom: 34%; }
@@ -3338,7 +3349,7 @@ body { max-width: 100%; overflow-x: clip; }
 
 @media (min-width: 992px) {
     .public-hero { --hero-background-overlap: 7rem; background: transparent; min-height: 32rem; z-index: 4; }
-    .public-hero-background { background: radial-gradient(circle at 82% 18%, rgba(214, 25, 39, .3), transparent 27rem), linear-gradient(118deg, #11102f 0%, #17143d 56%, #24143a 100%); bottom: 34%; left: 0; position: absolute; right: 0; top: 0; z-index: 0; }
+    .public-hero-background { background: var(--hero-background-gradient); bottom: 34%; left: 0; position: absolute; right: 0; top: 0; z-index: 0; }
     .public-hero-pixels { clip-path: inset(0 0 34% 0); }
     .public-hero > .public-container { position: relative; z-index: 2; }
     .public-hero::after { bottom: 34%; }

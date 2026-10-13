@@ -1,6 +1,7 @@
 @extends('layouts.public')
 
-@section('title', 'Search flights, hotels and holidays')
+@section('title', 'Book Flights, Hotels & Holiday Packages in Nigeria')
+@section('meta_description', 'Book affordable domestic and international flights, hotels and holiday packages with Karossy Travels, a trusted travel agency in Nigeria.')
 
 @section('content')
 <section class="public-hero" id="travel-search">
@@ -11,10 +12,10 @@
             <div class="public-hero-copy">
                 <span class="public-eyebrow"><i class="bi bi-stars"></i> Travel made simple</span>
                 <h1>Your world, <em>within reach.</em></h1>
-                <p>Compare flights, stays and travel services with expert support from search to arrival.</p>
+                <p>From stress-free visa support to great flight deals and custom tour packages, we handle the fine print so you can enjoy the journey.</p>
                 <div class="public-hero-assurance" aria-label="Karossy service benefits">
                     <span><i class="bi bi-check2-circle"></i> Live travel options</span>
-                    <span><i class="bi bi-headset"></i> Human support</span>
+                    <span><i class="bi bi-headset"></i> 24/7 Assistance</span>
                     <span><i class="bi bi-shield-check"></i> Secure booking</span>
                     <span><i class="bi bi-shield-check"></i> IATA certified travel agency</span>
                 </div>
@@ -54,7 +55,7 @@
             </div>
             <div class="public-service-panel d-none" data-public-service-panel="visas"><form action="{{ route('visas.results') }}" class="home-visa-search"><label><span>Passport country</span><select name="passport_country" required data-searchable-select data-search-placeholder="Search passport country"><option value="">Select passport country</option>@foreach($passportCountries as $country)<option>{{ $country }}</option>@endforeach</select></label><label><span>Destination</span><select name="destination" required data-searchable-select data-search-placeholder="Search destination"><option value="">Where are you travelling to?</option>@foreach($visaDestinations as $country)<option>{{ $country }}</option>@endforeach</select></label><label><span>Travellers</span><select name="travellers"><option>1</option>@foreach(range(2,10) as $count)<option>{{ $count }}</option>@endforeach</select></label><button class="btn btn-karossy">Check requirements</button></form></div>
             <div class="public-service-panel d-none" data-public-service-panel="cars"><div class="public-coming-search"><span><i class="bi bi-car-front"></i></span><div><strong>Drive with the Karossy network</strong><small>We are inviting professional drivers and vehicle owners to partner with us.</small></div><div class="public-coming-actions"><a class="btn btn-karossy" href="tel:+2347061382134"><i class="bi bi-telephone"></i> Call +234 706 138 2134</a><a class="btn btn-outline-dark" href="{{ route('cars.partners') }}">Join us</a></div></div></div>
-            <div class="public-service-panel d-none" data-public-service-panel="charter"><div class="public-coming-search"><span><i class="bi bi-airplane-engines"></i></span><div><strong>Plan your private flight with Karossy</strong><small>Tell us where you need to go, when you want to travel and how many people are flying. Our charter team will arrange the aircraft, route and support around your plans.</small></div><div class="public-coming-actions"><a class="btn btn-karossy" href="tel:+2347061382134"><i class="bi bi-telephone"></i> Call +234 706 138 2134</a><a class="btn btn-outline-dark" href="mailto:{{ config('travel.support.email') }}?subject=Charter%20flight%20request"><i class="bi bi-envelope"></i> Email our charter team</a></div></div></div>
+            <div class="public-service-panel d-none" data-public-service-panel="charter"><div class="public-coming-search"><span><i class="bi bi-airplane-engines"></i></span><div><strong>Plan your private flight with Karossy</strong><small>Tell us where you need to go, when you want to travel and how many people are flying. Our charter team will arrange the aircraft, route and support around your plans.</small></div><div class="public-coming-actions"><a class="btn btn-karossy" href="tel:+2347061382134"><i class="bi bi-telephone"></i> Call +234 706 138 2134</a><a class="btn btn-outline-dark" href="mailto:{{ config('travel.support.email') }}?subject=Charter%20flight%20request"><i class="bi bi-envelope"></i> Request a charter</a></div></div></div>
         </div>
     </div>
 </section>
@@ -64,7 +65,7 @@
         <div class="public-trust-card">
             <div><i class="bi bi-shield-check"></i><span><strong>Book with confidence</strong><small>Expert travel support when you need it</small></span></div>
             <div><i class="bi bi-tags"></i><span><strong>Clear pricing</strong><small>No surprises at checkout</small></span></div>
-            <div><i class="bi bi-headset"></i><span><strong>Human support</strong><small>Real help before and after booking</small></span></div>
+            <div><i class="bi bi-headset"></i><span><strong>24/7 Assistance</strong><small>Real help before and after booking</small></span></div>
             <div class="iata-trust"><i class="bi bi-shield-check"></i><span><strong>IATA</strong><small>Certified travel agency</small></span></div>
         </div>
     </div>
@@ -267,7 +268,7 @@
         </div>
     </section>
 @endif
-<section class="home-app-section"><div class="container public-container"><div><span class="public-eyebrow">The Karossy app</span><h2>Make every journey easier from your phone.</h2><p>Download the Karossy app to search, book and manage flights, hotels, visa support and travel updates wherever you go.</p><div class="app-store-actions"><a href="https://apps.apple.com/" target="_blank" rel="noopener noreferrer" aria-label="Open the Apple App Store"><i class="bi bi-apple"></i><small><span class="app-store-copy-desktop">Get it on</span><span class="app-store-copy-mobile">Download on</span></small><strong>App Store</strong></a><a href="https://play.google.com/store/apps" target="_blank" rel="noopener noreferrer" aria-label="Open Google Play"><i class="bi bi-google-play"></i><small><span class="app-store-copy-desktop">Get it on</span><span class="app-store-copy-mobile">Download on</span></small><strong>Google Play</strong></a></div></div><div class="app-phone-preview"><span class="phone-logo"><img src="{{ asset('favicon.jpg') }}" alt=""> KAROSSY</span><small>YOUR NEXT TRIP</small><h3>Everything you need, ready when you are.</h3><div><i class="bi bi-airplane-fill"></i><span><strong>Lagos to London</strong><small>Trip details and updates in one place</small></span></div></div></div></section>
+<section class="home-app-section"><div class="container public-container"><div><span class="public-eyebrow">The Karossy app</span><h2>Make every journey easier from your phone.</h2><p>Download the Karossy app to search, book and manage flights, hotels, visa support and travel updates wherever you go.</p><span class="visually-hidden">Plan, book and manage your trip anywhere.</span><div class="app-store-actions"><a href="https://apps.apple.com/" target="_blank" rel="noopener noreferrer" aria-label="Open the Apple App Store"><i class="bi bi-apple"></i><small><span class="app-store-copy-desktop">Get it on</span><span class="app-store-copy-mobile">Download on</span></small><strong>App Store</strong></a><a href="https://play.google.com/store/apps" target="_blank" rel="noopener noreferrer" aria-label="Open Google Play"><i class="bi bi-google-play"></i><small><span class="app-store-copy-desktop">Get it on</span><span class="app-store-copy-mobile">Download on</span></small><strong>Google Play</strong></a></div></div><div class="app-phone-preview"><span class="phone-logo"><img src="{{ asset('favicon.jpg') }}" alt=""> KAROSSY</span><small>YOUR NEXT TRIP</small><h3>Everything you need, ready when you are.</h3><div><i class="bi bi-airplane-fill"></i><span><strong>Lagos to London</strong><small>Trip details and updates in one place</small></span></div></div></div></section>
 <section class="home-study-section" id="student-study-program">
     <div class="container public-container">
         <div class="home-study-visual" aria-hidden="true">
@@ -289,5 +290,21 @@
         </div>
     </div>
 </section>
-<section class="public-content-section home-about" id="about-karossy"><div class="container public-container"><div><span class="public-eyebrow">Travel made human</span><h2>More than a booking website.</h2></div><p>Karossy Travels combines live travel technology with the care of an experienced local team. Search confidently, understand what you are paying for, and get real support before, during and after every journey.</p></div></section>
+<section class="public-content-section home-about" id="about-karossy">
+    <div class="container public-container">
+        <div class="home-about-heading">
+            <span class="public-eyebrow">About Karossy</span>
+            <h2>Book Affordable Flights, Hotels and Holiday Packages with Karossy Travels.</h2>
+        </div>
+        <div class="home-about-copy">
+            <p>Karossy Travels &amp; Tours Limited is a travel destination management company based in Lagos, Nigeria, with a presence across other parts of Nigeria and the United Kingdom. We provide comprehensive travel solutions designed to make every journey convenient, seamless and rewarding. Our approach is centred on understanding the unique needs of our clients and delivering personalized services with professionalism, care and attention to detail.</p>
+            <p>We cater to individuals, families, corporate organizations and groups, offering a wide range of services that cover different aspects of travel. Our services include flight bookings, charter flight services, hotel reservations, customized holiday packages, pilgrimage, corporate travel management, visa assistance, study abroad programs, travel insurance, car hire, cargo services and travel logistics coordination. Whether it is a business trip, a family holiday, a group tour or a specialized travel arrangement, we work to provide solutions that align with our clients’ needs, preferences and objectives.</p>
+            <p>At Karossy, we believe that effective travel management goes beyond bookings and reservations. It requires thoughtful planning, efficient coordination, clear communication and dependable support. We are committed to offering competitive pricing and value-driven travel solutions that balance affordability, quality and convenience. By understanding our clients’ budgets and individual requirements, we work to identify suitable options without losing sight of the comfort, experience and reliability they deserve. Through our corporate travel management services, we help businesses coordinate their travel requirements, while our leisure travel solutions are designed to create memorable experiences through carefully planned itineraries and tailored arrangements.</p>
+            <p>Our guiding slogan, “Your Satisfaction, Our Peace,” reflects the principle behind everything we do. We believe that our success is closely tied to the satisfaction and confidence of those we serve. We therefore place great importance on listening to our clients, understanding their expectations, paying attention to the details and working diligently to deliver solutions that meet their needs. From the initial enquiry to the completion of travel arrangements, our goal is to provide a positive and reassuring service experience.</p>
+            <p>As the travel industry continues to evolve, we remain committed to continuous improvement, innovation and building lasting relationships based on trust and consistent service delivery. Our ambition is to strengthen our position as a dependable travel partner, providing practical solutions that support business mobility, personal travel and meaningful experiences across destinations.</p>
+            <p>At Karossy Travels &amp; Tours Limited, every journey is an opportunity to deliver value, build trust and exceed expectations. We are committed to making travel planning easier, experiences more rewarding and client satisfaction the standard by which we measure our service.</p>
+            <p><strong>Karossy Travels &amp; Tours Limited - Your Satisfaction, Our Peace.</strong></p>
+        </div>
+    </div>
+</section>
 @endsection
