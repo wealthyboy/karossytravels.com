@@ -222,21 +222,31 @@
 </section>
 @endif
 
-<section class="home-charter-section" id="charter-flights">
+<section class="home-charter-section" id="charter-flights" aria-labelledby="home-charter-title">
     <div class="container public-container">
-        <div class="home-charter-copy">
-            <div class="home-charter-partner"><small><i></i> KAROSSY CHARTER PARTNER</small><strong>GYRO AIR</strong></div>
-            <span class="public-eyebrow"><i class="bi bi-stars"></i> Private charter flights <b>Powered by Gyro Air</b></span>
-            <h2>Your schedule. Your aircraft. Your journey.</h2>
-            <p>Fly privately with Gyro Air for business, leisure, executive movements or group trips. Karossy manages your request, itinerary and travel support around your exact requirements.</p>
-            <div class="home-charter-benefits">
-                <span><i class="bi bi-clock-history"></i> Fly on your schedule</span>
-                <span><i class="bi bi-people"></i> Private, corporate &amp; group travel</span>
-                <span><i class="bi bi-headset"></i> Dedicated travel specialist</span>
+        <div class="home-charter-heading">
+            <div class="home-charter-copy">
+                <span class="public-eyebrow"><i class="bi bi-airplane-engines" aria-hidden="true"></i> Private charter flights</span>
+                <h2 id="home-charter-title">Private flights, <em>your way.</em></h2>
+                <p>Business, leisure or a group journey. Karossy coordinates your charter with Gyro Air, from your first enquiry to a carefully planned itinerary.</p>
             </div>
-            <div class="home-charter-actions">
-                <a class="btn btn-karossy" href="tel:+2347061382134"><i class="bi bi-telephone"></i> Call +234 706 138 2134</a>
-                <a class="home-charter-contact" href="mailto:{{ config('travel.support.email') }}?subject=Charter%20flight%20request&amp;body=Hello%20Karossy%2C%0A%0AI%20would%20like%20to%20request%20a%20charter%20flight.%0A%0ADeparture%3A%0ADestination%3A%0ATravel%20date%3A%0ANumber%20of%20passengers%3A%0A%0AThank%20you."><i class="bi bi-envelope"></i><span><small>Email our charter desk</small><strong>{{ config('travel.support.email') }}</strong></span></a>
+            <div class="home-charter-partner"><small>KAROSSY CHARTER PARTNER</small><strong>GYRO AIR</strong><span>Private aviation, together.</span></div>
+        </div>
+        <div class="home-charter-feature">
+            <figure class="home-charter-photo">
+                <img src="{{ asset('images/ads/charter-private-jet-traveller.jpg') }}" alt="A traveller approaching a private jet on the apron at sunset" width="2006" height="784" loading="lazy" decoding="async">
+                <figcaption><span>PLANNED AROUND YOU</span><strong>Your schedule. Your aircraft. Your journey.</strong></figcaption>
+            </figure>
+            <div class="home-charter-footer">
+                <div class="home-charter-benefits" aria-label="Charter travel support">
+                    <span><i class="bi bi-clock-history" aria-hidden="true"></i> Fly on your schedule</span>
+                    <span><i class="bi bi-people" aria-hidden="true"></i> Private, corporate &amp; group travel</span>
+                    <span><i class="bi bi-headset" aria-hidden="true"></i> Dedicated travel specialist</span>
+                </div>
+                <div class="home-charter-actions">
+                    <a class="btn btn-karossy" href="tel:+2347061382134"><i class="bi bi-telephone" aria-hidden="true"></i> Call +234 706 138 2134</a>
+                    <a class="home-charter-contact" href="mailto:{{ config('travel.support.email') }}?subject=Charter%20flight%20request&amp;body=Hello%20Karossy%2C%0A%0AI%20would%20like%20to%20request%20a%20charter%20flight.%0A%0ADeparture%3A%0ADestination%3A%0ATravel%20date%3A%0ANumber%20of%20passengers%3A%0A%0AThank%20you."><i class="bi bi-envelope" aria-hidden="true"></i><span>Email our charter desk</span><i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+                </div>
             </div>
         </div>
     </div>

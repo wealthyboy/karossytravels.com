@@ -189,6 +189,20 @@ final class PublicNavigationTest extends TestCase
             ->assertDontSee('home-study-globe');
     }
 
+    public function test_homepage_charter_feature_keeps_partner_and_contact_links(): void
+    {
+        config(['travel.support.email' => 'charter@example.com']);
+        $this->get(route('home'))->assertOk()
+            ->assertSee('aria-labelledby="home-charter-title"', false)
+            ->assertSeeInOrder(['Private charter flights', 'Private flights,', 'your way.', 'GYRO AIR'])
+            ->assertSee('images/ads/charter-private-jet-traveller.jpg', false)
+            ->assertSee('A traveller approaching a private jet on the apron at sunset')
+            ->assertSee('href="tel:+2347061382134"', false)
+            ->assertSee('mailto:charter@example.com?subject=Charter%20flight%20request', false)
+            ->assertSee('Dedicated travel specialist')
+            ->assertSee('Email our charter desk');
+    }
+
     public function test_guest_can_securely_find_booking_with_reference_and_email(): void
     {
         [$order, $booking] = $this->createGuestBooking();
