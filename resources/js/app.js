@@ -955,6 +955,33 @@ document.querySelectorAll('.admin-table-card').forEach((tableCard) => {
     updateSelection();
 });
 
+document.querySelectorAll('[data-default-pricing-form]').forEach((form) => {
+    const direction = form.querySelector('[data-pricing-direction]');
+    const percent = form.querySelector('[data-pricing-percent]');
+    const enabled = form.querySelector('[data-pricing-enabled]');
+    const example = form.querySelector('[data-pricing-example]');
+    if (!direction || !percent || !enabled || !example) return;
+
+    const updateExample = () => {
+        const amount = Number(percent.value || 0);
+        const markdown = direction.value === 'markdown';
+        percent.max = markdown ? '99.99' : '1000000';
+        if (!Number.isFinite(amount) || amount < 0 || amount > Number(percent.max)) {
+            example.textContent = markdown ? 'Enter a markdown percentage from 0 to 99.99.' : 'Enter a valid, non-negative percentage.';
+            return;
+        }
+        if (!enabled.checked || amount === 0) {
+            example.textContent = 'No adjustment: 100,000 → 100,000';
+            return;
+        }
+        const total = 100000 * (1 + (markdown ? -amount : amount) / 100);
+        const formatted = total.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 2});
+        example.textContent = `${amount}% ${markdown ? 'markdown' : 'markup'}: 100,000 → ${formatted}`;
+    };
+    [direction, percent, enabled].forEach((input) => input.addEventListener('input', updateExample));
+    updateExample();
+});
+
 document.querySelectorAll('[data-currency-rate-search]').forEach((input) => {
     input.addEventListener('input', () => {
         const query = input.value.trim().toUpperCase();

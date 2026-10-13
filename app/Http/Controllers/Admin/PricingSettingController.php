@@ -14,7 +14,7 @@ final class PricingSettingController extends Controller
     public function edit(string $product): View
     {
         abort_unless(in_array($product, ['airline', 'hotel'], true), 404);
-        $setting = PricingSetting::firstOrCreate(['product_type' => $product], ['markup_type' => 'percentage', 'currency' => 'USD', 'enabled' => true]);
+        $setting = PricingSetting::firstOrCreate(['product_type' => $product], ['markup_type' => 'percentage', 'adjustment_type' => 'markup', 'currency' => 'USD', 'enabled' => true]);
 
         return view('admin.pricing.edit', compact('setting', 'product'));
     }
@@ -25,10 +25,11 @@ final class PricingSettingController extends Controller
         $setting = PricingSetting::firstOrCreate(['product_type' => $product]);
         $before = $setting->toArray();
         $data = $request->validated();
+        $data['markup_type'] = 'percentage';
         $data['enabled'] = $request->boolean('enabled');
         $data['markup_value'] = filled($data['markup_value'] ?? null) ? $data['markup_value'] : null;
         $setting->update($data);
-        $audit->record('pricing.updated', ucfirst($product).' default markup updated.', $setting, $before, $setting->fresh()->toArray());
+        $audit->record('pricing.updated', ucfirst($product).' percentage markup / markdown updated.', $setting, $before, $setting->fresh()->toArray());
 
         return back()->with('success', ucfirst($product).' pricing updated successfully.');
     }

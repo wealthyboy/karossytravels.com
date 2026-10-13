@@ -43,13 +43,16 @@ final class HotelSearchService
             ]);
 
             $offers = collect($providerOffers)->map(function (array $offer) use ($search, $criteria): array {
-                $price = $this->pricing->price($offer, $criteria['currency']);
+                $nights = max(1, (int) \Illuminate\Support\Carbon::parse($criteria['check_in'])->diffInDays(\Illuminate\Support\Carbon::parse($criteria['check_out'])));
+                $price = $this->pricing->price($offer, $criteria['currency'], $nights);
                 $expiresAt = now()->addMinutes((int) config('travel.offers.ttl_minutes', 15));
                 $stored = $search->offers()->create([
                     ...collect($offer)->except(['total_minor'])->all(),
                     'provider' => $this->provider->name(),
                     'provider_total_minor' => $price['provider_total_minor'],
                     'markup_minor' => $price['markup_minor'],
+                    'markdown_minor' => $price['markdown_minor'],
+                    'pricing' => [...($offer['pricing'] ?? []), 'adjustment_type' => $price['adjustment_type'], 'adjustment_percent' => $price['adjustment_percent']],
                     'selling_total_minor' => $price['selling_total_minor'],
                     'expires_at' => $expiresAt,
                 ]);
@@ -61,6 +64,8 @@ final class HotelSearchService
                         'total_minor' => $price['display_total_minor'],
                         'nightly_minor' => $price['display_nightly_minor'],
                         'markup_minor' => $price['display_markup_minor'],
+                        'markdown_minor' => $price['display_markdown_minor'],
+                        'discount_minor' => $price['display_markdown_minor'],
                     ],
                     'expires_at' => $expiresAt->toIso8601String(),
                 ];

@@ -35,7 +35,7 @@ final class AdminHotelSearchTest extends TestCase
             'destination_code' => 'LOS', 'destination_label' => 'Lagos, Nigeria',
             'check_in' => now()->addDays(14)->toDateString(), 'check_out' => now()->addDays(16)->toDateString(),
             'adults' => 2, 'children' => 0, 'rooms' => 1, 'session_id' => (string) Str::uuid(),
-        ]))->assertOk()->assertSee('Karossy Grand Hotel')->assertSee('Hotel markup and USD conversion applied');
+        ]))->assertOk()->assertSee('Karossy Grand Hotel')->assertSee('Hotel pricing rule and USD conversion applied');
 
         $this->assertDatabaseHas('hotel_searches', ['channel' => 'admin', 'user_id' => $user->id]);
     }

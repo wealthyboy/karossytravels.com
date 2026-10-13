@@ -271,24 +271,28 @@
     </section>
 @endif
 <section class="home-app-section"><div class="container public-container"><div><span class="public-eyebrow">The Karossy app</span><h2>Make every journey easier from your phone.</h2><p>Download the Karossy app to search, book and manage flights, hotels, visa support and travel updates wherever you go.</p><span class="visually-hidden">Plan, book and manage your trip anywhere.</span><div class="app-store-actions"><a href="https://apps.apple.com/" target="_blank" rel="noopener noreferrer" aria-label="Open the Apple App Store"><i class="bi bi-apple"></i><small><span class="app-store-copy-desktop">Get it on</span><span class="app-store-copy-mobile">Download on</span></small><strong>App Store</strong></a><a href="https://play.google.com/store/apps" target="_blank" rel="noopener noreferrer" aria-label="Open Google Play"><i class="bi bi-google-play"></i><small><span class="app-store-copy-desktop">Get it on</span><span class="app-store-copy-mobile">Download on</span></small><strong>Google Play</strong></a></div></div><div class="app-phone-preview"><span class="phone-logo"><img src="{{ asset('favicon.jpg') }}" alt=""> KAROSSY</span><small>YOUR NEXT TRIP</small><h3>Everything you need, ready when you are.</h3><div><i class="bi bi-airplane-fill"></i><span><strong>Lagos to London</strong><small>Trip details and updates in one place</small></span></div></div></div></section>
-<section class="home-study-section" id="student-study-program">
+<section class="home-study-section" id="student-study-program" aria-labelledby="home-study-title">
     <div class="container public-container">
-        <div class="home-study-visual" aria-hidden="true">
-            <span class="home-study-globe"><i class="bi bi-globe2"></i></span>
-            <span class="home-study-flight"><i class="bi bi-airplane-fill"></i></span>
-            <div class="home-study-card home-study-card-one"><i class="bi bi-mortarboard-fill"></i><span><small>STUDY DESTINATION</small><strong>Your next chapter starts abroad</strong></span></div>
-            <div class="home-study-card home-study-card-two"><i class="bi bi-passport-fill"></i><span><small>COMPLETE SUPPORT</small><strong>Application to arrival</strong></span></div>
-        </div>
-        <div class="home-study-copy">
-            <span class="public-eyebrow"><i class="bi bi-mortarboard-fill"></i> Student Study Program</span>
-            <h2>Study abroad with a team that plans every step.</h2>
-            <p>From choosing the right destination to visa guidance and travel arrangements, Karossy supports students and families through the complete education journey.</p>
-            <div class="home-study-points">
-                <span><i class="bi bi-check2"></i> School and destination guidance</span>
-                <span><i class="bi bi-check2"></i> Application and visa support</span>
-                <span><i class="bi bi-check2"></i> Flights and pre-departure planning</span>
+        <div class="home-study-feature">
+            <div class="home-study-copy">
+                <span class="home-study-eyebrow"><i class="bi bi-mortarboard-fill" aria-hidden="true"></i> Student Study Program</span>
+                <h2 id="home-study-title">Your next chapter.<br><em>Beyond borders.</em></h2>
+                <p>From choosing the right school to getting ready for take-off, we help students and families plan their study-abroad journey with confidence.</p>
+                <a class="btn btn-karossy" href="{{ route('study-program') }}">Explore the study program <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+                <span class="home-study-note"><i class="bi bi-people" aria-hidden="true"></i> Personal guidance for students and families</span>
             </div>
-            <a class="btn btn-karossy" href="{{ route('study-program') }}">Explore the study program <i class="bi bi-arrow-right"></i></a>
+            <div class="home-study-journey">
+                <div class="home-study-journey-heading">
+                    <div><span>THE KAROSSY STUDY JOURNEY</span><h3>Big ambitions. Clear next steps.</h3></div>
+                    <i class="bi bi-mortarboard" aria-hidden="true"></i>
+                </div>
+                <ol class="home-study-steps">
+                    <li><span class="home-study-step-number" aria-hidden="true">01</span><div><h4>Find your direction</h4><p>School and destination guidance, tailored to your plans.</p></div><i class="bi bi-compass" aria-hidden="true"></i></li>
+                    <li><span class="home-study-step-number" aria-hidden="true">02</span><div><h4>Prepare your application</h4><p>Application and visa support, with the details in focus.</p></div><i class="bi bi-passport" aria-hidden="true"></i></li>
+                    <li><span class="home-study-step-number" aria-hidden="true">03</span><div><h4>Get ready for take-off</h4><p>Flights and pre-departure planning for your next chapter.</p></div><i class="bi bi-airplane" aria-hidden="true"></i></li>
+                </ol>
+                <div class="home-study-journey-footer"><span><i class="bi bi-geo-alt" aria-hidden="true"></i> Application</span><span class="home-study-journey-line" aria-hidden="true"><i class="bi bi-airplane-fill"></i></span><span>Arrival <i class="bi bi-mortarboard-fill" aria-hidden="true"></i></span></div>
+            </div>
         </div>
     </div>
 </section>

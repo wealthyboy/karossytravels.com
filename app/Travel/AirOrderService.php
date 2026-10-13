@@ -155,6 +155,9 @@ final class AirOrderService
                     'pricing' => [
                         'base_minor' => $offer->provider_total_minor,
                         'configured_markup_minor' => $offer->markup_minor,
+                        'configured_markdown_minor' => $offer->markdown_minor,
+                        'configured_adjustment_type' => data_get($offer->fare_summary, 'adjustment_type', 'none'),
+                        'configured_adjustment_percent' => data_get($offer->fare_summary, 'adjustment_percent', 0),
                         'addons_minor' => $addonTotalMinor,
                         'operator_markup_minor' => $operatorMarkup['amount_minor'],
                     ],

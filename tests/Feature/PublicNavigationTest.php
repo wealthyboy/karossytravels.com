@@ -180,10 +180,13 @@ final class PublicNavigationTest extends TestCase
             ->assertSeeInOrder([
                 'Plan, book and manage your trip anywhere.',
                 'Student Study Program',
-                'More than a booking website.',
+                'Book Affordable Flights, Hotels and Holiday Packages with Karossy Travels.',
             ])
+            ->assertSee('aria-labelledby="home-study-title"', false)
+            ->assertSeeInOrder(['Your next chapter.', 'Beyond borders.', 'Find your direction', 'Prepare your application', 'Get ready for take-off'])
             ->assertSee('Explore the study program')
-            ->assertSee(route('study-program'));
+            ->assertSee(route('study-program'))
+            ->assertDontSee('home-study-globe');
     }
 
     public function test_guest_can_securely_find_booking_with_reference_and_email(): void

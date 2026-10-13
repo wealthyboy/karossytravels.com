@@ -158,7 +158,7 @@ final class HotelOrderService
                         'hotel_offer_id' => $offer->id,
                         'stay' => ['hotel_name' => $offer->name, 'hotel_code' => $offer->hotel_code, 'check_in' => $offer->search->check_in->toDateString(), 'check_out' => $offer->search->check_out->toDateString(), 'rooms' => $offer->search->rooms, 'adults' => $offer->search->adults, 'children' => $offer->search->children, 'room_name' => $offer->room_name, 'rate_name' => $offer->rate_name],
                         'special_requests' => $specialRequests,
-                        'pricing' => ['base_minor' => $offer->provider_total_minor, 'configured_markup_minor' => $offer->markup_minor, 'addons_minor' => $addonTotal, 'operator_markup_minor' => $operatorMarkup['amount_minor']],
+                        'pricing' => ['base_minor' => $offer->provider_total_minor, 'configured_markup_minor' => $offer->markup_minor, 'configured_markdown_minor' => $offer->markdown_minor, 'configured_adjustment_type' => data_get($offer->pricing, 'adjustment_type', 'none'), 'configured_adjustment_percent' => data_get($offer->pricing, 'adjustment_percent', 0), 'addons_minor' => $addonTotal, 'operator_markup_minor' => $operatorMarkup['amount_minor']],
                         'provider_confirmation_required' => $offer->provider !== 'fake',
                         'provider_response' => $providerResponse,
                     ],

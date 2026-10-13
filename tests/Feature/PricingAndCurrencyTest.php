@@ -214,7 +214,7 @@ final class PricingAndCurrencyTest extends TestCase
     public function test_authorized_admin_can_update_pricing_and_currency_settings(): void
     {
         $admin = $this->authorizedAdmin();
-        $this->actingAs($admin)->put('/admin/pricing/airline', ['markup_type' => 'percentage', 'markup_value' => 7.5, 'currency' => 'USD', 'enabled' => 1])->assertSessionHasNoErrors();
+        $this->actingAs($admin)->put('/admin/pricing/airline', ['adjustment_type' => 'markup', 'markup_type' => 'percentage', 'markup_value' => 7.5, 'enabled' => 1])->assertSessionHasNoErrors();
         $this->assertDatabaseHas('pricing_settings', ['product_type' => 'airline', 'markup_value' => 7.5]);
 
         $ngn = CurrencySetting::where('code', 'NGN')->firstOrFail();
