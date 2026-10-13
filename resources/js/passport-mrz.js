@@ -64,7 +64,14 @@ export const parseVisualPassportNames = text => {
     const givenLabel = /\b(?:GIVEN|FIRST|FORE)[\s_-]*NAMES?\b|\bPRENOMS?\b/i;
     const fieldLabel = /surname|surmame|given|first.name|family.name|nationality|birth|expiry|expiration|sex|passport|authority|issue/i;
     const namePattern = /^[\p{L}][\p{L}\p{M}'’\-]*(?: [\p{L}][\p{L}\p{M}'’\-]*)*$/u;
-    const cleanPrintedName = line => line.replace(/[—–].*$/, '').replace(/\s+-\s.*$/, '').replace(/\s+/g, ' ').trim().toUpperCase();
+    const cleanPrintedName = line => {
+        const columns = line.trim().split(/\s{2,}/);
+        // Security artwork can be recognised as a separate digit/symbol
+        // column beside the printed name. Discard only non-name columns;
+        // keep genuine name words even when OCR inserts extra spacing.
+        while (columns.length > 1 && !namePattern.test(columns.at(-1))) columns.pop();
+        return columns.join(' ').replace(/[—–].*$/, '').replace(/\s+-\s.*$/, '').replace(/\s+/g, ' ').trim().toUpperCase();
+    };
     const readLabel = label => {
         const index = lines.findIndex(line => label.test(line.normalize('NFD').replace(/[\u0300-\u036f]/g, '')));
         if (index < 0) return '';

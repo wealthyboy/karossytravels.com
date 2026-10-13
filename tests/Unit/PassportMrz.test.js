@@ -90,6 +90,31 @@ test('prefers the printed name line over a stray letter beside its label', () =>
     });
 });
 
+test('ignores a separate security-artwork digit beside the printed surname', () => {
+    const names = parseVisualPassportNames('Surmame/Nom (1)                       A\nSMITH                        4\nGiven names/Prénoms (2)\nALICE\nNationality/Nationalite (3)          J');
+    assert.deepEqual(names, { first_name: 'ALICE', middle_name: '', last_name: 'SMITH' });
+    const result = parseMrz(fixture({ names: 'SMITH<C<ALICEC<LLLLLLLLLLLLLLLLCLKL' }), 'ADT', names);
+    assert.equal(result.first_name, 'ALICE');
+    assert.equal(result.last_name, 'SMITH');
+    assert.equal(result.__verified, true);
+});
+
+test('ignores separate symbol columns beside both printed names', () => {
+    assert.deepEqual(parseVisualPassportNames('Surname/Nom (1)       Ai\nSMITH                 +\nGiven names/Prenoms (2)     Hy\nALICE                 =\nNationality'), {
+        first_name: 'ALICE', middle_name: '', last_name: 'SMITH',
+    });
+});
+
+test('preserves genuine name words separated by extra OCR spacing', () => {
+    assert.deepEqual(parseVisualPassportNames('Surname\nDE   SOUZA\nGiven names\nALICE    MARIA\nNationality'), {
+        first_name: 'ALICE', middle_name: 'MARIA', last_name: 'DE SOUZA',
+    });
+});
+
+test('does not silently remove a digit attached to the printed name', () => {
+    assert.equal(parseVisualPassportNames('Surname\nSMITH4\nGiven names\nALICE\nNationality'), null);
+});
+
 test('printed substrings cannot replace complete readable MRZ names', () => {
     const result = parseMrz(fixture({ names: 'SMITHSON<<ALICE<MARIA' }), 'ADT', {
         first_name: 'ALI', middle_name: '', last_name: 'SMITH',
