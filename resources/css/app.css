@@ -3339,15 +3339,15 @@ body { max-width: 100%; overflow-x: clip; }
 /* Keep the search card and highlights in flow over the full-width hero gradient. */
 @media (max-width: 991.98px) {
     .public-hero { background: transparent; }
-    .public-hero-background { background: var(--hero-background-gradient); bottom: 34%; left: 0; position: absolute; right: 0; top: 0; z-index: 0; }
-    .public-hero-pixels { clip-path: inset(0 0 34% 0); }
+    .public-hero-background { background: var(--hero-background-gradient); bottom: 30%; left: 0; position: absolute; right: 0; top: 0; z-index: 0; }
+    .public-hero-pixels { clip-path: inset(0 0 30% 0); }
     .public-hero > .public-container { position: relative; z-index: 2; }
 }
 
 @media (min-width: 992px) {
     .public-hero { --hero-background-overlap: 7rem; background: transparent; min-height: 32rem; z-index: 4; }
-    .public-hero-background { background: var(--hero-background-gradient); bottom: 34%; left: 0; position: absolute; right: 0; top: 0; z-index: 0; }
-    .public-hero-pixels { clip-path: inset(0 0 34% 0); }
+    .public-hero-background { background: var(--hero-background-gradient); bottom: 30%; left: 0; position: absolute; right: 0; top: 0; z-index: 0; }
+    .public-hero-pixels { clip-path: inset(0 0 30% 0); }
     .public-hero > .public-container { position: relative; z-index: 2; }
     .public-search-card { margin-bottom: 0 !important; }
     .public-trust-strip { clear: both; margin-top: calc(-4.6rem - var(--hero-background-overlap)); position: relative; z-index: 3; }

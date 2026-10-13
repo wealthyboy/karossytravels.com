@@ -12,7 +12,7 @@
             <div class="public-hero-copy">
                 <span class="public-eyebrow"><i class="bi bi-stars"></i> Travel made simple</span>
                 <h1>Your world, <em>within reach.</em></h1>
-                <p>From stress-free visa support to great flight deals and custom tour packages, we handle the fine print so you can enjoy the journey.</p>
+                <p>From stress-free visa support to great flight deals and custom tour packages.</p>
                 <div class="public-hero-assurance" aria-label="Karossy service benefits">
                     <span><i class="bi bi-check2-circle"></i> Live travel options</span>
                     <span><i class="bi bi-headset"></i> 24/7 Assistance</span>
@@ -60,6 +60,7 @@
     </div>
 </section>
 
+{{--
 <section class="public-trust-strip">
     <div class="container public-container">
         <div class="public-trust-card">
@@ -70,6 +71,7 @@
         </div>
     </div>
 </section>
+--}}
 
 @php
     $destinationMoods = [
