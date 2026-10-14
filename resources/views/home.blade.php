@@ -237,11 +237,24 @@
             </div>
             <div class="home-charter-partner"><small>KAROSSY CHARTER PARTNER</small><strong>GYRO AIR</strong><span>Private aviation, together.</span></div>
         </div>
-        <div class="home-charter-feature">
-            <figure class="home-charter-photo">
-                <img src="{{ asset('images/ads/charter-private-jet-traveller.jpg') }}" alt="A traveller approaching a private jet on the apron at sunset" width="2006" height="784" loading="lazy" decoding="async">
+        <div class="home-charter-feature" data-gyro-gallery role="region" aria-roledescription="carousel" aria-label="Gyro Air photo gallery">
+            <figure class="home-charter-photo" id="gyro-air-gallery-photo">
+                <img class="is-active" src="{{ asset('images/gyro-air/aircraft.jpg') }}" alt="Gyro Air private jet parked on the apron" width="2364" height="1578" loading="lazy" decoding="async" data-gyro-gallery-slide aria-hidden="false">
+                <img class="gyro-cockpit-slide" src="{{ asset('images/gyro-air/cockpit.jpg') }}" alt="Gyro Air pilots seated in the aircraft cockpit" width="1920" height="1276" loading="lazy" decoding="async" data-gyro-gallery-slide aria-hidden="true">
                 <figcaption><span>PLANNED AROUND YOU</span><strong>Your schedule. Your aircraft. Your journey.</strong></figcaption>
             </figure>
+            <div class="home-charter-gallery-nav">
+                <div><strong>A closer look at Gyro Air</strong><span>Explore the aircraft and cockpit.</span><button class="home-charter-gallery-playback" type="button" data-gyro-gallery-playback aria-label="Pause Gyro Air slideshow" aria-pressed="false"><i class="bi bi-pause-fill" aria-hidden="true"></i><span data-gyro-gallery-playback-label>Pause slideshow</span></button></div>
+                <div class="home-charter-gallery-choices" role="group" aria-label="Choose a Gyro Air photo">
+                    <button type="button" aria-label="Show aircraft photo" aria-pressed="true" aria-controls="gyro-air-gallery-photo" data-gyro-gallery-select data-gyro-label="Aircraft">
+                        <img src="{{ asset('images/gyro-air/aircraft.jpg') }}" alt="" width="90" height="60" loading="lazy"><span>Aircraft</span>
+                    </button>
+                    <button type="button" aria-label="Show cockpit photo" aria-pressed="false" aria-controls="gyro-air-gallery-photo" data-gyro-gallery-select data-gyro-label="Cockpit">
+                        <img src="{{ asset('images/gyro-air/cockpit.jpg') }}" alt="" width="90" height="60" loading="lazy"><span>Cockpit</span>
+                    </button>
+                </div>
+                <span class="visually-hidden" data-gyro-gallery-status role="status" aria-live="off">Photo 1 of 2: Aircraft</span>
+            </div>
             <div class="home-charter-footer">
                 <div class="home-charter-benefits" aria-label="Charter travel support">
                     <span><i class="bi bi-clock-history" aria-hidden="true"></i> Fly on your schedule</span>

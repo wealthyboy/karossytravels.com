@@ -3160,12 +3160,27 @@ body { max-width: 100%; overflow-x: clip; }
 .home-charter-partner strong { color: #122b50; display: block; font-size: 1.65rem; font-weight: 700; letter-spacing: .15em; line-height: 1.25; margin-top: .35rem; }
 .home-charter-partner > span { color: #7a8291; display: block; font-size: .72rem; margin-top: .35rem; }
 .home-charter-feature { border: 1px solid #e0e6ee; border-radius: 1.25rem; overflow: hidden; }
-.home-charter-photo { background: #11223b; margin: 0; position: relative; }
-.home-charter-photo > img { display: block; height: clamp(19rem, 29vw, 24rem); object-fit: cover; object-position: 72% 20%; width: 100%; }
-.home-charter-photo::after { background: linear-gradient(180deg, transparent 40%, rgba(4,15,32,.1) 62%, rgba(4,15,32,.72)); content: ''; inset: 0; pointer-events: none; position: absolute; }
+.home-charter-photo { background: #11223b; height: clamp(22rem, 34vw, 29rem); margin: 0; overflow: hidden; position: relative; }
+.home-charter-photo > img { display: block; height: 100%; inset: 0; object-fit: cover; object-position: center 65%; opacity: 0; position: absolute; transition: opacity 1s ease-in-out; width: 100%; }
+.home-charter-photo > img.is-active { opacity: 1; }
+.home-charter-photo > img.gyro-cockpit-slide { object-position: center 55%; }
+@media (prefers-reduced-motion: reduce) {
+    .home-charter-photo > img { transition: none; }
+}
+.home-charter-photo::after { background: linear-gradient(180deg, rgba(4,15,32,.16), rgba(4,15,32,.18) 45%, rgba(4,15,32,.32) 68%, rgba(4,15,32,.76)); content: ''; inset: 0; pointer-events: none; position: absolute; }
 .home-charter-photo figcaption { bottom: 1.75rem; color: #fff; left: 2rem; position: absolute; right: 2rem; z-index: 1; }
 .home-charter-photo figcaption span { color: #ffe1a8; display: block; font-size: .62rem; font-weight: 600; letter-spacing: .14em; }
 .home-charter-photo figcaption strong { display: block; font-size: clamp(1rem, 1.8vw, 1.4rem); font-weight: 500; letter-spacing: -.015em; line-height: 1.4; margin-top: .35rem; }
+.home-charter-gallery-nav { align-items: center; background: #fff; display: flex; gap: 1rem; justify-content: space-between; padding: 1.1rem 2rem; }
+.home-charter-gallery-nav > div:first-child strong { color: var(--karossy-navy); display: block; font-size: .85rem; }
+.home-charter-gallery-nav > div:first-child > span { color: #6b788a; display: block; font-size: .75rem; margin-top: .25rem; }
+.home-charter-gallery-playback { align-items: center; background: transparent; border: 0; color: #465b79; display: inline-flex; font-size: .7rem; font-weight: 600; gap: .3rem; margin-top: .35rem; padding: .25rem 0; }
+.home-charter-gallery-playback:focus-visible { border-radius: .2rem; outline: 3px solid #315985; outline-offset: 3px; }
+.home-charter-gallery-choices { display: flex; gap: .65rem; }
+.home-charter-gallery-choices button { align-items: center; background: #f7f9fc; border: 1px solid #dfe5ee; border-radius: .7rem; color: #46556c; display: inline-flex; font-size: .8rem; font-weight: 700; gap: .55rem; padding: .3rem .75rem .3rem .3rem; }
+.home-charter-gallery-choices img { border-radius: .45rem; height: 2.8rem; object-fit: cover; object-position: center 60%; width: 4rem; }
+.home-charter-gallery-choices button[aria-pressed="true"] { background: #fff5f5; border-color: var(--karossy-cta-red); color: var(--karossy-navy); }
+.home-charter-gallery-choices button:focus-visible { outline: 3px solid #315985; outline-offset: 3px; }
 .home-charter-footer { align-items: center; background: #f8fafd; display: grid; gap: 2rem; grid-template-columns: minmax(0, 1fr) auto; padding: 1.5rem 2rem; }
 .home-charter-benefits { align-items: center; display: flex; flex-wrap: wrap; gap: .85rem 1.5rem; }
 .home-charter-benefits span { align-items: center; color: #34415b; display: inline-flex; font-size: .77rem; font-weight: 500; gap: .5rem; line-height: 1.6; }
@@ -3283,7 +3298,9 @@ body { max-width: 100%; overflow-x: clip; }
     .home-charter-partner strong { font-size: 1.2rem; grid-column: 1; grid-row: 1 / 3; margin-top: 0; }
     .home-charter-partner > span { font-size: .68rem; grid-column: 2; grid-row: 2; margin-top: .1rem; }
     .home-charter-feature { border-radius: 1rem; }
-    .home-charter-photo > img { height: 14rem; object-position: 70% 20%; }
+    .home-charter-photo { height: 18rem; }
+    .home-charter-gallery-nav { align-items: stretch; flex-direction: column; padding: 1rem 1.25rem; }
+    .home-charter-gallery-choices button { flex: 1; justify-content: center; min-width: 0; padding-right: .4rem; }
     .home-charter-photo figcaption { bottom: 1rem; left: 1.25rem; right: 1.25rem; }
     .home-charter-photo figcaption strong { font-size: .95rem; max-width: 17rem; }
     .home-charter-footer { gap: 1.25rem; grid-template-columns: 1fr; padding: 1.25rem; }

@@ -31,6 +31,7 @@ document.addEventListener('keydown', event => {
 import './hotel-results';
 import './passport-scanner';
 import './service-enquiries';
+import './gyro-gallery';
 
 // Blade page scripts use Bootstrap's programmatic modal API after the Vite
 // bundle has loaded. Expose the imported module explicitly instead of relying

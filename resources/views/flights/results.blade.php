@@ -63,7 +63,7 @@
         <div class="modal-content">
             <div class="modal-body public-flight-search-promo">
                 <div class="public-flight-search-promo-media">
-                    <img src="{{ asset('images/ads/charter-private-jet-traveller.jpg') }}" alt="Traveller approaching a private charter jet" width="2006" height="784" decoding="async">
+                    <img src="{{ asset('images/gyro-air/aircraft.jpg') }}" alt="Gyro Air private jet parked on the apron" width="2364" height="1578" decoding="async">
                     <div class="public-flight-search-promo-shade" aria-hidden="true"></div>
                     <span class="public-flight-search-sponsored">Karossy charter partner</span>
                     <div class="public-flight-search-promo-brand"><strong>GYRO AIR</strong><small>Private flights, planned around you.</small></div>

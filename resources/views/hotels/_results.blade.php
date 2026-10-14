@@ -54,7 +54,7 @@
                 @if($loop->iteration === min(2, $loop->count))
                     <aside class="hotel-results-inline-ad" data-hotel-mobile-ad aria-label="Gyro Air charter services">
                         <a href="mailto:{{ config('travel.support.email') }}?subject=Gyro%20Air%20charter%20flight%20request">
-                            <img src="{{ asset('images/ads/jiro-air-charter-v1.png') }}" alt="Private jet at sunset" loading="lazy">
+                            <img src="{{ asset('images/gyro-air/aircraft.jpg') }}" alt="Gyro Air private jet parked on the apron" loading="lazy">
                             <span class="jiro-ad-shine"></span>
                             <div class="jiro-ad-copy">
                                 <small><i></i> Private charter</small>
@@ -73,7 +73,7 @@
     </div>
     <aside class="flight-results-ad hotel-results-ad" aria-label="Gyro Air charter services">
         <a href="mailto:{{ config('travel.support.email') }}?subject=Gyro%20Air%20charter%20flight%20request">
-            <img src="{{ asset('images/ads/jiro-air-charter-v1.png') }}" alt="Private jet at sunset" loading="lazy">
+            <img src="{{ asset('images/gyro-air/aircraft.jpg') }}" alt="Gyro Air private jet parked on the apron" loading="lazy">
             <span class="jiro-ad-shine"></span>
             <div class="jiro-ad-copy">
                 <small><i></i> Private charter</small>
