@@ -1301,10 +1301,8 @@ main .h5 {
 .flight-card-time > span i.has-stop::before { background: var(--karossy-red); border: 2px solid #fff; border-radius: 50%; content: ''; height: .5rem; left: 50%; position: absolute; top: -.32rem; width: .5rem; }
 .flight-card-time em { color: #68798f; font-size: var(--small-font-size, .78rem); font-style: normal; }
 .flight-card-benefits { display: flex; flex-wrap: wrap; gap: .55rem; padding-top: .9rem; }
-.flight-card-benefits span { align-items: center; background: transparent; border: 1px solid #dde6f2; border-radius: 999px; color: #405a7c; display: inline-flex; font-size: var(--small-font-size, .78rem); font-weight: 650; gap: .35rem; padding: .45rem .7rem; }
-.flight-card-benefits span:nth-child(2) { border-color: #e6dcff; color: #5b3f8c; }
+.flight-card-benefits span { align-items: center; background: transparent; border: 1px solid #dde6f2; border-radius: 999px; color: #000; display: inline-flex; font-size: var(--small-font-size, .78rem); font-weight: 650; gap: .35rem; padding: .45rem .7rem; }
 .flight-card-benefits span:nth-child(3):not(.is-positive) { border-color: #f8dfb8; color: #a65a00; }
-.flight-card-benefits span.is-positive { color: #147a45; }
 .public-live-flight-results .admin-flight-card-footer { align-items: center; border-top: 1px solid #e7ebf1; margin-top: .95rem; padding-top: .95rem; }
 .public-live-flight-results .admin-flight-card-footer [data-flight-details] { color: var(--karossy-navy); }
 .public-live-flight-results .admin-flight-card-footer [data-flight-details]:hover { color: var(--karossy-red); }
