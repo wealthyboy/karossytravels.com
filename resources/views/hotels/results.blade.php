@@ -42,16 +42,21 @@
     </div>
 </section>
 
-<div class="modal fade public-flight-search-modal public-hotel-search-modal" id="publicHotelSearchModal" tabindex="-1" aria-labelledby="publicHotelSearchModalTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+<div class="modal fade public-hotel-search-modal" id="publicHotelSearchModal" tabindex="-1" aria-labelledby="publicHotelSearchModalTitle" aria-describedby="publicHotelSearchModalNote" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-body text-center">
-                <span class="public-search-progress-icon is-hotel"><i class="bi bi-buildings"></i></span>
-                <span class="modal-eyebrow">Live hotel search</span>
-                <h2 id="publicHotelSearchModalTitle">Finding the right stays</h2>
-                <p data-public-hotel-search-status>Checking rooms and live rates in {{ $criteria['destination_label'] }}…</p>
-                <div class="public-search-progress" role="progressbar" aria-label="Hotel search in progress"><span></span></div>
-                <small>We are comparing available rooms, cancellation terms and the latest prices.</small>
+            <div class="modal-body public-hotel-loader">
+                <div class="public-hotel-loader-heading">
+                    <span class="public-search-progress-icon is-hotel"><i class="bi bi-buildings" aria-hidden="true"></i></span>
+                    <span class="modal-eyebrow">Live hotel search</span>
+                    <h2 id="publicHotelSearchModalTitle">Finding the right stays</h2>
+                    <span class="public-hotel-loader-destination"><i class="bi bi-geo-alt" aria-hidden="true"></i> {{ $criteria['destination_label'] }}</span>
+                </div>
+                <div class="public-hotel-loader-progress-area">
+                    <p data-public-hotel-search-status role="status">Checking rooms and live rates in {{ $criteria['destination_label'] }}…</p>
+                    <div class="public-search-progress" role="progressbar" aria-label="Hotel search in progress"><span></span></div>
+                    <small id="publicHotelSearchModalNote">We are comparing available rooms, cancellation terms and the latest prices.</small>
+                </div>
             </div>
         </div>
     </div>

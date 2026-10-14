@@ -43,6 +43,9 @@ final class FrontendHotelSearchTest extends TestCase
             ->assertSee('Hotels in Lagos, Nigeria')
             ->assertSee($checkIn->format('M j').' – '.$checkOut->format('M j'))
             ->assertSee('Finding the right stays')
+            ->assertSee('class="modal fade public-hotel-search-modal"', false)
+            ->assertSee('public-hotel-loader-progress-area')
+            ->assertSee('aria-describedby="publicHotelSearchModalNote"', false)
             ->assertSee(route('hotels.search.store'), false)
             ->assertSee('2 travellers · 1 room')
             ->assertSee('id="inlineHotelSearch"', false)
@@ -80,10 +83,16 @@ final class FrontendHotelSearchTest extends TestCase
             ->assertSee('Reserve')
             ->assertSee(route('hotels.checkout', $offer), false);
 
-        $this->get(route('hotels.checkout', $offer))
+        $checkout = $this->get(route('hotels.checkout', $offer))
             ->assertOk()
             ->assertSee('Reserve your room')
+            ->assertSee('hotel-checkout-sidebar')
+            ->assertSee('checkout-summary hotel-checkout-summary')
             ->assertSee('Paystack secure checkout');
+        $checkoutDocument = new \DOMDocument;
+        @$checkoutDocument->loadHTML('<?xml encoding="UTF-8">'.$checkout->getContent());
+        $payLabel = (new \DOMXPath($checkoutDocument))->evaluate('normalize-space(//button[@data-hotel-pay])');
+        $this->assertStringStartsWith('Pay ₦', $payLabel);
 
         Mail::fake();
         config()->set('travel.checkout.demo_payment_enabled', true);

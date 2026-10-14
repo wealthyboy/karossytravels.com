@@ -1231,6 +1231,34 @@ main .h5 {
 @keyframes public-search-plane { 0%,100% { transform: translate(-.15rem,.12rem) rotate(-8deg); } 50% { transform: translate(.15rem,-.12rem) rotate(4deg); } }
 @keyframes public-search-hotel { 0%,100% { opacity: .7; transform: translateY(.1rem) scale(.94); } 50% { opacity: 1; transform: translateY(-.08rem) scale(1.05); } }
 @keyframes flight-result-enter { from { opacity: 0; transform: translateY(.8rem); } to { opacity: 1; transform: translateY(0); } }
+
+/* Hotel loading uses its own proportions, independently of the flight promo. */
+.public-hotel-search-modal::before { background: rgba(9,22,45,.16); content: ''; inset: 0; pointer-events: none; position: fixed; }
+.public-hotel-search-modal .modal-dialog { margin: 1.25rem auto; max-width: 30rem; min-height: calc(100% - 2.5rem); width: calc(100% - 2rem); }
+.public-hotel-search-modal .modal-content { background: #fff; border: 1px solid #e3e9f2; border-radius: 1.5rem; box-shadow: 0 1.75rem 5rem rgba(7,20,46,.22); max-height: calc(100dvh - 2.5rem); overflow-y: auto; }
+.public-hotel-search-modal .modal-body { padding: 0; text-align: center; }
+.public-hotel-loader-heading { background: radial-gradient(ellipse at 50% 0%, #eaf2fc, transparent 75%), #f8fbff; border-bottom: 1px solid #e9eef5; border-radius: 1.5rem 1.5rem 0 0; padding: 2rem 1.75rem 1.65rem; }
+.public-hotel-loader-heading .public-search-progress-icon { background: #fff; border: 1px solid #e3e9f2; border-radius: 1.15rem; box-shadow: 0 .35rem 1rem rgba(32,62,101,.05); font-size: 1.8rem; height: 4.25rem; margin-bottom: 1.1rem; width: 4.25rem; }
+.public-hotel-loader-heading .modal-eyebrow { color: var(--karossy-cta-red, var(--karossy-red)); font-size: .68rem; letter-spacing: .13em; margin-bottom: .55rem; }
+.public-hotel-loader-heading h2 { color: var(--karossy-navy); font-size: clamp(1.35rem, 3vw, 1.7rem); font-weight: 700; letter-spacing: -.035em; line-height: 1.25; margin: 0; }
+.public-hotel-loader-destination { align-items: center; color: #5f718a; display: flex; font-size: .85rem; gap: .4rem; justify-content: center; line-height: 1.5; margin-top: .75rem; overflow-wrap: anywhere; }
+.public-hotel-loader-destination i { color: #315985; flex: 0 0 auto; }
+.public-hotel-loader-progress-area { padding: 1.5rem 1.75rem 1.75rem; }
+.public-hotel-loader-progress-area > p { color: #3f5068; font-size: .9rem; line-height: 1.6; margin: 0 0 1rem; min-height: 2.9rem; }
+.public-hotel-loader-progress-area .public-search-progress { background: #e9eff6; height: .65rem; margin: 0 0 1.15rem; max-width: none; width: 100%; }
+.public-hotel-loader-progress-area .public-search-progress > span { animation: hotel-loader-sweep 1.8s ease-in-out infinite alternate; background: linear-gradient(90deg, #d8666c, var(--karossy-cta-red, var(--karossy-red))); width: 35%; }
+.public-hotel-loader-progress-area > small { color: #6b778a; display: block; font-size: .75rem; line-height: 1.65; }
+@keyframes hotel-loader-sweep { from { transform: translateX(0); } to { transform: translateX(185%); } }
+@media (max-width: 575.98px) {
+    .public-hotel-search-modal .modal-content { border-radius: 1.2rem; }
+    .public-hotel-loader-heading { border-radius: 1.2rem 1.2rem 0 0; padding: 1.6rem 1.25rem 1.4rem; }
+    .public-hotel-loader-progress-area { padding: 1.25rem 1.25rem 1.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .public-hotel-loader-heading .public-search-progress-icon i,
+    .public-hotel-loader-progress-area .public-search-progress > span { animation: none; transform: none; }
+    .public-hotel-loader-progress-area .public-search-progress > span { width: 55%; }
+}
 .results-heading { align-items: end; display: flex; justify-content: space-between; margin-bottom: 1.5rem; }
 .results-heading h1,
 .booking-heading h1 { font-size: 1.75rem; font-weight: 750; letter-spacing: -.035em; margin: .35rem 0 .2rem; }
@@ -1899,7 +1927,8 @@ main .h5 {
     --karossy-cta-red-active: #87141a;
     background: #fff;
     color: var(--karossy-navy);
-    overflow-x: hidden;
+    /* Clip sideways overflow without creating a scroll container for sticky panels. */
+    overflow-x: clip;
 }
 .public-site .btn-karossy {
     --bs-btn-bg: var(--karossy-cta-red);
@@ -2394,6 +2423,12 @@ input[type="radio"]:disabled { cursor: not-allowed; }
 .mini-itinerary small { font-size: var(--small-font-size, .78rem); }
 .checkout-actions .btn { font-size: .92rem; font-weight: 750; min-height: 3.25rem; padding: .85rem 1.35rem; }
 .checkout-actions .checkout-pay-button { font-size: 1.05rem; font-weight: 800; min-height: 3.65rem; padding-inline: 1.7rem; }
+.hotel-checkout-page [data-hotel-pay] { align-items: center; display: inline-flex; gap: .65rem; justify-content: center; min-width: 13rem; }
+.hotel-checkout-summary { position: static; }
+@media (min-width: 992px) {
+    .hotel-checkout-sidebar { align-self: stretch; }
+    .hotel-checkout-summary { max-height: calc(100dvh - 2rem); overflow-y: auto; position: sticky; top: 1rem; }
+}
 .checkout-signin-prompt strong { font-size: 1.02rem; font-weight: 800; }
 .checkout-signin-prompt p { font-size: .88rem; line-height: 1.45; }
 .checkout-signin-modal .modal-dialog { max-width: 37rem; }
@@ -3446,6 +3481,12 @@ body { max-width: 100%; overflow-x: clip; }
 .checkout-travellers-main,
 .checkout-travellers-summary { min-width: 0; }
 .checkout-travellers-summary { grid-column: 2; grid-row: 1 / span 2; }
+.flight-checkout-summary { position: static; }
+@media (min-width: 992px) {
+    /* Let the sticky card travel through the full height of the traveller form. */
+    .checkout-travellers-summary { align-self: stretch; }
+    .flight-checkout-summary { max-height: calc(100dvh - 2rem); overflow-y: auto; position: sticky; top: 1rem; }
+}
 .checkout-travellers-layout > .checkout-actions { grid-column: 1; grid-row: 2; margin-top: 0; }
 .checkout-mobile-back { align-items: center; color: var(--karossy-navy); display: inline-flex; font-size: .85rem; font-weight: 750; gap: .35rem; text-decoration: none; }
 .checkout-mobile-back:hover { color: var(--karossy-red); }

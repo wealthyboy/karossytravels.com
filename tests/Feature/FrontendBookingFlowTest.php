@@ -191,6 +191,19 @@ final class FrontendBookingFlowTest extends TestCase
             ->assertSee('Create account');
     }
 
+    public function test_flight_checkout_uses_the_dedicated_summary_without_changing_payment_controls(): void
+    {
+        $offer = $this->createOfferForGuestRedirect();
+
+        $this->get(route('checkout.travellers', $offer))
+            ->assertOk()
+            ->assertSee('class="checkout-travellers-summary"', false)
+            ->assertSee('class="checkout-summary flight-checkout-summary"', false)
+            ->assertSee('data-checkout-total', false)
+            ->assertSee('data-open-booking-payment', false)
+            ->assertSee(route('checkout.payment.initialize', $offer), false);
+    }
+
     public function test_checkout_nationality_is_a_searchable_country_dropdown_with_iso_values(): void
     {
         $offer = $this->createOfferForGuestRedirect();

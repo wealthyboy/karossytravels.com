@@ -5,7 +5,7 @@
     $money = fn (int $minor) => \App\Support\CurrencyMetadata::format($minor, $currency);
     $search = $offer->search;
 @endphp
-<section class="booking-page"><div class="container public-container">
+<section class="booking-page hotel-checkout-page"><div class="container public-container">
     @include('checkout._progress', ['step' => 1])
     <div class="booking-heading"><span class="public-eyebrow">Secure hotel booking</span><h1>Reserve your room</h1><p>Review the stay, enter the lead guest details and complete payment securely with Paystack.</p></div>
     @if($recoverableAttempt)<div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-3" role="alert"><span><strong>Payment confirmed.</strong> Do not pay again. Reference: {{ $recoverableAttempt->reference }}</span>@if(!$recoverableAttempt->reservation_attempted_at)<button class="btn btn-sm btn-outline-dark" type="button" data-retry-hotel-confirmation>Retry hotel confirmation</button>@else<span class="fw-bold">Confirmation is under review</span>@endif</div>@endif
@@ -24,9 +24,19 @@
                 </div>
             </div>
             <label class="form-check checkout-terms mt-4"><input class="form-check-input" name="terms" value="1" type="checkbox" required><span class="form-check-label">I accept the room conditions, cancellation policy and Karossy booking terms.</span></label>
-            <div class="checkout-actions"><a class="btn btn-outline-dark" href="{{ route('hotels.rooms', $offer) }}"><i class="bi bi-arrow-left"></i> Back to rooms</a><button class="btn btn-karossy checkout-pay-button" type="submit" data-hotel-pay @disabled($recoverableAttempt)>@if($recoverableAttempt)Payment received@else Pay {{ $money($total['amount_minor']) }} <i class="bi bi-arrow-right"></i>@endif</button></div>
+            <div class="checkout-actions">
+                <a class="btn btn-outline-dark" href="{{ route('hotels.rooms', $offer) }}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back to rooms</a>
+                <button class="btn btn-karossy checkout-pay-button" type="submit" data-hotel-pay @disabled($recoverableAttempt)>
+                    @if($recoverableAttempt)
+                        <span data-hotel-pay-label>Payment received</span>
+                    @else
+                        <span data-hotel-pay-label>Pay {{ $money($total['amount_minor']) }}</span>
+                        <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                    @endif
+                </button>
+            </div>
         </div>
-        <aside class="col-lg-4"><div class="checkout-summary sticky-lg-top">
+        <aside class="col-lg-4 hotel-checkout-sidebar"><div class="checkout-summary hotel-checkout-summary">
             <div class="mini-itinerary"><span class="airline-token"><i class="bi bi-building"></i></span><div><strong>{{ $offer->name }}</strong><small>{{ $offer->room_name }}</small></div></div>
             <div><span>Check-in</span><strong>{{ $search->check_in->format('D, M j, Y') }}</strong></div><div><span>Check-out</span><strong>{{ $search->check_out->format('D, M j, Y') }}</strong></div>
             <div><span>{{ $search->rooms }} {{ str('room')->plural($search->rooms) }} · {{ $search->adults }} {{ str('guest')->plural($search->adults) }}</span><strong>{{ $search->check_in->diffInDays($search->check_out) }} nights</strong></div>
