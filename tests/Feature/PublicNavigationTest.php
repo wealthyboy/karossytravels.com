@@ -39,15 +39,17 @@ final class PublicNavigationTest extends TestCase
 
         $this->get(route('home'))
             ->assertOk()
-            ->assertSee('data-searchable-select', false)
-            ->assertSee('data-search-placeholder="Search passport country"', false)
-            ->assertSee('data-search-placeholder="Search destination"', false)
+            ->assertSee('Submit a visa enquiry')
+            ->assertSee(route('visas.enquiry'))
+            ->assertDontSee('home-visa-search')
             ->assertSee('class="public-whatsapp-float"', false)
             ->assertSee('https://wa.me/2348169389886', false);
 
         $this->get(route('visas.index'))
             ->assertOk()
-            ->assertSee('data-searchable-select', false);
+            ->assertSee('data-searchable-select', false)
+            ->assertSee('data-search-placeholder="Search passport country"', false)
+            ->assertSee('data-search-placeholder="Search destination"', false);
     }
 
     public function test_homepage_destination_mood_tabs_have_switchable_panels(): void

@@ -24,6 +24,17 @@ final class ServiceEnquiryTest extends TestCase
         $this->get(route('visas.index'))->assertOk()->assertSee('Check visa eligibility');
     }
 
+    public function test_home_visa_tab_only_links_to_the_new_enquiry_form(): void
+    {
+        $this->get(route('home', ['service' => 'visas']))
+            ->assertOk()
+            ->assertSee('Submit a visa enquiry')
+            ->assertSee(route('visas.enquiry'))
+            ->assertDontSee('home-visa-search')
+            ->assertDontSee('name="passport_country"', false)
+            ->assertDontSee('Check requirements');
+    }
+
     public function test_car_request_is_saved_with_a_real_reference_and_encrypted_trip_details(): void
     {
         $response = $this->postJson(route('cars.hire.store'), $this->carData())->assertCreated()->assertJsonStructure(['message', 'reference']);

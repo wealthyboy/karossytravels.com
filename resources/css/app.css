@@ -1726,11 +1726,14 @@ main .h5 {
     .flight-card-time { grid-template-columns: auto minmax(4rem, 1fr) auto; }
 }
 
+.btn { --bs-btn-font-weight: 700; }
+
 .btn,
 .btn-karossy,
 .admin-search-button,
 .table-action-btn {
     border-radius: 50rem;
+    font-weight: 700;
 }
 
 .status-dot {
@@ -3160,22 +3163,22 @@ body { max-width: 100%; overflow-x: clip; }
 .app-phone-preview span small { display: block; }
 .app-phone-preview strong { font-size: var(--small-font-size, .78rem); }
 .app-phone-preview span small { color: #7b8491; font-size: var(--small-font-size, .78rem); margin-top: .15rem; }
-.home-study-section { background: #f7f8fb; padding: 4.5rem 0; }
-.home-study-feature { align-items: center; background: linear-gradient(115deg, #0b2048, #153a74); border: 1px solid #183b6a; border-radius: 1.75rem; display: grid; gap: clamp(2rem, 4vw, 4rem); grid-template-columns: minmax(0, 1fr) minmax(0, .94fr); isolation: isolate; overflow: hidden; padding: clamp(1.75rem, 4vw, 3.75rem); position: relative; }
-.home-study-feature::before { border: 1px solid rgba(255,255,255,.08); border-radius: 50%; content: ''; height: 42rem; left: -22rem; pointer-events: none; position: absolute; top: -22rem; width: 42rem; z-index: -1; }
-.home-study-feature::after { border: 1px solid rgba(255,255,255,.06); border-radius: 50%; bottom: -33rem; content: ''; height: 54rem; pointer-events: none; position: absolute; right: -21rem; width: 54rem; z-index: -1; }
-.home-study-eyebrow { align-items: center; color: #ffb756; display: inline-flex; font-size: .75rem; font-weight: 700; gap: .6rem; letter-spacing: .12em; line-height: 1.5; text-transform: uppercase; }
+.home-study-section { background: linear-gradient(115deg, #f8fbff, #eef5fd 60%, #f7faff); isolation: isolate; overflow: hidden; padding: 5rem 0; position: relative; }
+.home-study-section::before { border: 1px solid rgba(49,89,133,.065); border-radius: 50%; content: ''; height: 42rem; left: -24rem; pointer-events: none; position: absolute; top: -26rem; width: 42rem; z-index: -1; }
+.home-study-section::after { border: 1px solid rgba(49,89,133,.055); border-radius: 50%; bottom: -35rem; content: ''; height: 54rem; pointer-events: none; position: absolute; right: -23rem; width: 54rem; z-index: -1; }
+.home-study-feature { align-items: center; display: grid; gap: clamp(2rem, 5vw, 5rem); grid-template-columns: minmax(0, 1fr) minmax(0, .94fr); position: relative; }
+.home-study-eyebrow { align-items: center; color: var(--karossy-cta-red, var(--karossy-red)); display: inline-flex; font-size: .75rem; font-weight: 700; gap: .6rem; letter-spacing: .12em; line-height: 1.5; text-transform: uppercase; }
 .home-study-eyebrow i { font-size: 1rem; }
-.home-study-copy h2 { color: #fff; font-size: clamp(2rem, 3.6vw, 3.15rem); font-weight: 700; letter-spacing: -.045em; line-height: 1.14; margin: 1.1rem 0 1.25rem; }
-.home-study-copy h2 em { color: #bcd8ff; font-style: normal; font-weight: 500; }
-.home-study-copy > p { color: #d0daeb; font-size: .95rem; line-height: 1.8; margin: 0; max-width: 29rem; }
+.home-study-copy h2 { color: var(--karossy-navy); font-size: clamp(2rem, 3.6vw, 3.15rem); font-weight: 700; letter-spacing: -.045em; line-height: 1.14; margin: 1.1rem 0 1.25rem; }
+.home-study-copy h2 em { color: #315985; font-style: normal; font-weight: 500; }
+.home-study-copy > p { color: #5c687c; font-size: .95rem; line-height: 1.8; margin: 0; max-width: 29rem; }
 .home-study-copy .btn { align-items: center; border-radius: .65rem; display: inline-flex; font-size: .9rem; gap: 1rem; justify-content: space-between; margin-top: 1.8rem; min-height: 3.2rem; padding: .8rem 1.25rem; }
-.home-study-copy .btn:focus-visible { outline: 3px solid #ffb756; outline-offset: 4px; }
-.home-study-note { align-items: center; color: #bdcce2; display: flex; font-size: .75rem; gap: .5rem; line-height: 1.6; margin-top: 1rem; }
-.home-study-note i { color: #a9c7ed; font-size: 1rem; }
-.home-study-journey { background: #fff; border: 1px solid rgba(255,255,255,.7); border-radius: 1.15rem; box-shadow: 0 1.5rem 3rem rgba(0,9,34,.18); min-width: 0; }
+.home-study-copy .btn:focus-visible { outline: 3px solid #315985; outline-offset: 4px; }
+.home-study-note { align-items: center; color: #5a6b81; display: flex; font-size: .75rem; gap: .5rem; line-height: 1.6; margin-top: 1rem; }
+.home-study-note i { color: #315985; font-size: 1rem; }
+.home-study-journey { background: #fff; border: 1px solid #dfe7f2; border-radius: 1.15rem; box-shadow: 0 1rem 2.75rem rgba(32,62,101,.07); min-width: 0; }
 .home-study-journey-heading { align-items: center; border-bottom: 1px solid #edf0f5; display: flex; gap: .75rem; justify-content: space-between; padding: 1.5rem 1.5rem 1.25rem; }
-.home-study-journey-heading span { color: #707b8d; display: block; font-size: .62rem; font-weight: 700; letter-spacing: .1em; line-height: 1.6; }
+.home-study-journey-heading span { color: #66738a; display: block; font-size: .62rem; font-weight: 700; letter-spacing: .1em; line-height: 1.6; }
 .home-study-journey-heading h3 { color: var(--karossy-navy); font-size: 1.15rem; font-weight: 700; letter-spacing: -.025em; line-height: 1.4; margin: .3rem 0 0; }
 .home-study-journey-heading > i { align-items: center; background: #fff0f1; border-radius: .75rem; color: var(--karossy-red); display: flex; flex: 0 0 2.7rem; font-size: 1.4rem; height: 2.7rem; justify-content: center; }
 .home-study-steps { list-style: none; margin: 0; padding: .35rem 1.5rem; }
@@ -3231,7 +3234,7 @@ body { max-width: 100%; overflow-x: clip; }
     .home-charter-heading { gap: 1.5rem; }
     .home-charter-partner { padding-left: 1.25rem; }
     .home-charter-footer { gap: 1.25rem; padding: 1.5rem; }
-    .home-study-feature { gap: 2rem; padding: 2rem; }
+    .home-study-feature { gap: 2rem; }
     .public-header > .navbar > .public-container { flex-wrap: nowrap; }
 }
 
@@ -3299,7 +3302,7 @@ body { max-width: 100%; overflow-x: clip; }
     .home-app-section > .public-container,
     .home-about > .public-container { grid-template-columns: 1fr; }
     .home-study-section { padding: 3rem 0; }
-    .home-study-feature { border-radius: 1.2rem; gap: 2rem; grid-template-columns: 1fr; padding: 1.5rem; }
+    .home-study-feature { gap: 2rem; grid-template-columns: 1fr; }
     .home-study-copy h2 { font-size: clamp(1.85rem, 7.2vw, 2.7rem); }
     .home-study-copy > p { max-width: none; }
     .home-study-copy .btn { width: 100%; }
