@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\AppBootstrapController;
 use App\Http\Controllers\Api\V1\BookingLookupController;
 use App\Http\Controllers\Api\V1\FlightSearchController;
 use App\Http\Controllers\Api\V1\FlightOfferController;
+use App\Http\Controllers\Api\V1\FlightPromotionController;
 use App\Http\Controllers\Api\V1\HotelSearchController;
 use App\Http\Controllers\Api\V1\HotelRoomsController;
 use App\Http\Controllers\Api\V1\MobileCheckoutController;
@@ -15,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::get('app/bootstrap', AppBootstrapController::class)->name('app.bootstrap');
     Route::get('services', ServiceCatalogController::class)->name('services.index');
+    Route::get('flights/promotions', FlightPromotionController::class)->middleware('throttle:60,1')->name('flights.promotions');
     Route::post('flights/search', FlightSearchController::class)
         ->middleware('throttle:30,1')
         ->name('flights.search');

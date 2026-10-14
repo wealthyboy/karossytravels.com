@@ -18,6 +18,7 @@ use App\Travel\HotelOrderService;
 use App\Travel\MobileCheckoutService;
 use App\Travel\Exceptions\BookingCreationException;
 use App\Travel\Pricing\ExchangeRateService;
+use App\Travel\Pricing\FlightPricePresenter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -29,16 +30,25 @@ use Throwable;
 
 final class MobileCheckoutController extends Controller
 {
-    public function flight(Request $request, TravelOffer $offer, FlightRevalidationService $revalidation, ExchangeRateService $rates, PaystackService $paystack, AirOrderService $orders, CheckoutCustomerResolver $customerResolver): JsonResponse
+    public function flight(Request $request, TravelOffer $offer, FlightRevalidationService $revalidation, ExchangeRateService $rates, PaystackService $paystack, AirOrderService $orders, CheckoutCustomerResolver $customerResolver, FlightPricePresenter $prices): JsonResponse
     {
         $data = $request->validate($this->flightRules());
         try {
             $validation = $revalidation->revalidate($offer);
-            if ($validation['price_changed'] ?? false) {
-                return response()->json(['message' => 'The fare changed. Please review the updated total before paying.'], 409);
-            }
+            $offer->refresh();
             $currency = $this->currency($request, $offer->currency);
-            $amount = $rates->convertMinor($offer->fresh()->selling_total_minor, $offer->currency, $currency)['amount_minor'];
+            $presentation = $prices->present($offer, $currency);
+            if (($validation['price_changed'] ?? false)
+                || (isset($data['expected_total_minor']) && (int) $data['expected_total_minor'] !== $presentation['price']['total_minor'])) {
+                return response()->json([
+                    'message' => 'The fare changed. Please review the updated total before paying.',
+                    'error_code' => 'FARE_CHANGED',
+                    'data' => ['offer' => ['id' => $offer->id, 'validating_airline' => data_get($offer->fare_summary, 'validating_airline'), 'segments' => $offer->itinerary, ...$presentation, 'refundable' => (bool) data_get($offer->fare_summary, 'refundable', false), 'expires_at' => $offer->expires_at->toIso8601String()]],
+                    'meta' => ['api_version' => 'v1', 'request_id' => $request->attributes->get('request_id')],
+                ], 409);
+            }
+            $currency = $presentation['price']['currency'];
+            $amount = $presentation['price']['total_minor'];
             $primary = $data['travellers'][0];
             $phone = PhoneCountryCodes::normalize($data['contact']['phone_code'], $data['contact']['phone']);
 
@@ -53,7 +63,7 @@ final class MobileCheckoutController extends Controller
                     'customer' => [...$primary, 'email' => strtolower($data['contact']['email']), 'phone' => $phone],
                 ],
                 'booking_type' => 'flight',
-            ]);
+            ], $presentation);
         } catch (Throwable $exception) {
             report($exception);
             return response()->json(['message' => 'This fare could not be prepared for payment. Please retry or choose another flight.'], 422);
@@ -154,7 +164,9 @@ final class MobileCheckoutController extends Controller
         try {
             $orders->assertCanCreate($offer);
             $currency = $this->currency($request, $offer->currency);
-            $amount = $rates->convertMinor($offer->fresh()->selling_total_minor, $offer->currency, $currency)['amount_minor'];
+            $converted = $rates->convertMinor($offer->fresh()->selling_total_minor, $offer->currency, $currency);
+            $amount = $converted['amount_minor'];
+            $currency = $converted['currency'];
 
             return $this->initialize($request, $paystack, $currency, $amount, strtolower($data['email']), [
                 'hotel_offer_id' => $offer->id,
@@ -226,7 +238,7 @@ final class MobileCheckoutController extends Controller
         ];
     }
 
-    private function initialize(Request $request, PaystackService $paystack, string $currency, int $amount, string $email, array $context): JsonResponse
+    private function initialize(Request $request, PaystackService $paystack, string $currency, int $amount, string $email, array $context, ?array $presentation = null): JsonResponse
     {
         $token = Str::random(64);
         $reference = ($context['booking_type'] === 'hotel' ? 'KAR-MHT-' : 'KAR-MFL-').Str::upper(Str::random(18));
@@ -244,7 +256,7 @@ final class MobileCheckoutController extends Controller
         return ApiResponse::success($request, [
             'attempt_id' => $attempt->id, 'reference' => $reference, 'client_token' => $token,
             'authorization_url' => $payment['authorization_url'] ?? null,
-            'price' => ['currency' => $currency, 'total_minor' => $amount], 'status' => 'pending',
+            'price' => $presentation['price'] ?? ['currency' => $currency, 'total_minor' => $amount], 'promotion' => $presentation['promotion'] ?? null, 'status' => 'pending',
         ], status: 201);
     }
 
@@ -260,13 +272,14 @@ final class MobileCheckoutController extends Controller
     private function currency(Request $request, string $fallback): string
     {
         $currency = strtoupper((string) $request->input('currency', $fallback));
-        return in_array($currency, ['NGN', 'USD'], true) ? $currency : 'USD';
+        return in_array($currency, config('travel.currency.supported', ['NGN', 'USD']), true) ? $currency : $fallback;
     }
 
     private function flightRules(): array
     {
         return [
-            'currency' => ['nullable', Rule::in(['NGN', 'USD'])], 'payment_method' => ['nullable', Rule::in(['online', 'hold'])], 'terms' => ['accepted'],
+            'currency' => ['nullable', Rule::in(config('travel.currency.supported', ['NGN', 'USD']))], 'payment_method' => ['nullable', Rule::in(['online', 'hold'])], 'terms' => ['accepted'],
+            'expected_total_minor' => ['nullable', 'integer', 'min:0'],
             'travellers' => ['required', 'array', 'min:1', 'max:9'], 'travellers.*.type' => ['required', Rule::in(['ADT', 'CNN', 'INF'])],
             'travellers.*.title' => ['required', Rule::in(['Mr', 'Mrs', 'Ms', 'Miss', 'Dr'])],
             'travellers.*.first_name' => ['required', 'string', 'max:80'], 'travellers.*.last_name' => ['required', 'string', 'max:80'],

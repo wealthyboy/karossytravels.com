@@ -112,10 +112,13 @@ final class FlightSearchService
                         'markdown_minor' => $price['display_markdown_minor'],
                         'discount_minor' => $price['display_discount_minor'],
                         'total_minor' => $price['display_total_minor'],
+                        'original_total_minor' => $price['display_total_minor'] + $price['display_discount_minor'],
+                        'promotion_discount_minor' => $price['display_promotion_discount_minor'],
                         'provider_currency' => $offer->currency,
                         'exchange_rate' => $price['exchange_rate'],
                     ],
                     'refundable' => $offer->refundable,
+                    'promotion' => $price['promotion'],
                     'expires_at' => $expiresAt->toIso8601String(),
                 ];
             })->all();

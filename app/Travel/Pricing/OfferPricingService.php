@@ -11,6 +11,7 @@ final class OfferPricingService
         private readonly ExchangeRateService $exchangeRates,
         private readonly FlightDealMatcher $deals,
         private readonly PercentagePriceAdjustment $adjustments,
+        private readonly FlightPromotionPresenter $promotions,
     ) {}
 
     /** @return array{provider_total_minor:int,markup_minor:int,selling_total_minor:int,display_currency:string,display_base_minor:int,display_taxes_minor:int,display_markup_minor:int,display_total_minor:int,exchange_rate:?float} */
@@ -30,6 +31,7 @@ final class OfferPricingService
         $displayMarkdown = $this->exchangeRates->convertMinor($adjustment['markdown_minor'], $offer->currency, $displayCurrency);
         $displayDiscount = $this->exchangeRates->convertMinor($adjustment['markdown_minor'] + $deal['discount_minor'], $offer->currency, $displayCurrency);
         $selling = $this->exchangeRates->convertMinor($sellingMinor, $offer->currency, $displayCurrency);
+        $displayPromotion = $this->exchangeRates->convertMinor($deal['discount_minor'], $offer->currency, $selling['currency'])['amount_minor'];
 
         return [
             'provider_total_minor' => $offer->totalMinor,
@@ -47,6 +49,8 @@ final class OfferPricingService
             'display_markdown_minor' => $displayMarkdown['amount_minor'],
             'display_discount_minor' => $displayDiscount['amount_minor'],
             'display_total_minor' => $selling['amount_minor'],
+            'display_promotion_discount_minor' => $displayPromotion,
+            'promotion' => $this->promotions->present($deal['deal_id'], $displayPromotion),
             'exchange_rate' => $selling['rate'],
         ];
     }

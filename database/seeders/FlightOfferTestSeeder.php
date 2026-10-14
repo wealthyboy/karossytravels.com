@@ -13,13 +13,14 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
 
-/** Explicit, local-only reset. Never called from DatabaseSeeder. */
+/** Explicit reset with a production --force gate. Never called from DatabaseSeeder. */
 final class FlightOfferTestSeeder extends Seeder
 {
     public function run(): void
     {
-        if (! app()->environment(['local', 'testing'])) {
-            throw new RuntimeException('FlightOfferTestSeeder replaces homepage offers and may only run in local/testing environments.');
+        $forced = $this->command?->getDefinition()->hasOption('force') && $this->command->option('force');
+        if (app()->environment('production') && ! $forced) {
+            throw new RuntimeException('FlightOfferTestSeeder replaces homepage offers. On production, run php artisan db:seed --class=FlightOfferTestSeeder --force explicitly.');
         }
         if (! Schema::hasColumn('flight_offers', 'promotion_enabled') || ! Schema::hasColumn('flight_deals', 'airline_codes')) {
             throw new RuntimeException('Apply the flight-promotion migration before running FlightOfferTestSeeder.');
@@ -94,6 +95,9 @@ final class FlightOfferTestSeeder extends Seeder
         $this->command?->info("Replaced {$removed} homepage flight offers with 4 linked test promotions.");
         $this->command?->line('Backup: '.Storage::disk('local')->path($backup));
         $this->command?->warn('Card prices are estimates. Matching live fares receive the promotion; no supplier, payment, booking or upload data was reset.');
+        if (app()->environment('production')) {
+            $this->command?->warn('These TEST cards and discounts are visible to production visitors. Real payment and ticketing remain enabled if configured; stop before payment unless a real booking is intended.');
+        }
     }
 
     private function examples(): array

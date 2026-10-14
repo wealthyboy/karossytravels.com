@@ -8,6 +8,7 @@ use App\Models\BookingHoldSetting;
 use App\Models\TravelOffer;
 use App\Travel\FlightRevalidationService;
 use App\Travel\Pricing\ExchangeRateService;
+use App\Travel\Pricing\FlightPricePresenter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Throwable;
@@ -19,9 +20,10 @@ final class FlightOfferController extends Controller
         TravelOffer $offer,
         FlightRevalidationService $revalidation,
         ExchangeRateService $rates,
+        FlightPricePresenter $prices,
     ): JsonResponse {
         $currency = strtoupper((string) $request->query('currency', $offer->currency));
-        if (! in_array($currency, ['NGN', 'USD'], true)) {
+        if (! in_array($currency, config('travel.currency.supported', ['NGN', 'USD']), true)) {
             $currency = strtoupper($offer->currency);
         }
 
@@ -67,12 +69,7 @@ final class FlightOfferController extends Controller
                 'id' => $offer->id,
                 'validating_airline' => data_get($offer->fare_summary, 'validating_airline'),
                 'segments' => $offer->itinerary,
-                'price' => [
-                    'currency' => $converted['currency'],
-                    'total_minor' => $converted['amount_minor'],
-                    'discount_minor' => $rates->convertMinor((int) $offer->deal_discount_minor + (int) $offer->markdown_minor, $offer->currency, $currency)['amount_minor'],
-                    'markdown_minor' => $rates->convertMinor((int) $offer->markdown_minor, $offer->currency, $currency)['amount_minor'],
-                ],
+                ...$prices->present($offer, $currency),
                 'refundable' => (bool) data_get($offer->fare_summary, 'refundable', false),
                 'expires_at' => $offer->expires_at->toIso8601String(),
                 'book_on_hold' => [

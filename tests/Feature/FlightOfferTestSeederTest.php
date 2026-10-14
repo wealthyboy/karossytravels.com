@@ -106,20 +106,37 @@ final class FlightOfferTestSeederTest extends TestCase
         $this->assertCount(0, Storage::disk('local')->files('flight-offer-test-backups'));
     }
 
-    public function test_production_is_refused_before_any_data_changes(): void
+    public function test_production_requires_an_explicit_forced_command_before_any_data_changes(): void
     {
         $old = $this->oldOffer($this->oldDeal()->id);
         $this->app->instance('env', 'production');
         try {
             app(FlightOfferTestSeeder::class)->run();
-            $this->fail('Seeder should refuse production.');
+            $this->fail('Seeder should refuse an unforced production invocation.');
         } catch (\RuntimeException $error) {
-            $this->assertStringContainsString('local/testing', $error->getMessage());
+            $this->assertStringContainsString('--force', $error->getMessage());
         } finally {
             $this->app->instance('env', 'testing');
         }
         $this->assertDatabaseHas('flight_offers', ['id' => $old->id]);
         $this->assertTrue($old->deal->active);
+    }
+
+    public function test_production_forced_command_replaces_cards_only_after_a_verified_backup(): void
+    {
+        $old = $this->oldOffer($this->oldDeal()->id);
+        $this->app->instance('env', 'production');
+        try {
+            $this->artisan('db:seed', ['--class' => FlightOfferTestSeeder::class, '--force' => true])->assertSuccessful();
+        } finally {
+            $this->app->instance('env', 'testing');
+        }
+        $this->assertDatabaseCount('flight_offers', 4);
+        $this->assertFalse($old->deal->fresh()->active);
+        $paths = Storage::disk('local')->files('flight-offer-test-backups');
+        $this->assertCount(1, $paths);
+        $backup = json_decode(Storage::disk('local')->get($paths[0]), true, flags: JSON_THROW_ON_ERROR);
+        $this->assertSame($old->id, $backup['flight_offers'][0]['id']);
     }
 
     public function test_maximum_priority_conflict_aborts_without_deleting_offers(): void

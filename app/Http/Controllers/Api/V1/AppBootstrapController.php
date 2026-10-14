@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Support\ServiceCatalog;
+use App\Travel\HomepageFlightOfferCatalog;
 use App\Travel\Pricing\DisplayCurrencyResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 final class AppBootstrapController extends Controller
 {
-    public function __invoke(Request $request, ServiceCatalog $catalog, DisplayCurrencyResolver $currencyResolver): JsonResponse
+    public function __invoke(Request $request, ServiceCatalog $catalog, DisplayCurrencyResolver $currencyResolver, HomepageFlightOfferCatalog $flightOffers): JsonResponse
     {
         return ApiResponse::success($request, [
             'application' => [
@@ -26,6 +27,7 @@ final class AppBootstrapController extends Controller
             // updated without shipping a new application build.
             'homepage' => [
                 'destination_moods' => $this->destinationMoods(),
+                'flight_offers' => $flightOffers->cards($currencyResolver->resolve($request)),
             ],
         ]);
     }

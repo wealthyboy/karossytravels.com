@@ -15,19 +15,27 @@ The same rule applies to qualifying live searches regardless of whether the cust
 
 Overlapping deals do not stack: highest priority wins, then the greatest actual saving, then the oldest rule ID. Draft, disabled or deleted homepage offers do not leave their linked promotion running. Standalone rules remain available in **Admin → Flight deals**; linked cards and that screen share the same stored rule.
 
-For deployment, apply `database/migrations/2026_10_14_000003_extend_flight_promotions.php` before serving the updated code. Existing offers and legacy rules are preserved. Do not seed demonstration promotions into the live database.
+For deployment, apply `database/migrations/2026_10_14_000003_extend_flight_promotions.php` before serving the updated code. Existing offers and legacy rules are preserved. Seed demonstration promotions in production only when deliberately preparing client testing as described below.
 
 Regression coverage: `tests/Feature/FlightPromotionsTest.php` includes multi-airline/all-airline matching, route/date exclusions, Lagos midnight, overlap priority, currency conversion, administration validation, repeated revalidation and payment initialization. Supplier and payment requests in these tests are fake.
 
 ## Four checkout test cards
 
-Run explicitly on a local/test installation with the flight-promotion migration and existing flight-search `children_ages` migration applied:
+With the flight-promotion migration and existing flight-search `children_ages` migration applied, run explicitly on a local/test installation:
 
 ```sh
 php artisan db:seed --class=FlightOfferTestSeeder
 ```
 
-This replaces only the homepage flight cards and deactivates their old linked promotions. It does not drop tables, delete uploaded images, erase live search/booking/payment records, alter default pricing/currency settings or disable unrelated standalone deals. A verified JSON backup of the previous cards and linked rules is saved in `storage/app/private/flight-offer-test-backups/` before replacement. The seeder refuses production and aborts without replacement if prerequisites or backup verification fail. It is not included in the normal `DatabaseSeeder`.
+For deliberate client testing in production, deploy the updated seeder, then use:
+
+```sh
+php artisan db:seed --class=FlightOfferTestSeeder --force
+```
+
+Production requires this explicit `--force` invocation. The TEST cards and their discounts will be visible to all visitors, not just the client. The seeder does not switch payment gateways or supplier environments into test mode. Stop before payment/ticketing unless a real booking is intended.
+
+This replaces only the homepage flight cards and deactivates their old linked promotions. It does not drop tables, delete uploaded images, erase live search/booking/payment records, alter default pricing/currency settings or disable unrelated standalone deals. A verified JSON backup of the previous cards and linked rules is saved in `storage/app/private/flight-offer-test-backups/` before replacement. The seeder aborts without replacement if prerequisites or backup verification fail. It is not included in the normal `DatabaseSeeder`.
 
 The new cards are LOS → LHR (QR/TK, 10%), LOS → DXB (all airlines, 12%), LOS → CDG (AF, 15%) and LOS → DOH (QR, 5%). Each shows only its featured airline. They use economy round trips, USD indicative starting prices, future departures, a 30-day booking window and a 7–60-day departure window, all relative to the day the seeder runs. Unrelated overlapping discounts are preserved; the test rules use a higher priority. The cards are labelled TEST so they are not mistaken for verified live quotes.
 
