@@ -32,6 +32,7 @@ import './hotel-results';
 import './passport-scanner';
 import './service-enquiries';
 import './gyro-gallery';
+import './flight-promotions';
 
 // Blade page scripts use Bootstrap's programmatic modal API after the Vite
 // bundle has loaded. Expose the imported module explicitly instead of relying

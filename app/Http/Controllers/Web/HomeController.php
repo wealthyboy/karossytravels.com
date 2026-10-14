@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Models\HolidayPackage;
 use App\Models\FlightOffer;
+use App\Models\HolidayPackage;
 use App\Travel\Pricing\DisplayCurrencyResolver;
 use App\Travel\Pricing\ExchangeRateService;
+use App\Travel\Pricing\FlightDealMatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
@@ -14,7 +15,7 @@ use Illuminate\View\View;
 
 final class HomeController extends Controller
 {
-    public function __invoke(Request $request, DisplayCurrencyResolver $currencyResolver, ExchangeRateService $exchangeRates): View
+    public function __invoke(Request $request, DisplayCurrencyResolver $currencyResolver, ExchangeRateService $exchangeRates, FlightDealMatcher $deals): View
     {
         $displayCurrency = $currencyResolver->resolve($request);
 
@@ -34,9 +35,10 @@ final class HomeController extends Controller
             ));
         });
 
-        $flightOffers->each(function (FlightOffer $offer) use ($displayCurrency, $exchangeRates): void {
+        $flightOffers->each(function (FlightOffer $offer) use ($displayCurrency, $exchangeRates, $deals): void {
+            $discount = $deals->discount((string) $offer->airline_code, [], $offer->price_minor, $offer->currency, $offer->departure_date->toDateString(), $offer->origin_airport, $offer->destination_airport);
             $offer->setAttribute('display_price', $exchangeRates->convertMinor(
-                $offer->price_minor,
+                max(0, $offer->price_minor - $discount['discount_minor']),
                 $offer->currency,
                 $displayCurrency,
             ));

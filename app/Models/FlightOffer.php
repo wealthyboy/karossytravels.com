@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
 
 final class FlightOffer extends Model
@@ -19,6 +20,7 @@ final class FlightOffer extends Model
             'departure_date' => 'date',
             'return_date' => 'date',
             'active' => 'boolean',
+            'promotion_enabled' => 'boolean',
         ];
     }
 
@@ -38,5 +40,10 @@ final class FlightOffer extends Model
         }
 
         return $this->image_url;
+    }
+
+    public function deal(): BelongsTo
+    {
+        return $this->belongsTo(FlightDeal::class, 'flight_deal_id');
     }
 }
