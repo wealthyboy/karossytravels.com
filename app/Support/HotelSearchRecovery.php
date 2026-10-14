@@ -18,6 +18,7 @@ final class HotelSearchRecovery
             'check_out' => $search->check_out->toDateString(),
             'adults' => $search->adults,
             'children' => $search->children,
+            'children_ages' => $search->children_ages ?? [],
             'rooms' => $search->rooms,
             'currency' => $search->currency,
         ];

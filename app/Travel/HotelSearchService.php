@@ -21,6 +21,7 @@ final class HotelSearchService
     /** @param array<string, mixed> $criteria */
     public function search(array $criteria): array
     {
+        $criteria['children_ages'] = array_map('intval', $criteria['children_ages'] ?? []);
         $startedAt = hrtime(true);
         try {
             $providerOffers = $this->provider->search($criteria);

@@ -49,8 +49,8 @@
             <div class="public-primary-nav public-desktop-service-nav" aria-label="Travel products">
                 <a class="nav-link {{ request()->routeIs('home', 'flights.*', 'checkout.*') && request('service', 'flights') === 'flights' ? 'active' : '' }}" href="{{ $serviceUrl('flights') }}" data-header-service="flights">Flights</a>
                 <a class="nav-link {{ request()->routeIs('hotels.*') || request('service') === 'hotels' ? 'active' : '' }}" href="{{ $serviceUrl('hotels') }}" data-header-service="hotels">Hotels</a>
-                <a class="nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}" href="{{ route('cars.partners') }}">Cars</a>
-                <a class="nav-link {{ request()->routeIs('visas.*') ? 'active' : '' }}" href="{{ route('visas.index') }}">Visa services</a>
+                <a class="nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}" href="{{ route('cars.hire') }}">Cars</a>
+                <a class="nav-link {{ request()->routeIs('visas.*') ? 'active' : '' }}" href="{{ route('visas.enquiry') }}">Visa services</a>
                 <a class="nav-link {{ request('service') === 'charter' ? 'active' : '' }}" href="{{ $serviceUrl('charter') }}" data-header-service="charter">Charter</a>
                 <a class="nav-link {{ request()->routeIs('holidays.*') ? 'active' : '' }}" href="{{ route('holidays.index') }}">Holidays</a>
                 <a class="nav-link {{ request()->routeIs('study-program') ? 'active' : '' }}" href="{{ route('study-program') }}">Student Study Program</a>
@@ -78,8 +78,8 @@
                 <div class="public-menu-links public-menu-products">
                     <a href="{{ $serviceUrl('flights') }}" data-header-service="flights"><span><i class="bi bi-airplane-fill"></i><strong>Flights</strong></span><i class="bi bi-chevron-right"></i></a>
                     <a href="{{ $serviceUrl('hotels') }}" data-header-service="hotels"><span><i class="bi bi-building-fill"></i><strong>Hotels</strong></span><i class="bi bi-chevron-right"></i></a>
-                    <a href="{{ route('cars.partners') }}"><span><i class="bi bi-car-front-fill"></i><strong>Cars · Join our network</strong></span><i class="bi bi-chevron-right"></i></a>
-                    <a href="{{ route('visas.index') }}"><span><i class="bi bi-passport-fill"></i><strong>Visa services</strong></span><i class="bi bi-chevron-right"></i></a>
+                    <a href="{{ route('cars.hire') }}"><span><i class="bi bi-car-front-fill"></i><strong>Car hire</strong></span><i class="bi bi-chevron-right"></i></a>
+                    <a href="{{ route('visas.enquiry') }}"><span><i class="bi bi-passport-fill"></i><strong>Visa enquiries</strong></span><i class="bi bi-chevron-right"></i></a>
                     <a href="{{ $serviceUrl('charter') }}" data-header-service="charter"><span><i class="bi bi-airplane-engines-fill"></i><strong>Charter</strong></span><i class="bi bi-chevron-right"></i></a>
                     <a href="{{ route('holidays.index') }}"><span><i class="bi bi-sun-fill"></i><strong>Holiday packages</strong></span><i class="bi bi-chevron-right"></i></a>
                 </div>
@@ -150,7 +150,7 @@
                 <div class="public-footer-contact"><a href="mailto:{{ config('travel.support.email') }}"><i class="bi bi-envelope"></i>{{ config('travel.support.email') }}</a>@if(config('travel.support.phone'))<a href="tel:{{ preg_replace('/\s+/', '', config('travel.support.phone')) }}"><i class="bi bi-telephone"></i>{{ config('travel.support.phone') }}</a>@endif</div>
                 <div class="public-footer-social" aria-label="Karossy social channels"><span title="Facebook"><i class="bi bi-facebook"></i></span><span title="Instagram"><i class="bi bi-instagram"></i></span><span title="LinkedIn"><i class="bi bi-linkedin"></i></span><span title="YouTube"><i class="bi bi-youtube"></i></span></div>
             </div>
-            <div><h2>Products</h2><nav><a href="{{ $serviceUrl('flights') }}">Flights</a><a href="{{ $serviceUrl('hotels') }}">Hotels</a><a href="{{ route('holidays.index') }}">Holiday packages</a><a href="{{ route('cars.partners') }}">Car partners</a><a href="{{ route('visas.index') }}">Visa services</a><a href="{{ $serviceUrl('charter') }}">Charter flights</a><a href="{{ route('study-program') }}">Student Study Program</a></nav></div>
+            <div><h2>Products</h2><nav><a href="{{ $serviceUrl('flights') }}">Flights</a><a href="{{ $serviceUrl('hotels') }}">Hotels</a><a href="{{ route('holidays.index') }}">Holiday packages</a><a href="{{ route('cars.hire') }}">Car hire</a><a href="{{ route('cars.partners') }}">Driver partners</a><a href="{{ route('visas.enquiry') }}">Visa enquiries</a><a href="{{ $serviceUrl('charter') }}">Charter flights</a><a href="{{ route('study-program') }}">Student Study Program</a></nav></div>
             <div><h2>Support</h2><nav><a href="mailto:{{ config('travel.support.email') }}?subject=Karossy%20Help%20Request">Help centre</a><a href="mailto:{{ config('travel.support.email') }}?subject=Karossy%20Travel%20Enquiry">Contact us</a><a href="{{ route('manage-booking.index') }}">Manage booking</a>@auth<a href="{{ route('account.bookings.index') }}">My bookings</a>@endauth<a href="mailto:{{ config('travel.support.email') }}?subject=Cancellation%20Policy%20Enquiry">Cancellation support</a></nav></div>
             <div><h2>Company</h2><nav><a href="{{ route('home') }}#about-karossy">About Karossy</a><a href="mailto:{{ config('travel.support.email') }}?subject=Business%20Travel%20Enquiry">Business travel</a><a href="mailto:{{ config('travel.support.email') }}?subject=Karossy%20Partnership%20Enquiry">Partner with us</a><a href="{{ route('study-program') }}">Study abroad</a><a href="mailto:{{ config('travel.support.email') }}?subject=Careers%20at%20Karossy">Careers</a></nav></div>
         </div>

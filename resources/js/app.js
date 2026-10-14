@@ -30,6 +30,7 @@ document.addEventListener('keydown', event => {
 });
 import './hotel-results';
 import './passport-scanner';
+import './service-enquiries';
 
 // Blade page scripts use Bootstrap's programmatic modal API after the Vite
 // bundle has loaded. Expose the imported module explicitly instead of relying
@@ -464,6 +465,10 @@ document.querySelectorAll('[data-hotel-search]').forEach((hotelSearch) => {
     const guestsPopover = guests.querySelector('[data-hotel-guests-popover]');
     const guestsSummary = guests.querySelector('[data-hotel-guests-summary]');
     const guestRows = [...guests.querySelectorAll('[data-hotel-counter]')];
+    const agesContainer = guests.querySelector('[data-hotel-child-ages]');
+    const agesList = guests.querySelector('[data-hotel-child-ages-list]');
+    const ageError = guests.querySelector('[data-hotel-age-error]');
+    const occupancyError = guests.querySelector('[data-hotel-occupancy-error]');
     const valueFor = (row) => Number(row.querySelector('[data-counter-value]').textContent);
     const updateGuests = () => {
         const values = Object.fromEntries(guestRows.map((row) => [row.dataset.field, valueFor(row)]));
@@ -475,8 +480,47 @@ document.querySelectorAll('[data-hotel-search]').forEach((hotelSearch) => {
         });
         const travellers = values.adults + values.children;
         guestsSummary.textContent = `${travellers} ${travellers === 1 ? 'traveller' : 'travellers'}, ${values.rooms} ${values.rooms === 1 ? 'room' : 'rooms'}`;
+        const previousAges = [...agesList.querySelectorAll('select')].map(select => select.value);
+        agesList.replaceChildren();
+        agesContainer.hidden = values.children === 0;
+        const equalOccupancy = values.adults % values.rooms === 0 && values.children % values.rooms === 0;
+        occupancyError.hidden = equalOccupancy;
+        occupancyError.textContent = equalOccupancy ? '' : 'Sabre requires the same adult and child counts in each room. For different room occupancies, search rooms separately.';
+        for (let index = 0; index < values.children; index++) {
+            const roomNumber = equalOccupancy ? Math.floor(index / (values.children / values.rooms)) + 1 : null;
+            const label = document.createElement('label');
+            const title = `Child ${index + 1} age`;
+            const labelText = document.createElement('span');
+            labelText.textContent = `${title}${values.rooms > 1 && roomNumber ? ` · Room ${roomNumber}` : ''}`;
+            const select = document.createElement('select');
+            select.className = 'form-select';
+            select.name = 'children_ages[]';
+            select.required = true;
+            select.setAttribute('aria-label', labelText.textContent);
+            select.add(new Option('Select age', ''));
+            for (let age = 0; age <= 17; age++) select.add(new Option(age === 0 ? 'Under 1' : String(age), String(age)));
+            select.value = previousAges[index] ?? '';
+            select.addEventListener('change', () => {
+                select.classList.toggle('is-invalid', select.value === '');
+                if ([...agesList.querySelectorAll('select')].every(field => field.value !== '')) ageError.hidden = true;
+            });
+            label.append(labelText, select);
+            agesList.append(label);
+        }
+        if (values.children === 0) ageError.hidden = true;
     };
     const closeGuests = () => { guestsPopover.classList.add('d-none'); guestsToggle.setAttribute('aria-expanded', 'false'); };
+    const validateGuests = () => {
+        const missing = [...agesList.querySelectorAll('select')].find(select => select.value === '');
+        ageError.hidden = !missing;
+        if (missing || !occupancyError.hidden) {
+            guestsPopover.classList.remove('d-none');
+            guestsToggle.setAttribute('aria-expanded', 'true');
+            if (missing) { missing.classList.add('is-invalid'); missing.focus(); }
+            return false;
+        }
+        return true;
+    };
     guestsToggle.addEventListener('click', () => {
         const opening = guestsPopover.classList.contains('d-none');
         guestsPopover.classList.toggle('d-none', !opening);
@@ -486,10 +530,11 @@ document.querySelectorAll('[data-hotel-search]').forEach((hotelSearch) => {
         row.querySelector('[data-counter-minus]').addEventListener('click', () => { row.querySelector('[data-counter-value]').textContent = Math.max(Number(row.dataset.min), valueFor(row) - 1); updateGuests(); });
         row.querySelector('[data-counter-plus]').addEventListener('click', () => { row.querySelector('[data-counter-value]').textContent = Math.min(Number(row.dataset.max), valueFor(row) + 1); updateGuests(); });
     });
-    guests.querySelector('[data-hotel-guests-done]').addEventListener('click', closeGuests);
+    guests.querySelector('[data-hotel-guests-done]').addEventListener('click', () => { if (validateGuests()) closeGuests(); });
     document.addEventListener('click', (event) => { if (!guests.contains(event.target)) closeGuests(); });
     updateGuests();
     hotelSearch.addEventListener('submit', (event) => {
+        if (!validateGuests()) { event.preventDefault(); return; }
         if (!destinationCode.value || !checkIn.value || !checkOut.value) {
             event.preventDefault();
             destination.focus();

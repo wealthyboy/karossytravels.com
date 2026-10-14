@@ -5,7 +5,7 @@
 @section('content')
 <header class="mb-4"><p class="text-danger fw-semibold mb-1">HOTEL OPERATIONS</p><h1 class="h3 fw-bold mb-1">Search hotels</h1><p class="text-secondary mb-0">Search and price live hotel rates for Karossy customers and partners.</p></header>
 
-<section class="admin-travel-search-card mb-4"><x-hotel-search-form :check-in="$defaultCheckIn" :check-out="$defaultCheckOut" :action="route('admin.hotels.results')" submit-label="Search hotels" /></section>
+<section class="admin-travel-search-card mb-4"><x-hotel-search-form :check-in="$defaultCheckIn" :check-out="$defaultCheckOut" :action="route('admin.hotels.results')" :criteria="$criteria ?? []" submit-label="Search hotels" /></section>
 
 @if(is_array($offers))
     @php $money = fn (int $minor, string $code) => \App\Support\CurrencyMetadata::format($minor, $code); @endphp

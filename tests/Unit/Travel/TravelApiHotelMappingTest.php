@@ -35,6 +35,30 @@ final class TravelApiHotelMappingTest extends TestCase
         $this->assertTrue($offer['refundable']);
     }
 
+    public function test_it_sends_exact_child_ages_in_the_sabre_v5_room_format(): void
+    {
+        $builder = new TravelApiHotelSearchRequestBuilder(['pcc' => 'WD4H']);
+        $criteria = ['destination_code' => 'LOS', 'check_in' => '2026-11-01', 'check_out' => '2026-11-03', 'adults' => 2, 'children' => 2, 'children_ages' => [0, 17], 'rooms' => 1];
+        $payload = $builder->build($criteria);
+        $this->assertSame([['Index' => 1, 'Adults' => 2, 'Children' => 2, 'ChildAges' => '0,17']], data_get($payload, 'GetHotelAvailRQ.SearchCriteria.RateInfoRef.Rooms.Room'));
+        $this->assertSame([['Index' => 1, 'Adults' => 2, 'Children' => 0]], data_get($builder->build([...$criteria, 'children' => 0, 'children_ages' => []]), 'GetHotelAvailRQ.SearchCriteria.RateInfoRef.Rooms.Room'));
+    }
+
+    public function test_it_does_not_repeat_all_children_in_every_room(): void
+    {
+        $payload = (new TravelApiHotelSearchRequestBuilder(['pcc' => 'WD4H']))->build(['destination_code' => 'LOS', 'check_in' => '2026-11-01', 'check_out' => '2026-11-03', 'adults' => 4, 'children' => 4, 'children_ages' => [0, 7, 10, 17], 'rooms' => 2]);
+        $this->assertSame([
+            ['Index' => 1, 'Adults' => 2, 'Children' => 2, 'ChildAges' => '0,7'],
+            ['Index' => 2, 'Adults' => 2, 'Children' => 2, 'ChildAges' => '10,17'],
+        ], data_get($payload, 'GetHotelAvailRQ.SearchCriteria.RateInfoRef.Rooms.Room'));
+    }
+
+    public function test_builder_never_invents_an_age_for_a_child(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        (new TravelApiHotelSearchRequestBuilder(['pcc' => 'WD4H']))->build(['destination_code' => 'LOS', 'check_in' => '2026-11-01', 'check_out' => '2026-11-03', 'adults' => 2, 'children' => 1, 'rooms' => 1]);
+    }
+
     public function test_it_preserves_every_room_rate_returned_for_a_property(): void
     {
         $response = ['GetHotelAvailRS' => ['HotelAvailInfos' => ['HotelAvailInfo' => [[

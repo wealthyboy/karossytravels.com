@@ -15,11 +15,13 @@ return [
         ['label' => 'Operational Logs', 'slug' => 'logs', 'route' => 'admin.travel-logs.index', 'active' => 'admin.travel-logs.*', 'route_parameters' => ['product' => 'hotel'], 'permission' => 'integrations.view'],
     ]],
     ['label' => 'Visas', 'slug' => 'visas', 'icon' => 'bi-ticket-perforated-fill', 'permission' => 'services.view', 'items' => [
+        ['label' => 'Visa Enquiries', 'slug' => 'enquiries', 'route' => 'admin.service-enquiries.index', 'route_parameters' => ['type' => 'visa_enquiry']],
         ['label' => 'Visa Services', 'slug' => 'services', 'route' => 'admin.visas.index', 'active' => 'admin.visas.*'],
         ['label' => 'Applications', 'slug' => 'applications', 'route' => 'admin.visa-applications.index', 'active' => 'admin.visa-applications.*'],
         ['label' => 'Operational Logs', 'slug' => 'logs', 'route' => 'admin.travel-logs.index', 'route_parameters' => ['product' => 'visa'], 'permission' => 'integrations.view'],
     ]],
     ['label' => 'Car Hire', 'slug' => 'car-hire', 'icon' => 'bi-car-front-fill', 'permission' => 'services.view', 'items' => [
+        ['label' => 'Car Hire Requests', 'slug' => 'requests', 'route' => 'admin.service-enquiries.index', 'route_parameters' => ['type' => 'car_hire']],
         ['label' => 'Partner enquiries', 'slug' => 'partners', 'route' => 'admin.partner-enquiries.index', 'active' => 'admin.partner-enquiries.*'], ['label' => 'Operational Logs', 'slug' => 'logs', 'route' => 'admin.travel-logs.index', 'route_parameters' => ['product' => 'car'], 'permission' => 'integrations.view'],
     ]],
     ['label' => 'Holiday Packages', 'slug' => 'holidays', 'icon' => 'bi-sun-fill', 'permission' => 'services.manage', 'route' => 'admin.holidays.index', 'active' => 'admin.holidays.*'],

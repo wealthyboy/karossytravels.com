@@ -14,7 +14,7 @@ final class HotelSearch extends Model
 
     protected function casts(): array
     {
-        return ['check_in' => 'date', 'check_out' => 'date'];
+        return ['check_in' => 'date', 'check_out' => 'date', 'children_ages' => 'array'];
     }
 
     public function offers(): HasMany
