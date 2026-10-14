@@ -27,7 +27,7 @@
             <a
                 href="{{ route('auth.google.redirect') }}"
                 class="btn w-100 d-flex align-items-center justify-content-center gap-2 bg-white text-dark fw-semibold border"
-                style="min-height:3rem;border-radius:4.65rem;border-color:#d9dde5 !important;box-shadow:0 .35rem 1rem rgba(18,25,38,.05);"
+                style="min-height:3rem;border-radius:var(--karossy-form-radius);border-color:#d9dde5 !important;box-shadow:0 .35rem 1rem rgba(18,25,38,.05);"
                 aria-label="Continue with Google"
             >
                 <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false">

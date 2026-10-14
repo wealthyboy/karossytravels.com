@@ -32,6 +32,7 @@
     --karossy-red-dark: #a30009;
     --karossy-canvas: #f5f6fa;
     --karossy-muted: #697386;
+    --karossy-form-radius: .8rem;
     --bs-danger: #cc000b;
     --bs-danger-rgb: 204, 0, 11;
 }
@@ -93,7 +94,7 @@ main .h5 {
 .form-select,
 .input-group-text {
     border-color: #dce1e9;
-    border-radius: 4.65rem;
+    border-radius: var(--karossy-form-radius);
     min-height: 2.75rem;
 }
 
@@ -417,7 +418,7 @@ main .h5 {
 .booking-action-modal .modal-footer .btn { font-size: var(--small-font-size, .78rem); }
 .booking-action-modal .form-label { color: #343c49; font-size: var(--small-font-size, .78rem); font-weight: 650; }
 .booking-action-modal .form-label span { color: #8b929d; font-weight: 400; }
-.booking-action-modal .form-control, .booking-action-modal .form-select { border-color: #d9dde5; border-radius: .7rem; font-size: var(--small-font-size, .78rem); padding: .7rem .8rem; }
+.booking-action-modal .form-control, .booking-action-modal .form-select { border-color: #d9dde5; border-radius: var(--karossy-form-radius); font-size: var(--small-font-size, .78rem); padding: .7rem .8rem; }
 .booking-action-modal .form-control:focus, .booking-action-modal .form-select:focus { border-color: var(--karossy-red); box-shadow: 0 0 0 .18rem rgba(193, 16, 27, .1); }
 .booking-modal-callout { align-items: flex-start; background: #eef5ff; border-radius: .8rem; color: #244c7f; display: flex; gap: .7rem; margin-bottom: 1rem; padding: .8rem; }
 .booking-modal-callout.is-warning { background: #fff7df; color: #71590c; }
@@ -2220,7 +2221,7 @@ main .h5 {
 .manage-booking-form h2 { color: var(--karossy-navy); font-size: 1.45rem; font-weight: 800; margin: 0; }
 .manage-booking-form > p { color: #747d8b; font-size: var(--small-font-size, .78rem); line-height: 1.5; margin: .4rem 0 1.35rem; }
 .manage-booking-form .form-label { color: #30394a; font-size: .8rem; font-weight: 750; }
-.manage-booking-form .form-control { border-color: #cfd4de; border-radius: .8rem; font-size: .9rem; min-height: 3.3rem; }
+.manage-booking-form .form-control { border-color: #cfd4de; border-radius: var(--karossy-form-radius); font-size: .9rem; min-height: 3.3rem; }
 .manage-booking-form .form-control:focus { border-color: var(--karossy-red); box-shadow: 0 0 0 .16rem rgba(204,0,11,.1); }
 .manage-booking-form .btn { align-items: center; display: flex; font-size: .9rem; font-weight: 750; justify-content: space-between; min-height: 3.3rem; padding-inline: 1.15rem; }
 .manage-booking-account-link { color: var(--karossy-red); display: block; font-size: var(--small-font-size, .78rem); font-weight: 700; margin-top: 1rem; text-align: center; text-decoration: none; }
@@ -2239,7 +2240,7 @@ main .h5 {
 .auth-form .form-label { font-size: var(--small-font-size, .78rem); font-weight: 650; margin-bottom: .35rem; }
 .auth-form .form-label span { color: #969da8; font-size: var(--small-font-size, .78rem); font-weight: 400; }
 .auth-form .form-control,
-.auth-form .form-select { border-radius: 4.65rem; font-size: .86rem; min-height: 3rem; }
+.auth-form .form-select { border-radius: var(--karossy-form-radius); font-size: .86rem; min-height: 3rem; }
 .auth-password { position: relative; }
 .auth-password .form-control { padding-right: 3rem; }
 .auth-password > button { background: transparent; border: 0; color: #777f8c; height: 2.9rem; position: absolute; right: .35rem; top: 0; width: 2.5rem; }
@@ -2636,7 +2637,7 @@ body { max-width: 100%; overflow-x: clip; }
 .home-visa-search select,
 .visa-form-grid input,
 .partner-form-grid input,
-.partner-form-grid textarea { background: #fff; border: 1px solid #cfd6e1; border-radius: .8rem; color: var(--karossy-navy); font-size: .88rem; min-height: 3.45rem; outline: 0; padding: .75rem .85rem; transition: border-color .18s, box-shadow .18s; width: 100%; }
+.partner-form-grid textarea { background: #fff; border: 1px solid #cfd6e1; border-radius: var(--karossy-form-radius); color: var(--karossy-navy); font-size: .88rem; min-height: 3.45rem; outline: 0; padding: .75rem .85rem; transition: border-color .18s, box-shadow .18s; width: 100%; }
 .partner-form-grid textarea { line-height: 1.55; min-height: 7rem; resize: vertical; }
 .visa-search-form select:focus,
 .home-visa-search select:focus,
@@ -2653,7 +2654,7 @@ body { max-width: 100%; overflow-x: clip; }
 .searchable-select { min-width: 0; position: relative; }
 .searchable-select-source { height: 1px !important; left: 0; opacity: 0; pointer-events: none; position: absolute; top: 100%; width: 1px !important; }
 .visa-search-form .searchable-select-input,
-.home-visa-search .searchable-select-input { background: #fff; border: 1px solid #cfd6e1; border-radius: .8rem; color: var(--karossy-navy); font-size: .88rem; min-height: 3.45rem; outline: 0; padding: .75rem 2.7rem .75rem .85rem; transition: border-color .18s, box-shadow .18s; width: 100%; }
+.home-visa-search .searchable-select-input { background: #fff; border: 1px solid #cfd6e1; border-radius: var(--karossy-form-radius); color: var(--karossy-navy); font-size: .88rem; min-height: 3.45rem; outline: 0; padding: .75rem 2.7rem .75rem .85rem; transition: border-color .18s, box-shadow .18s; width: 100%; }
 .visa-search-form .searchable-select-input:focus,
 .home-visa-search .searchable-select-input:focus,
 .searchable-select.is-open .searchable-select-input { border-color: var(--karossy-red); box-shadow: 0 0 0 .18rem rgba(204,0,11,.08); }
@@ -2667,7 +2668,7 @@ body { max-width: 100%; overflow-x: clip; }
 .searchable-select-option:hover,
 .searchable-select-option.active { background: #fff1f2; color: var(--karossy-red-dark); }
 .searchable-select-empty { color: #7d8795; font-size: var(--small-font-size, .78rem); padding: .8rem .75rem; text-align: center; }
-.checkout-nationality .searchable-select-input { background: #fff; border: 1px solid #dee2e6; border-radius: 4.65rem; color: var(--karossy-navy); font-size: .9rem; line-height: 1.25; min-height: 2.85rem; outline: 0; padding: .65rem 2.7rem .65rem 1rem; width: 100%; }
+.checkout-nationality .searchable-select-input { background: #fff; border: 1px solid #dee2e6; border-radius: var(--karossy-form-radius); color: var(--karossy-navy); font-size: .9rem; line-height: 1.25; min-height: 2.85rem; outline: 0; padding: .65rem 2.7rem .65rem 1rem; width: 100%; }
 .checkout-nationality.is-invalid .searchable-select-input,
 .checkout-nationality .searchable-select-source.is-invalid + .searchable-select-input { border-color: #dc3545; }
 .visa-search-form > .btn,
@@ -3430,12 +3431,12 @@ body { max-width: 100%; overflow-x: clip; }
 .booking-page[data-flight-checkout-page] .traveller-card .form-control,
 .booking-page[data-flight-checkout-page] .traveller-card .form-select,
 .booking-page[data-flight-checkout-page] .booking-card .form-control,
-.booking-page[data-flight-checkout-page] .booking-card .form-select { border-radius: 4.65rem; font-size: .9rem; line-height: 1.25; min-height: 2.85rem; padding-left: 1rem; padding-right: 1rem; }
+.booking-page[data-flight-checkout-page] .booking-card .form-select { border-radius: var(--karossy-form-radius); font-size: .9rem; line-height: 1.25; min-height: 2.85rem; padding-left: 1rem; padding-right: 1rem; }
 .booking-page[data-flight-checkout-page] .traveller-card .form-control::placeholder,
 .booking-page[data-flight-checkout-page] .booking-card .form-control::placeholder { font-size: .9rem; opacity: 1; }
 .booking-page[data-flight-checkout-page] input[type="date"].form-control,
 .booking-page[data-flight-checkout-page] input[type="date"].form-control::-webkit-datetime-edit { font-size: .9rem; line-height: 1.25; }
-.checkout-phone-control { align-items: stretch; border: 1px solid #dce1e9; border-radius: 4.65rem; display: grid; grid-template-columns: auto minmax(0,1fr); min-height: 2.85rem; overflow: hidden; }
+.checkout-phone-control { align-items: stretch; border: 1px solid #dce1e9; border-radius: var(--karossy-form-radius); display: grid; grid-template-columns: auto minmax(0,1fr); min-height: 2.85rem; overflow: hidden; }
 .checkout-phone-control:focus-within { border-color: rgba(204,0,11,.55); }
 .checkout-phone-control.is-invalid { border-color: #dc3545; box-shadow: 0 0 0 .14rem rgba(220,53,69,.1); }
 .checkout-phone-code { appearance: none; background: #f7f9fc; border: 0; border-right: 1px solid #dce1e9; color: #303746; cursor: pointer; font-size: .82rem; font-weight: 700; max-width: 6.6rem; min-width: 5.5rem; padding: 0 .7rem; }
