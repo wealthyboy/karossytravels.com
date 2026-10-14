@@ -58,22 +58,27 @@
     </div>
 </section>
 
-<div class="modal fade public-flight-search-modal" id="publicFlightSearchModal" tabindex="-1" aria-labelledby="publicFlightSearchModalTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+<div class="modal fade public-flight-search-modal" id="publicFlightSearchModal" tabindex="-1" aria-labelledby="publicFlightSearchModalTitle" aria-describedby="publicFlightSearchStatus" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-body public-flight-search-promo">
                 <div class="public-flight-search-promo-media">
-                    <img src="{{ asset('images/ads/charter-private-jet-traveller.jpg') }}" alt="Traveller approaching a private charter jet">
+                    <img src="{{ asset('images/ads/charter-private-jet-traveller.jpg') }}" alt="Traveller approaching a private charter jet" width="2006" height="784" decoding="async">
                     <div class="public-flight-search-promo-shade" aria-hidden="true"></div>
                     <span class="public-flight-search-sponsored">Karossy charter partner</span>
-                    <div class="public-flight-search-promo-brand"><strong>GYRO AIR</strong><small>Charter flights</small></div>
-                    <div class="public-search-progress" role="progressbar" aria-label="Flight search in progress"><span></span></div>
+                    <div class="public-flight-search-promo-brand"><strong>GYRO AIR</strong><small>Private flights, planned around you.</small></div>
+                    <div class="public-flight-loader-image-progress">
+                        <div class="public-flight-loader-progress-meta"><span><i aria-hidden="true"></i><strong data-public-search-phase>Search in progress</strong></span><small>Live fares &amp; availability</small></div>
+                        <div class="public-search-progress public-flight-loader-progress" role="progressbar" aria-label="Flight search in progress" aria-valuetext="Searching live airline availability" data-public-flight-progress><span></span></div>
+                    </div>
                 </div>
-                <div class="public-flight-search-promo-copy text-center">
-                    <span class="modal-eyebrow">Fly private</span>
-                    <h2 id="publicFlightSearchModalTitle">Fly with Gyro Air</h2>
-                    <p data-public-search-status>Checking live fares from {{ $origin }} to {{ $destination }}…</p>
-                    <small>While we compare your flights, discover private charter travel built around your schedule.</small>
+                <div class="public-flight-search-promo-copy">
+                    <div class="public-flight-loader-heading">
+                        <div><span class="modal-eyebrow">Live flight search</span><h2 id="publicFlightSearchModalTitle">Finding your best flights</h2></div>
+                        <span class="public-flight-loader-route" data-public-search-route>{{ $origin }} → {{ $destination }}</span>
+                    </div>
+                    <p id="publicFlightSearchStatus" data-public-search-status role="status" aria-live="polite" aria-atomic="true">Checking live fares from {{ $origin }} to {{ $destination }}…</p>
+                    <div class="public-flight-loader-note"><i class="bi bi-info-circle" aria-hidden="true"></i><span>Please keep this page open. Your flight options will appear when the search finishes.</span></div>
                 </div>
             </div>
         </div>

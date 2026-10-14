@@ -26,6 +26,21 @@ if (page) {
     let renderedResultCount = 0;
     const publicSearchModal = publicSearchModalElement ? Modal.getOrCreateInstance(publicSearchModalElement) : null;
 
+    const setPublicSearchState = (state, statusText) => {
+        if (!publicSearchModalElement) return;
+        publicSearchModalElement.classList.toggle('is-complete', state === 'complete');
+        publicSearchModalElement.classList.toggle('is-error', state === 'error');
+        const progress = publicSearchModalElement.querySelector('[data-public-flight-progress]');
+        const phase = publicSearchModalElement.querySelector('[data-public-search-phase]');
+        if (progress) {
+            progress.removeAttribute('aria-valuenow');
+            progress.setAttribute('aria-valuetext', state === 'complete' ? 'Search complete' : (state === 'error' ? 'Search unavailable' : 'Searching live airline availability'));
+            if (state === 'complete') progress.setAttribute('aria-valuenow', '100');
+        }
+        if (phase) phase.textContent = state === 'complete' ? 'Search complete' : (state === 'error' ? 'Search unavailable' : 'Search in progress');
+        if (statusText) publicSearchModalElement.querySelector('[data-public-search-status]').textContent = statusText;
+    };
+
     const closePublicSearchModal = async startedAt => {
         if (!publicSearchModalElement || !publicSearchModal) return;
 
@@ -433,6 +448,8 @@ if (page) {
     const performSearch = async searchCriteria => {
         const startedAt = Date.now();
         let statusTimer = null;
+        page.setAttribute('aria-busy', 'true');
+        setPublicSearchState('searching');
         message.className = 'flight-search-message d-none';
         results.classList.add('d-none');
         if (submit) {
@@ -443,18 +460,21 @@ if (page) {
 
         if (publicSearchModalElement) {
             const status = publicSearchModalElement.querySelector('[data-public-search-status]');
+            const searchOrigin = criteria.origin || criteria.segments?.[0]?.origin || '';
+            const searchDestination = criteria.destination || criteria.segments?.at(-1)?.destination || '';
+            publicSearchModalElement.querySelector('[data-public-search-route]').textContent = `${searchOrigin} → ${searchDestination}`;
             const messages = [
-                `Checking live fares from ${criteria.origin} to ${criteria.destination}…`,
-                'Comparing airline schedules and fare families…',
-                'Confirming taxes and displaying your total fare…',
-                'Preparing your available flight options…',
+                `Checking live fares from ${searchOrigin} to ${searchDestination}…`,
+                'The airline search is still running. Responses can take a moment…',
+                'We are still checking live availability. Please keep this page open…',
             ];
             let messageIndex = 0;
             status.textContent = messages[0];
             statusTimer = window.setInterval(() => {
                 messageIndex = Math.min(messageIndex + 1, messages.length - 1);
                 status.textContent = messages[messageIndex];
-            }, 1700);
+                if (messageIndex === messages.length - 1) window.clearInterval(statusTimer);
+            }, 8000);
         }
 
         try {
@@ -463,6 +483,7 @@ if (page) {
             const body = contentType.includes('application/json') ? await response.json() : null;
             if (!response.ok || !body) throw new Error('flight-search-unavailable');
             offers = body.data?.offers || [];
+            setPublicSearchState('complete', offers.length ? 'Your flight options are ready.' : 'Search complete. No live flights were returned for these dates.');
             if (!offers.length) {
                 summaries = [];
                 page.querySelector('[data-flight-results-overview]')?.replaceChildren();
@@ -487,6 +508,7 @@ if (page) {
             }
             (page.querySelector('.public-flight-results-header') || results).scrollIntoView({ behavior: 'smooth', block: 'start' });
         } catch (error) {
+            setPublicSearchState('error', 'The airline service is temporarily unavailable. You can retry your search.');
             message.innerHTML = `<div><strong>Airline service temporarily unavailable</strong><span>We could not reach the airline service. Please try again shortly.</span></div><button type="button" class="btn btn-sm btn-outline-danger" data-retry-flight-search><i class="bi bi-arrow-clockwise"></i> Try again</button>`;
             message.className = 'flight-search-message alert alert-danger mt-3';
             message.querySelector('[data-retry-flight-search]')?.addEventListener('click', () => {
@@ -496,6 +518,7 @@ if (page) {
         } finally {
             if (statusTimer) window.clearInterval(statusTimer);
             await closePublicSearchModal(startedAt);
+            page.setAttribute('aria-busy', 'false');
             if (submit) {
                 submit.disabled = false;
                 submit.querySelector('.spinner-border')?.classList.add('d-none');
