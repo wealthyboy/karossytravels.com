@@ -8,7 +8,9 @@ final class FlightPromotionPresenter
 {
     public function present(?int $id, int $discountMinor): ?array
     {
-        if (! $id || $discountMinor <= 0 || ! ($deal = FlightDeal::find($id))) return null;
+        if (! $id || $discountMinor <= 0 || ! ($deal = FlightDeal::find($id))) {
+            return null;
+        }
 
         return [
             'id' => $deal->id,

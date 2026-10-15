@@ -5,18 +5,18 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Mail\BookingInvoice;
-use App\Models\CheckoutPaymentAttempt;
 use App\Models\BookingHoldSetting;
+use App\Models\CheckoutPaymentAttempt;
 use App\Models\HotelOffer;
 use App\Models\TravelOffer;
 use App\Payments\PaystackService;
 use App\Support\PhoneCountryCodes;
 use App\Travel\AirOrderService;
 use App\Travel\CheckoutCustomerResolver;
+use App\Travel\Exceptions\BookingCreationException;
 use App\Travel\FlightRevalidationService;
 use App\Travel\HotelOrderService;
 use App\Travel\MobileCheckoutService;
-use App\Travel\Exceptions\BookingCreationException;
 use App\Travel\Pricing\ExchangeRateService;
 use App\Travel\Pricing\FlightPricePresenter;
 use Illuminate\Http\JsonResponse;
@@ -38,6 +38,9 @@ final class MobileCheckoutController extends Controller
             $offer->refresh();
             $currency = $this->currency($request, $offer->currency);
             $presentation = $prices->present($offer, $currency);
+            if ($error = $this->conversionError($request, $currency, $presentation['price']['currency'])) {
+                return $error;
+            }
             if (($validation['price_changed'] ?? false)
                 || (isset($data['expected_total_minor']) && (int) $data['expected_total_minor'] !== $presentation['price']['total_minor'])) {
                 return response()->json([
@@ -66,6 +69,7 @@ final class MobileCheckoutController extends Controller
             ], $presentation);
         } catch (Throwable $exception) {
             report($exception);
+
             return response()->json(['message' => 'This fare could not be prepared for payment. Please retry or choose another flight.'], 422);
         }
     }
@@ -143,11 +147,13 @@ final class MobileCheckoutController extends Controller
             ], status: 201);
         } catch (BookingCreationException $exception) {
             report($exception);
+
             return response()->json([
                 'message' => 'The airline could not place this flight on hold. No payment was taken. Please retry or choose another flight.',
             ], 422);
         } catch (Throwable $exception) {
             report($exception);
+
             return response()->json(['message' => 'The flight could not be placed on hold. Please retry or choose another flight.'], 422);
         }
     }
@@ -156,6 +162,7 @@ final class MobileCheckoutController extends Controller
     {
         $request->merge(['phone' => PhoneCountryCodes::normalize((string) $request->input('phone_code', '+234'), $request->input('phone'))]);
         $data = $request->validate([
+            'currency' => ['nullable', Rule::in(['NGN', 'USD'])],
             'first_name' => ['required', 'string', 'max:80'], 'last_name' => ['required', 'string', 'max:80'],
             'email' => ['required', 'email:rfc', 'max:190'], 'phone_code' => ['required', 'regex:/^\+[0-9]{1,4}$/'],
             'phone' => ['required', 'regex:/^\+[0-9]{7,15}$/'], 'special_requests' => ['nullable', 'string', 'max:1000'],
@@ -165,6 +172,9 @@ final class MobileCheckoutController extends Controller
             $orders->assertCanCreate($offer);
             $currency = $this->currency($request, $offer->currency);
             $converted = $rates->convertMinor($offer->fresh()->selling_total_minor, $offer->currency, $currency);
+            if ($error = $this->conversionError($request, $currency, $converted['currency'])) {
+                return $error;
+            }
             $amount = $converted['amount_minor'];
             $currency = $converted['currency'];
 
@@ -175,6 +185,7 @@ final class MobileCheckoutController extends Controller
             ]);
         } catch (Throwable $exception) {
             report($exception);
+
             return response()->json(['message' => 'This room could not be prepared for payment. Please choose another available room.'], 422);
         }
     }
@@ -224,6 +235,7 @@ final class MobileCheckoutController extends Controller
             return ApiResponse::success($request, $attempt->order_id ? $this->completed($attempt) : ['status' => 'processing', 'reference' => $attempt->reference]);
         } catch (Throwable $exception) {
             report($exception);
+
             return ApiResponse::success($request, ['status' => $attempt->status === 'paid' ? 'processing' : 'pending', 'reference' => $attempt->reference]);
         }
     }
@@ -264,6 +276,7 @@ final class MobileCheckoutController extends Controller
     {
         $order = $attempt->order()->with('bookings')->firstOrFail();
         $booking = $order->bookings->first();
+
         return ['status' => 'completed', 'reference' => $order->reference, 'order_id' => $order->id,
             'booking_type' => $booking?->product_type, 'provider_locator' => $booking?->provider_locator,
             'price' => ['currency' => $order->currency, 'total_minor' => $order->total_minor]];
@@ -272,13 +285,27 @@ final class MobileCheckoutController extends Controller
     private function currency(Request $request, string $fallback): string
     {
         $currency = strtoupper((string) $request->input('currency', $fallback));
-        return in_array($currency, config('travel.currency.supported', ['NGN', 'USD']), true) ? $currency : $fallback;
+
+        return in_array($currency, ['NGN', 'USD'], true) ? $currency : $fallback;
+    }
+
+    private function conversionError(Request $request, string $requestedCurrency, string $actualCurrency): ?JsonResponse
+    {
+        if ($actualCurrency === $requestedCurrency && in_array($actualCurrency, ['NGN', 'USD'], true)) {
+            return null;
+        }
+
+        return response()->json([
+            'message' => 'Currency conversion is temporarily unavailable. Please retry or choose another display currency before paying.',
+            'error_code' => 'CURRENCY_UNAVAILABLE',
+            'meta' => ['api_version' => 'v1', 'request_id' => $request->attributes->get('request_id')],
+        ], 422);
     }
 
     private function flightRules(): array
     {
         return [
-            'currency' => ['nullable', Rule::in(config('travel.currency.supported', ['NGN', 'USD']))], 'payment_method' => ['nullable', Rule::in(['online', 'hold'])], 'terms' => ['accepted'],
+            'currency' => ['nullable', Rule::in(['NGN', 'USD'])], 'payment_method' => ['nullable', Rule::in(['online', 'hold'])], 'terms' => ['accepted'],
             'expected_total_minor' => ['nullable', 'integer', 'min:0'],
             'travellers' => ['required', 'array', 'min:1', 'max:9'], 'travellers.*.type' => ['required', Rule::in(['ADT', 'CNN', 'INF'])],
             'travellers.*.title' => ['required', Rule::in(['Mr', 'Mrs', 'Ms', 'Miss', 'Dr'])],

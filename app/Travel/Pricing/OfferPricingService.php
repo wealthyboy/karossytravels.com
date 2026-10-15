@@ -25,12 +25,12 @@ final class OfferPricingService
             ? $this->deals->discount($offer->validatingAirline, $offer->segments, $grossSellingMinor, $offer->currency, $departureDate, $origin, $destination)
             : ['deal_id' => null, 'discount_minor' => 0];
         $sellingMinor = max(0, $grossSellingMinor - $deal['discount_minor']);
+        $selling = $this->exchangeRates->convertMinor($sellingMinor, $offer->currency, $displayCurrency);
+        $displayCurrency = $selling['currency'];
         $base = $this->exchangeRates->convertMinor($offer->baseMinor, $offer->currency, $displayCurrency);
         $taxes = $this->exchangeRates->convertMinor($offer->taxesMinor, $offer->currency, $displayCurrency);
         $displayMarkup = $this->exchangeRates->convertMinor($markup, $offer->currency, $displayCurrency);
         $displayMarkdown = $this->exchangeRates->convertMinor($adjustment['markdown_minor'], $offer->currency, $displayCurrency);
-        $displayDiscount = $this->exchangeRates->convertMinor($adjustment['markdown_minor'] + $deal['discount_minor'], $offer->currency, $displayCurrency);
-        $selling = $this->exchangeRates->convertMinor($sellingMinor, $offer->currency, $displayCurrency);
         $displayPromotion = $this->exchangeRates->convertMinor($deal['discount_minor'], $offer->currency, $selling['currency'])['amount_minor'];
 
         return [
@@ -47,7 +47,8 @@ final class OfferPricingService
             'display_taxes_minor' => $taxes['amount_minor'],
             'display_markup_minor' => $displayMarkup['amount_minor'],
             'display_markdown_minor' => $displayMarkdown['amount_minor'],
-            'display_discount_minor' => $displayDiscount['amount_minor'],
+            // Round each saving once, exactly as review and checkout present it.
+            'display_discount_minor' => $displayMarkdown['amount_minor'] + $displayPromotion,
             'display_total_minor' => $selling['amount_minor'],
             'display_promotion_discount_minor' => $displayPromotion,
             'promotion' => $this->promotions->present($deal['deal_id'], $displayPromotion),

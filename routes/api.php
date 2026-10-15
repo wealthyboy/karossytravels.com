@@ -3,19 +3,23 @@
 use App\Http\Controllers\Api\V1\AnalyticsEventController;
 use App\Http\Controllers\Api\V1\AppBootstrapController;
 use App\Http\Controllers\Api\V1\BookingLookupController;
-use App\Http\Controllers\Api\V1\FlightSearchController;
 use App\Http\Controllers\Api\V1\FlightOfferController;
 use App\Http\Controllers\Api\V1\FlightPromotionController;
-use App\Http\Controllers\Api\V1\HotelSearchController;
+use App\Http\Controllers\Api\V1\FlightSearchController;
 use App\Http\Controllers\Api\V1\HotelRoomsController;
-use App\Http\Controllers\Api\V1\MobileCheckoutController;
+use App\Http\Controllers\Api\V1\HotelSearchController;
 use App\Http\Controllers\Api\V1\MobileAuthController;
+use App\Http\Controllers\Api\V1\MobileCheckoutController;
 use App\Http\Controllers\Api\V1\ServiceCatalogController;
+use App\Http\Controllers\Api\V1\ServiceEnquiryController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::get('app/bootstrap', AppBootstrapController::class)->name('app.bootstrap');
     Route::get('services', ServiceCatalogController::class)->name('services.index');
+    Route::get('enquiries/options', [ServiceEnquiryController::class, 'options'])->middleware('throttle:60,1')->name('enquiries.options');
+    Route::post('enquiries/car-hire', [ServiceEnquiryController::class, 'carHire'])->middleware('throttle:8,1')->name('enquiries.car-hire');
+    Route::post('enquiries/visa', [ServiceEnquiryController::class, 'visa'])->middleware('throttle:8,1')->name('enquiries.visa');
     Route::get('flights/promotions', FlightPromotionController::class)->middleware('throttle:60,1')->name('flights.promotions');
     Route::post('flights/search', FlightSearchController::class)
         ->middleware('throttle:30,1')

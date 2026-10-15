@@ -14,7 +14,9 @@ final class HomepageFlightOfferCatalog
 
     public function cards(string $currency): array
     {
-        if (! Schema::hasTable('flight_offers')) return [];
+        if (! Schema::hasTable('flight_offers')) {
+            return [];
+        }
 
         return FlightOffer::available()->limit(4)->get()->map(function (FlightOffer $offer) use ($currency): array {
             $discount = $this->deals->discount((string) $offer->airline_code, [], $offer->price_minor, $offer->currency, $offer->departure_date->toDateString(), $offer->origin_airport, $offer->destination_airport);

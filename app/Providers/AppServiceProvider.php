@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\GeneralSetting;
+use App\Support\SocialLinks;
 use App\Travel\Contracts\FlightProvider;
 use App\Travel\Contracts\HotelProvider;
 use App\Travel\Providers\FakeFlightProvider;
@@ -9,15 +11,16 @@ use App\Travel\Providers\FakeHotelProvider;
 use App\Travel\Providers\TravelApiFlightProvider;
 use App\Travel\Providers\TravelApiHotelProvider;
 use App\Travel\TravelApi\TravelApiClient;
-use App\Travel\TravelApi\TravelApiFlightSearchRequestBuilder;
 use App\Travel\TravelApi\TravelApiFlightRevalidationRequestBuilder;
-use App\Travel\TravelApi\TravelApiHotelSearchRequestBuilder;
+use App\Travel\TravelApi\TravelApiFlightSearchRequestBuilder;
 use App\Travel\TravelApi\TravelApiHotelBookingRequestBuilder;
-use Illuminate\Pagination\Paginator;
-use Illuminate\Support\ServiceProvider;
+use App\Travel\TravelApi\TravelApiHotelSearchRequestBuilder;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -80,6 +83,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        View::composer('layouts.public', function (\Illuminate\View\View $view): void {
+            $view->with('footerSocialLinks', SocialLinks::forFooter(GeneralSetting::current()->social_links ?? []));
+        });
         RateLimiter::for('login', fn (Request $request) => Limit::perMinute(5)->by(strtolower((string) $request->input('email')).'|'.$request->ip()));
         RateLimiter::for('registration', fn (Request $request) => Limit::perMinute(3)->by($request->ip()));
         Paginator::useBootstrapFive();

@@ -8,9 +8,11 @@ use App\Models\CurrencySetting;
 use App\Models\FlightDeal;
 use App\Models\FlightOffer;
 use App\Models\PricingSetting;
-use App\Models\TravelOffer;
+use App\Travel\Contracts\FlightProvider;
+use App\Travel\Providers\FakeFlightProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -58,7 +60,9 @@ final class MobileFlightPromotionsTest extends TestCase
     public function test_catalog_omits_drafts_past_departures_and_returns_at_most_four(): void
     {
         $offer = $this->card();
-        for ($i = 1; $i <= 5; $i++) $offer->replicate()->fill(['slug' => 'card-'.$i, 'flight_deal_id' => null, 'sort_order' => $i])->save();
+        for ($i = 1; $i <= 5; $i++) {
+            $offer->replicate()->fill(['slug' => 'card-'.$i, 'flight_deal_id' => null, 'sort_order' => $i])->save();
+        }
         $offer->replicate()->fill(['slug' => 'draft', 'active' => false])->save();
         $offer->replicate()->fill(['slug' => 'past', 'departure_date' => today()->subDay()])->save();
         $this->getJson('/api/v1/flights/promotions?currency=USD')->assertOk()->assertJsonCount(4, 'data.offers');
@@ -108,6 +112,38 @@ final class MobileFlightPromotionsTest extends TestCase
         Http::assertNotSent(fn ($request) => str_contains($request->url(), 'paystack'));
     }
 
+    public function test_fractional_conversion_preserves_component_rounding_and_unsupported_payment_currencies_are_rejected(): void
+    {
+        CurrencySetting::where('code', 'GBP')->update(['manual_rate' => .81317]);
+        $this->app->instance(FlightProvider::class, new class implements FlightProvider
+        {
+            public function name(): string
+            {
+                return 'fake';
+            }
+
+            public function search(array $criteria): array
+            {
+                // A supplier currency distinct from the requested display currency.
+                return (new FakeFlightProvider)->search([...$criteria, 'currency' => 'USD']);
+            }
+        });
+        $this->deal(['KQ']);
+        PricingSetting::where('product_type', 'airline')->update(['enabled' => true, 'markup_type' => 'percentage', 'markup_value' => 5, 'adjustment_type' => 'markdown']);
+        $criteria = $this->criteria();
+        $criteria['currency'] = 'GBP';
+        $search = $this->postJson('/api/v1/flights/search', $criteria)->assertOk();
+        $price = $search->json('data.offers.0.price');
+        $this->assertSame($price['markdown_minor'] + $price['promotion_discount_minor'], $price['discount_minor']);
+        $id = $search->json('data.offers.0.id');
+        $review = $this->getJson('/api/v1/flights/offers/'.$id.'?currency=GBP')->assertOk();
+        foreach ($review->json('data.offer.price') as $key => $value) {
+            $this->assertSame($price[$key], $value, $key);
+        }
+        $this->postJson('/api/v1/flights/offers/'.$id.'/checkout', $this->checkout(['currency' => 'GBP', 'expected_total_minor' => $price['total_minor']]))->assertUnprocessable()->assertJsonValidationErrors('currency');
+        $this->assertDatabaseCount('checkout_payment_attempts', 0);
+    }
+
     public function test_stale_client_total_is_rejected_even_if_stored_fare_was_already_revalidated(): void
     {
         $this->deal(['KQ']);
@@ -118,17 +154,34 @@ final class MobileFlightPromotionsTest extends TestCase
         Http::assertNotSent(fn ($request) => str_contains($request->url(), 'paystack'));
     }
 
-    public function test_client_cannot_set_discount_and_supported_gbp_currency_matches_charge(): void
+    public function test_client_cannot_set_discount_and_display_currency_is_separate_from_supported_payment_currency(): void
     {
         $this->deal(['KQ']);
         $search = $this->postJson('/api/v1/flights/search', $this->criteria())->assertOk();
         $id = $search->json('data.offers.0.id');
         $this->getJson('/api/v1/flights/offers/'.$id.'?currency=GBP')->assertOk()->assertJsonPath('data.offer.price.currency', 'GBP');
-        $response = $this->postJson('/api/v1/flights/offers/'.$id.'/checkout', $this->checkout(['currency' => 'GBP', 'discount_percent' => 99, 'total_minor' => 1]))->assertCreated();
-        $this->assertSame('GBP', $response->json('data.price.currency'));
-        $this->assertSame(25200, $response->json('data.price.total_minor'));
-        $this->assertSame(25200, (int) CheckoutPaymentAttempt::firstOrFail()->amount_minor);
-        Http::assertSent(fn ($request) => str_ends_with($request->url(), '/transaction/initialize') && $request['amount'] === '25200' && $request['currency'] === 'GBP');
+        $this->postJson('/api/v1/flights/offers/'.$id.'/checkout', $this->checkout(['currency' => 'GBP']))->assertUnprocessable()->assertJsonValidationErrors('currency');
+        $this->assertDatabaseCount('checkout_payment_attempts', 0);
+        $response = $this->postJson('/api/v1/flights/offers/'.$id.'/checkout', $this->checkout(['currency' => 'USD', 'discount_percent' => 99, 'total_minor' => 1]))->assertCreated();
+        $this->assertSame('USD', $response->json('data.price.currency'));
+        $this->assertSame(31500, $response->json('data.price.total_minor'));
+        $this->assertSame(31500, (int) CheckoutPaymentAttempt::firstOrFail()->amount_minor);
+        Http::assertSent(fn ($request) => str_ends_with($request->url(), '/transaction/initialize') && $request['amount'] === '31500' && $request['currency'] === 'USD');
+    }
+
+    public function test_missing_conversion_never_silently_initializes_payment_in_another_currency(): void
+    {
+        CurrencySetting::where('code', 'NGN')->update(['manual_rate' => null]);
+        config(['travel.currency.fallback_usd_rates' => []]);
+        Cache::put('travel:exchange-rates:USD', ['USD' => 1]);
+        $search = $this->postJson('/api/v1/flights/search', $this->criteria())->assertOk();
+        $this->postJson('/api/v1/flights/offers/'.$search->json('data.offers.0.id').'/checkout', $this->checkout(['currency' => 'USD']))
+            ->assertUnprocessable()->assertJsonPath('error_code', 'CURRENCY_UNAVAILABLE');
+        $hotel = $this->postJson('/api/v1/hotels/search', ['destination_code' => 'LOS', 'destination_label' => 'Lagos', 'check_in' => '2026-10-28', 'check_out' => '2026-10-30', 'adults' => 2, 'children' => 0, 'children_ages' => [], 'rooms' => 1, 'currency' => 'NGN', 'session_id' => (string) Str::uuid()])->assertOk();
+        $this->postJson('/api/v1/hotels/offers/'.$hotel->json('data.offers.0.id').'/checkout', ['first_name' => 'Test', 'last_name' => 'Guest', 'email' => 'test@example.com', 'phone_code' => '+234', 'phone' => '8000000000', 'terms' => true, 'currency' => 'NGN'])
+            ->assertUnprocessable()->assertJsonPath('error_code', 'CURRENCY_UNAVAILABLE');
+        $this->assertDatabaseCount('checkout_payment_attempts', 0);
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'paystack'));
     }
 
     private function card(): FlightOffer

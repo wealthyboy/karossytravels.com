@@ -324,6 +324,8 @@
         </div>
     </div>
 </section>
+@include('partials.home-trust')
+
 <section class="public-content-section home-about" id="about-karossy">
     <div class="container public-container">
         <div class="home-about-heading">

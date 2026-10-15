@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\BookingHoldSettingController;
 use App\Http\Controllers\Admin\FlightDealController;
 use App\Http\Controllers\Admin\CurrencySettingController;
+use App\Http\Controllers\Admin\GeneralSettingController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FairRuleController;
@@ -159,7 +160,9 @@ Route::prefix('admin')->name('admin.')->middleware('admin.hidden')->group(functi
     Route::get('/analytics', [SectionController::class, 'analytics'])->middleware('permission:analytics.view')->name('analytics.index');
     Route::get('/providers/sabre', [SectionController::class, 'sabreProvider'])->middleware('permission:integrations.view')->name('providers.sabre');
     Route::post('/providers/sabre/test', [SectionController::class, 'testSabreProvider'])->middleware(['permission:integrations.view', 'throttle:5,1'])->name('providers.sabre.test');
-    Route::get('/settings', [SectionController::class, 'settings'])->middleware('permission:settings.manage')->name('settings.index');
+    Route::get('/settings', [GeneralSettingController::class, 'edit'])->middleware('permission:settings.manage')->name('settings.index');
+    Route::get('/settings/general', [GeneralSettingController::class, 'edit'])->middleware('permission:settings.manage')->name('settings.general.edit');
+    Route::put('/settings/general', [GeneralSettingController::class, 'update'])->middleware('permission:settings.manage')->name('settings.general.update');
     Route::get('/pricing/{product}', [PricingSettingController::class, 'edit'])->whereIn('product', ['airline', 'hotel'])->middleware('permission:offers.manage')->name('pricing.edit');
     Route::put('/pricing/{product}', [PricingSettingController::class, 'update'])->whereIn('product', ['airline', 'hotel'])->middleware('permission:offers.manage')->name('pricing.update');
     Route::get('/settings/currency', [CurrencySettingController::class, 'edit'])->middleware('permission:settings.manage')->name('settings.currency.edit');

@@ -2202,8 +2202,10 @@ main .h5 {
 .public-footer-contact { display: grid; gap: .4rem; }
 .public-footer-contact a { align-items: center; color: rgba(255,255,255,.72); display: inline-flex; font-size: var(--small-font-size, .78rem); gap: .5rem; text-decoration: none; width: max-content; }
 .public-footer-contact a:hover { color: #fff; }
-.public-footer-social { display: flex; gap: .55rem; margin-top: 1.25rem; }
-.public-footer-social span { align-items: center; background: rgba(255,255,255,.08); border-radius: 50%; color: rgba(255,255,255,.75); display: flex; height: 2.35rem; justify-content: center; width: 2.35rem; }
+.public-footer .public-footer-social { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: 1.25rem; }
+.public-footer .public-footer-social a { align-items: center; background: rgba(255,255,255,.08); border-radius: 50%; color: rgba(255,255,255,.75); display: inline-flex; flex: 0 0 2.35rem; height: 2.35rem; justify-content: center; text-decoration: none; width: 2.35rem; }
+.public-footer .public-footer-social a:hover { background: rgba(255,255,255,.16); color: #fff; transform: none; }
+.public-footer .public-footer-social a:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 .public-footer h2 { color: #fff; font-size: .86rem; font-weight: 750; margin: .25rem 0 1.2rem; }
 .public-footer nav { display: grid; gap: .72rem; }
 .public-footer nav a { color: rgba(255,255,255,.62); font-size: var(--small-font-size, .78rem); text-decoration: none; transition: color .18s ease, transform .18s ease; width: max-content; }
@@ -3245,6 +3247,25 @@ body { max-width: 100%; overflow-x: clip; }
 .home-study-journey-footer > span:not(.home-study-journey-line) { align-items: center; display: inline-flex; gap: .35rem; white-space: nowrap; }
 .home-study-journey-line { border-top: 1px dashed #bbc9dc; flex: 1; min-width: 1.5rem; position: relative; }
 .home-study-journey-line i { background: #fff; color: var(--karossy-red); font-size: .9rem; left: 50%; padding-inline: .35rem; position: absolute; top: 0; transform: translate(-50%, -50%) rotate(90deg); }
+.home-trust-section { background: #f8fafc; border-block: 1px solid #edf0f5; padding: 4rem 0; }
+.home-trust-heading { margin-bottom: 2rem; }
+.home-trust-heading h2 { margin: 0; }
+.home-trust-grid { display: grid; gap: 1.25rem; grid-template-columns: repeat(4, minmax(0, 1fr)); list-style: none; margin: 0; padding: 0; }
+.home-trust-item { background: #fff; border: 1px solid #e5eaf1; border-radius: 1rem; box-shadow: 0 .4rem 1.5rem rgba(19,38,75,.025); min-width: 0; padding: 1.5rem; }
+.home-trust-icon { align-items: center; background: #fff0f1; border-radius: .85rem; color: var(--karossy-cta-red, var(--karossy-red)); display: inline-flex; height: 3.5rem; justify-content: center; margin-bottom: 1.25rem; width: 3.5rem; }
+.home-trust-icon svg { display: block; flex-shrink: 0; }
+.home-trust-item h3 { color: var(--karossy-navy); font-size: 1.05rem; font-weight: 700; line-height: 1.45; margin: 0 0 .65rem; }
+.home-trust-item p { color: #606d80; font-size: .9rem; line-height: 1.75; margin: 0; }
+@media (max-width: 991.98px) {
+    .home-trust-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 575.98px) {
+    .home-trust-section { padding: 2.5rem 0; }
+    .home-trust-heading { margin-bottom: 1.5rem; }
+    .home-trust-grid { gap: 1rem; grid-template-columns: minmax(0, 1fr); }
+    .home-trust-item { padding: 1.25rem; }
+    .home-trust-icon { margin-bottom: 1rem; }
+}
 .home-about > .public-container { display: block; }
 .home-about-heading { text-align: left; }
 .home-about h2 { font-size: clamp(1.35rem, 2.1vw, 2rem); margin: .45rem 0 1.5rem; }
@@ -3396,7 +3417,8 @@ body { max-width: 100%; overflow-x: clip; }
 
 /* Keep the homepage concept's compact mobile treatment after legacy responsive rules. */
 @media (max-width: 767.98px) {
-    .public-hero { min-height: 0; padding: 2.8rem 0 4.5rem; }
+    .public-hero { min-height: 0; padding: 2.8rem 0 1rem; }
+    .public-hero + .home-destinations { padding-top: .75rem; }
     .public-hero h1 { font-size: clamp(2.65rem, 13vw, 4rem); }
     .public-search-card { margin-top: 2.5rem; }
     .public-service-tabs { gap: .15rem; overflow-x: auto; padding: .65rem; scrollbar-width: none; }
