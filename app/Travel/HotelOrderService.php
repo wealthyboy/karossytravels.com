@@ -100,6 +100,7 @@ final class HotelOrderService
                 $providerResponse = $this->client->createHotelBooking(
                     $this->bookingBuilder->booking($offer, $providerCustomer, $bookingKey, $priceCheckResponse, $specialRequests),
                 );
+                $this->bookingBuilder->assertBookingSucceeded($providerResponse);
                 $locator = $this->bookingBuilder->locator($providerResponse);
                 if ($locator === '') {
                     throw new RuntimeException('The hotel reservation response did not contain a confirmation locator.');

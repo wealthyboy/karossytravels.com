@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Customer;
 use App\Models\HotelOffer;
 use App\Models\HotelSearch;
+use App\Models\TravelLog;
+use App\Travel\Exceptions\BookingCreationException;
 use App\Travel\HotelOrderService;
 use App\Travel\TravelApi\TravelApiClient;
 use App\Travel\TravelApi\TravelApiHotelBookingRequestBuilder;
@@ -73,7 +75,10 @@ final class HotelProviderBookingTest extends TestCase
                 ]],
             ]),
             'https://travel.test/v2.5.0/passenger/records?mode=create' => Http::response([
-                'CreatePassengerNameRecordRS' => ['ItineraryRef' => ['ID' => 'HTL123']],
+                'CreatePassengerNameRecordRS' => [
+                    'ApplicationResults' => ['status' => 'Complete'],
+                    'ItineraryRef' => ['ID' => 'HTL123'],
+                ],
             ]),
         ]);
 
@@ -88,6 +93,89 @@ final class HotelProviderBookingTest extends TestCase
             'status' => 'confirmed',
             'provider_locator' => 'HTL123',
         ]);
+        Http::assertSentCount(2);
+        Http::assertSent(fn ($request): bool => str_contains($request->url(), '/passenger/records')
+            && data_get($request->data(), 'CreatePassengerNameRecordRQ.HotelBook.Rooms.Room.0.RoomIndex') === 1);
+    }
+
+    public function test_incomplete_sabre_booking_preserves_the_room_index_error_in_operational_logs(): void
+    {
+        $this->assertIncompleteBookingIsRejected();
+    }
+
+    public function test_incomplete_sabre_booking_is_not_confirmed_even_if_a_locator_is_present(): void
+    {
+        $this->assertIncompleteBookingIsRejected('PNR123');
+    }
+
+    private function assertIncompleteBookingIsRejected(?string $locator = null): void
+    {
+        config([
+            'services.travel.travel_api.auth_scheme' => 'bearer_token',
+            'services.travel.travel_api.access_token' => 'test-token',
+            'services.travel.travel_api.environment' => 'cert',
+            'services.travel.travel_api.cert_url' => 'https://travel.test',
+            'services.travel.travel_api.hotel_price_check_path' => '/v4.0.0/hotel/pricecheck',
+            'services.travel.travel_api.hotel_booking_path' => '/v2.5.0/passenger/records?mode=create',
+            'services.travel.travel_api.pcc' => 'TEST',
+            'services.travel.travel_api.iata_number' => '12345678',
+        ]);
+        app()->forgetInstance(TravelApiClient::class);
+        app()->forgetInstance(TravelApiHotelBookingRequestBuilder::class);
+
+        $response = ['CreatePassengerNameRecordRS' => [
+            'ApplicationResults' => [
+                'status' => 'Incomplete',
+                'Error' => [[
+                    'SystemSpecificResults' => [[
+                        'Message' => [[
+                            'code' => 'ERR.SP.BUSINESS_ERROR',
+                            'content' => 'PNR has not been created successfully, see remaining messages for details',
+                        ]],
+                    ]],
+                ]],
+                'Warning' => [[
+                    'SystemSpecificResults' => [[
+                        'Message' => [[
+                            'code' => 'WARN.SP.PROVIDER_ERROR',
+                            'content' => 'UpdateReservationRQ: NGHP.ERR.0767: Invalid room stay index. (Code: 1)',
+                        ]],
+                    ]],
+                ]],
+            ],
+        ]];
+        if ($locator !== null) {
+            $response['CreatePassengerNameRecordRS']['ItineraryRef'] = ['ID' => $locator];
+        }
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://travel.test/v4.0.0/hotel/pricecheck' => Http::response([
+                'HotelPriceCheckRS' => ['PriceCheckInfo' => [
+                    'BookingKey' => 'BOOK-123',
+                    'HotelRateInfo' => ['RateSource' => '100'],
+                ]],
+            ]),
+            'https://travel.test/v2.5.0/passenger/records?mode=create' => Http::response($response),
+        ]);
+        [$offer, $customer] = $this->offerAndCustomer();
+
+        try {
+            app(HotelOrderService::class)->create($offer, $customer, sendConfirmation: false);
+            $this->fail('An incomplete Sabre hotel reservation must not be confirmed.');
+        } catch (BookingCreationException $exception) {
+            $this->assertSame('supplier', $exception->stage);
+            $this->assertStringContainsString('NGHP.ERR.0767', $exception->getMessage());
+            $this->assertStringContainsString('Invalid room stay index', $exception->getMessage());
+            $this->assertStringNotContainsString('NGHP.ERR.0767', $exception->publicMessage);
+        }
+
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('bookings', 0);
+        $log = TravelLog::query()->where('stage', 'booking')->firstOrFail();
+        $this->assertSame('failed', $log->status);
+        $this->assertStringContainsString('NGHP.ERR.0767', $log->error_message);
+        $this->assertSame($response, $log->response_payload);
         Http::assertSentCount(2);
     }
 

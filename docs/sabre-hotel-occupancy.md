@@ -15,3 +15,13 @@ The website accepts ages 0–17 and displays 0 as “Under 1”. It sends 0 unch
 The v5 schema requires matching adult and child counts across requested rooms. The UI explains this constraint and labels each child's room. Ages are grouped in displayed room order; they are not repeated for every room. Different room occupancies require separate searches.
 
 Price check continues to use the opaque supplier `RateKey` that identifies the selected stay and occupancy. The flight-search payload is not changed by this hotel work.
+
+## CSL booking room indices
+
+The room index in CreatePassengerNameRecord v2.5 booking requests is a separate field from both the availability `Index` and the guest `Index`. Following [Sabre's CSL booking and multi-room guidance](https://developer.sabre.com/rest-api/create-passenger-name-record/2.3.0/help-documentation/createpassengernamerecordrq.html), each `CreatePassengerNameRecordRQ.HotelBook.Rooms.Room` object includes an integer `RoomIndex`, numbered from 1. A single-room booking still sends `RoomIndex: 1`.
+
+The booking builder emits one room object per requested room, with sequential indices and the supplied lead guest. `NumberOfRooms` matches the emitted room count. The supplier BookingKey is passed through unchanged; this does not re-price the stay or change its selected occupancy.
+
+Sabre may return an unsuccessful `ApplicationResults` inside an HTTP-success response. Incomplete/NotProcessed responses and explicit application errors must not create a confirmed local order, even if a locator is included. The full saved response and its error/warning messages remain available to authorised staff in operational logs; the public checkout keeps its safe payment-under-review message. A completed response containing informational warnings is not rejected solely for having warnings.
+
+The room-index regression was identified from `NGHP.ERR.0767: Invalid room stay index`. Tests use fake HTTP responses only. This fix does not automatically retry paid attempts, charge customers, or create supplier reservations; a fresh certification booking is still required to establish supplier acceptance.

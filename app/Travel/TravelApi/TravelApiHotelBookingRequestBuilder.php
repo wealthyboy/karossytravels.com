@@ -40,7 +40,7 @@ final class TravelApiHotelBookingRequestBuilder
     }
 
     /**
-     * @param array<string, mixed> $priceCheckResponse
+     * @param  array<string, mixed>  $priceCheckResponse
      * @return array<string, mixed>
      */
     public function booking(
@@ -136,7 +136,7 @@ final class TravelApiHotelBookingRequestBuilder
      * The supplier is the source of truth for the final booking contract and
      * will return an authoritative error if a guarantee/FOP is required.
      *
-     * @param array<string, mixed> $priceCheckResponse
+     * @param  array<string, mixed>  $priceCheckResponse
      */
     public function assertBookable(array $priceCheckResponse): void
     {
@@ -164,6 +164,47 @@ final class TravelApiHotelBookingRequestBuilder
     }
 
     /** @param array<string, mixed> $response */
+    public function assertBookingSucceeded(array $response): void
+    {
+        $results = data_get($response, 'CreatePassengerNameRecordRS.ApplicationResults')
+            ?? data_get($response, 'ApplicationResults');
+        if (! is_array($results)) {
+            return;
+        }
+
+        $status = trim((string) ($results['status'] ?? ''));
+        if (($status === '' || strcasecmp($status, 'Complete') === 0) && empty($results['Error'])) {
+            // Sabre may attach informational warnings to a completed booking.
+            return;
+        }
+
+        // CPNR can return HTTP 200 with an Incomplete/NotProcessed result. Its
+        // warnings contain the downstream reason (for example NGHP.ERR.0767),
+        // so preserve them instead of replacing the cause with "no locator".
+        $messages = [];
+        foreach (['Error', 'Warning'] as $kind) {
+            foreach (data_get($results, $kind.'.*.SystemSpecificResults.*.Message.*', []) as $message) {
+                if (! is_array($message)) {
+                    continue;
+                }
+                $code = trim((string) ($message['code'] ?? ''));
+                $content = trim((string) ($message['content'] ?? ''));
+                $text = trim(($code !== '' ? $code.': ' : '').$content);
+                if ($text !== '') {
+                    $messages[] = $text;
+                }
+            }
+        }
+
+        $reason = implode(' | ', array_unique($messages));
+        throw new RuntimeException(
+            'The hotel supplier did not complete the reservation'
+            .($status !== '' ? ' ('.$status.')' : '')
+            .($reason !== '' ? ': '.$reason : '.'),
+        );
+    }
+
+    /** @param array<string, mixed> $response */
     public function locator(array $response): string
     {
         foreach ([
@@ -188,7 +229,7 @@ final class TravelApiHotelBookingRequestBuilder
     }
 
     /**
-     * @param array<string, mixed> $priceCheckResponse
+     * @param  array<string, mixed>  $priceCheckResponse
      * @return array<string, mixed>
      */
     private function hotelBook(HotelOffer $offer, Customer $customer, string $bookingKey, array $priceCheckResponse, ?string $specialRequests): array
@@ -204,13 +245,22 @@ final class TravelApiHotelBookingRequestBuilder
             'Contact' => $phone ? ['Mobile' => $phone] : null,
         ], fn (mixed $value): bool => $value !== null && $value !== '');
 
+        $numberOfRooms = max(1, (int) $offer->search->rooms);
+        $rooms = [];
+        for ($roomIndex = 1; $roomIndex <= $numberOfRooms; $roomIndex++) {
+            // CSL requires a room-level index, even for a single room. The
+            // guest's Index is a separate field and cannot identify the room.
+            $rooms[] = [
+                'RoomIndex' => $roomIndex,
+                'Guests' => ['Guest' => [$guest]],
+            ];
+        }
+
         $hotelBook = [
             'BookingInfo' => ['BookingKey' => $bookingKey],
             'Rooms' => [
-                'Room' => [[
-                    'Guests' => ['Guest' => [$guest]],
-                ]],
-                'NumberOfRooms' => max(1, (int) $offer->search->rooms),
+                'Room' => $rooms,
+                'NumberOfRooms' => $numberOfRooms,
             ],
             'bookGDSviaCSL' => true,
         ];
@@ -240,7 +290,7 @@ final class TravelApiHotelBookingRequestBuilder
      * requires a card and does not accept an agency/IATA guarantee, fail before
      * a local booking is marked confirmed.
      *
-     * @param array<string, mixed> $priceCheckResponse
+     * @param  array<string, mixed>  $priceCheckResponse
      * @return array<string, mixed>|null
      */
     private function paymentInformation(array $priceCheckResponse): ?array

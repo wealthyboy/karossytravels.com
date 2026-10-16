@@ -10,6 +10,8 @@ use App\Models\HotelOffer;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\User;
+use App\Travel\TravelApi\TravelApiClient;
+use App\Travel\TravelApi\TravelApiHotelBookingRequestBuilder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
@@ -207,6 +209,80 @@ final class FrontendHotelSearchTest extends TestCase
             'gateway_reference' => $initialize->json('reference'),
         ]);
         $this->assertSame('987654321', (string) Payment::query()->firstOrFail()->metadata['transaction_id']);
+    }
+
+    public function test_incomplete_supplier_booking_keeps_payment_locked_and_does_not_resell_on_repeat_requests(): void
+    {
+        Mail::fake();
+        Http::preventStrayRequests();
+        config([
+            'travel.checkout.demo_payment_enabled' => true,
+            'services.travel.travel_api.auth_scheme' => 'bearer_token',
+            'services.travel.travel_api.access_token' => 'test-token',
+            'services.travel.travel_api.environment' => 'cert',
+            'services.travel.travel_api.cert_url' => 'https://travel.test',
+            'services.travel.travel_api.hotel_price_check_path' => '/v4.0.0/hotel/pricecheck',
+            'services.travel.travel_api.hotel_booking_path' => '/v2.5.0/passenger/records?mode=create',
+            'services.travel.travel_api.pcc' => 'TEST',
+            'services.travel.travel_api.iata_number' => '12345678',
+        ]);
+        app()->forgetInstance(TravelApiClient::class);
+        app()->forgetInstance(TravelApiHotelBookingRequestBuilder::class);
+        Http::fake([
+            'https://travel.test/v4.0.0/hotel/pricecheck' => Http::response([
+                'HotelPriceCheckRS' => ['PriceCheckInfo' => [
+                    'BookingKey' => 'BOOK-123',
+                    'HotelRateInfo' => ['RateSource' => '100'],
+                ]],
+            ]),
+            'https://travel.test/v2.5.0/passenger/records?mode=create' => Http::response([
+                'CreatePassengerNameRecordRS' => ['ApplicationResults' => [
+                    'status' => 'Incomplete',
+                    'Warning' => [['SystemSpecificResults' => [['Message' => [[
+                        'code' => 'WARN.SP.PROVIDER_ERROR',
+                        'content' => 'UpdateReservationRQ: NGHP.ERR.0767: Invalid room stay index. (Code: 1)',
+                    ]]]]]],
+                ]],
+            ]),
+        ]);
+        $criteria = [
+            'destination_code' => 'LOS', 'destination_label' => 'Lagos, Nigeria',
+            'check_in' => now()->addDays(14)->toDateString(), 'check_out' => now()->addDays(18)->toDateString(),
+            'adults' => 2, 'children' => 0, 'rooms' => 1, 'currency' => 'NGN', 'session_id' => (string) Str::uuid(),
+        ];
+        $this->get(route('hotels.results', $criteria))->assertOk();
+        $this->postJson(route('hotels.search.store'), $criteria)->assertOk();
+        $offer = HotelOffer::query()->firstOrFail();
+        $offer->update(['provider' => 'travel_api']);
+        $guest = [
+            'first_name' => 'Ada', 'last_name' => 'Okafor', 'email' => 'ada.hotel@example.test',
+            'phone_code' => '+234', 'phone' => '8000000000', 'terms' => '1',
+        ];
+
+        $response = $this->postJson(route('hotels.checkout.payment', $offer), $guest)
+            ->assertStatus(202)
+            ->assertJsonPath('error_code', 'HOTEL_RESERVATION_FAILED')
+            ->assertJsonPath('payment_confirmed', true)
+            ->assertJsonPath('booking_pending', true)
+            ->assertJsonPath('payment_locked', true);
+        $reference = $response->json('reference');
+        $this->assertStringNotContainsString('NGHP.ERR.0767', $response->json('message'));
+        $attempt = CheckoutPaymentAttempt::query()->firstOrFail();
+        $this->assertSame('paid', $attempt->status);
+        $this->assertSame('supplier', $attempt->failure_stage);
+        $this->assertStringContainsString('NGHP.ERR.0767', $attempt->failure_message);
+        $this->assertNotNull($attempt->reservation_attempted_at);
+
+        $this->postJson(route('hotels.checkout.verify', $offer), ['reference' => $reference])
+            ->assertStatus(202)->assertJsonPath('payment_locked', true);
+        $this->postJson(route('hotels.checkout.payment', $offer), $guest)
+            ->assertStatus(202)->assertJsonPath('reference', $reference);
+
+        $this->assertDatabaseCount('checkout_payment_attempts', 1);
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('bookings', 0);
+        Http::assertSentCount(3); // Two price checks and exactly one supplier booking.
+        Mail::assertNothingSent();
     }
 
     public function test_signed_hotel_webhook_is_reused_by_the_checkout_callback(): void

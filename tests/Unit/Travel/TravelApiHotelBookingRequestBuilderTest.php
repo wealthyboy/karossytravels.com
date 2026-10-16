@@ -34,6 +34,51 @@ final class TravelApiHotelBookingRequestBuilderTest extends TestCase
         $this->assertSame(['version', 'RateInfoRef'], array_keys(data_get($payload, 'HotelPriceCheckRQ')));
     }
 
+    public function test_completed_booking_allows_informational_warnings(): void
+    {
+        $response = ['CreatePassengerNameRecordRS' => [
+            'ApplicationResults' => [
+                'status' => 'Complete',
+                'Warning' => [['SystemSpecificResults' => [['Message' => [[
+                    'code' => 'WARN.SP.PROVIDER_WARNING',
+                    'content' => 'Informational supplier message.',
+                ]]]]]],
+            ],
+            'ItineraryRef' => ['ID' => 'HTL123'],
+        ]];
+        $builder = $this->builder();
+
+        $builder->assertBookingSucceeded($response);
+
+        $this->assertSame('HTL123', $builder->locator($response));
+    }
+
+    public function test_not_processed_result_is_rejected_even_without_error_details(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('NotProcessed');
+
+        $this->builder()->assertBookingSucceeded([
+            'CreatePassengerNameRecordRS' => ['ApplicationResults' => ['status' => 'NotProcessed']],
+        ]);
+    }
+
+    public function test_explicit_application_error_is_not_ignored_when_status_says_complete(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('ERR.SP.BUSINESS_ERROR: Reservation failed.');
+
+        $this->builder()->assertBookingSucceeded([
+            'CreatePassengerNameRecordRS' => ['ApplicationResults' => [
+                'status' => 'Complete',
+                'Error' => [['SystemSpecificResults' => [['Message' => [[
+                    'code' => 'ERR.SP.BUSINESS_ERROR',
+                    'content' => 'Reservation failed.',
+                ]]]]]],
+            ]],
+        ]);
+    }
+
     public function test_pay_later_booking_omits_payment_information(): void
     {
         $builder = $this->builder();
@@ -48,6 +93,43 @@ final class TravelApiHotelBookingRequestBuilderTest extends TestCase
         $this->assertArrayNotHasKey('PaymentInformation', $hotelBook);
         $this->assertTrue((bool) data_get($payload, 'CreatePassengerNameRecordRQ.haltOnHotelBookError'));
         $this->assertTrue((bool) data_get($payload, 'CreatePassengerNameRecordRQ.haltWhenNoHotelCF'));
+    }
+
+    public function test_csl_booking_has_a_room_index_separate_from_the_guest_index(): void
+    {
+        $payload = $this->builder()->booking(
+            $this->offer(), $this->customer(), 'BOOK-123', $this->priceCheckResponse(),
+        );
+        $rooms = data_get($payload, 'CreatePassengerNameRecordRQ.HotelBook.Rooms');
+
+        $this->assertSame(1, $rooms['NumberOfRooms']);
+        $this->assertCount(1, $rooms['Room']);
+        $this->assertSame(1, $rooms['Room'][0]['RoomIndex'] ?? null);
+        $this->assertSame(1, data_get($rooms, 'Room.0.Guests.Guest.0.Index'));
+        $this->assertTrue(data_get($payload, 'CreatePassengerNameRecordRQ.HotelBook.bookGDSviaCSL'));
+    }
+
+    public function test_every_booked_room_has_a_sequential_index_and_lead_guest(): void
+    {
+        $offer = $this->offer();
+        $offer->search->rooms = 3;
+        $offer->search->adults = 6;
+
+        $payload = $this->builder()->booking(
+            $offer, $this->customer(), 'BOOK-123', $this->priceCheckResponse(),
+        );
+        $rooms = data_get($payload, 'CreatePassengerNameRecordRQ.HotelBook.Rooms');
+
+        $this->assertSame(3, $rooms['NumberOfRooms']);
+        $this->assertCount(3, $rooms['Room']);
+        $this->assertSame([1, 2, 3], array_column($rooms['Room'], 'RoomIndex'));
+        foreach ($rooms['Room'] as $room) {
+            $this->assertSame(10, data_get($room, 'Guests.Guest.0.Type'));
+            $this->assertTrue(data_get($room, 'Guests.Guest.0.LeadGuest'));
+            $this->assertSame('Ada', data_get($room, 'Guests.Guest.0.FirstName'));
+            $this->assertSame('Okafor', data_get($room, 'Guests.Guest.0.LastName'));
+        }
+        $this->assertSame('BOOK-123', data_get($payload, 'CreatePassengerNameRecordRQ.HotelBook.BookingInfo.BookingKey'));
     }
 
     public function test_iata_guarantee_is_sent_when_the_supplier_accepts_it(): void
