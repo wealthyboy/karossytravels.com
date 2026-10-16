@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Support\SocialLinks;
+use App\Models\GeneralSetting;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class UpdateGeneralSettingRequest extends FormRequest
@@ -20,6 +21,12 @@ final class UpdateGeneralSettingRequest extends FormRequest
             'phone_numbers' => ['nullable', 'array', 'max:10'],
             'phone_numbers.*' => ['required', 'string', 'max:40', 'regex:/^\+?[0-9][0-9\s().-]{4,39}$/'],
             'whatsapp_number' => ['nullable', 'string', 'max:40', 'regex:/^\+?[0-9][0-9\s().-]{4,39}$/'],
+            'enquiry_emails' => ['nullable', 'array', 'max:10'],
+            'enquiry_emails.*' => ['required', 'email:rfc', 'max:254'],
+            'enquiry_cc_emails' => ['nullable', 'array', 'max:10'],
+            'enquiry_cc_emails.*' => ['required', 'email:rfc', 'max:254'],
+            'enquiry_bcc_emails' => ['nullable', 'array', 'max:10'],
+            'enquiry_bcc_emails.*' => ['required', 'email:rfc', 'max:254'],
             'social_links' => ['nullable', 'array:'.implode(',', array_keys(SocialLinks::platforms()))],
             'social_links.*' => ['nullable', 'string', 'max:2048', 'url:http,https', function ($attribute, $value, $fail): void {
                 if (! SocialLinks::isSafeUrl($value)) {
@@ -40,6 +47,22 @@ final class UpdateGeneralSettingRequest extends FormRequest
             $links = array_map(fn ($value) => is_string($value) ? trim($value) : $value, $links);
         }
         $this->merge(['phone_numbers' => $phones, 'social_links' => $links]);
+        foreach (['enquiry_emails', 'enquiry_cc_emails', 'enquiry_bcc_emails'] as $field) {
+            if (array_key_exists($field, $this->all()) && (is_string($this->input($field)) || $this->input($field) === null)) {
+                $emails = preg_split('/[\r\n,;]+/u', (string) $this->input($field)) ?: [];
+                $this->merge([$field => array_values(array_unique(array_filter(array_map(fn ($email) => strtolower(trim($email)), $emails))))]);
+            }
+        }
+    }
+
+    public function after(): array
+    {
+        return [function ($validator): void {
+            if (! $validator->errors()->has('whatsapp_number') && $this->filled('whatsapp_number')
+                && ! (new GeneralSetting(['whatsapp_number' => $this->input('whatsapp_number')]))->whatsappUrl()) {
+                $validator->errors()->add('whatsapp_number', 'Enter a valid WhatsApp phone number including the country code (7–15 digits).');
+            }
+        }];
     }
 
     public function attributes(): array

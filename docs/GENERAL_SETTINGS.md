@@ -9,8 +9,11 @@ connected to the public website; existing public names and contact information
 remain unchanged.
 
 Paste the full `https://` profile URL for each social platform. Saved links appear
-in the footer on every public page. Leave a link blank to hide its icon. No
-placeholder profiles are supplied, and changes take effect without a cache clear.
+in the footer on every public page. The original Facebook, Instagram, LinkedIn
+and YouTube icons remain visible even before URLs are entered; they become
+clickable when a URL is saved. Other platforms appear only when linked. Clearing
+a URL removes its link, while the four original icons remain. No guessed profile
+URLs or fake `#` links are supplied. Changes take effect without a cache clear.
 
 After deploying, apply the additive settings migration:
 

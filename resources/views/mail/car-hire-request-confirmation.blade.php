@@ -31,7 +31,7 @@
                                 </tr>
                             </table>
                             <p style="font-size:14px;line-height:1.7;color:#5f6877">This email acknowledges receipt of your request; your vehicle and booking are not yet confirmed.</p>
-                            <p style="font-size:14px;line-height:1.7;color:#5f6877">If you need to update your request, contact <a href="mailto:{{ config('travel.support.email') }}" style="color:#bf1e2e">{{ config('travel.support.email') }}</a> and quote the reference above.</p>
+                            <p style="font-size:14px;line-height:1.7;color:#5f6877">If you need to update your request, contact <a href="mailto:{{ $supportEmail }}" style="color:#bf1e2e">{{ $supportEmail }}</a> and quote the reference above.</p>
                             <p style="margin:24px 0 0;font-size:15px;line-height:1.7">Warm regards,<br><strong>The Karossy Car Hire Team</strong></p>
                         </td>
                     </tr>

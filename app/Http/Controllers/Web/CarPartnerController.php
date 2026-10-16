@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\PartnerEnquiry;
 use App\Support\TravelLogger;
+use App\Support\EnquiryMailDelivery;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -16,7 +19,7 @@ final class CarPartnerController extends Controller
         return view('cars.partners');
     }
 
-    public function store(Request $request, TravelLogger $logger): JsonResponse
+    public function store(Request $request, TravelLogger $logger, EnquiryMailDelivery $mail): JsonResponse|RedirectResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:160'],
@@ -29,9 +32,15 @@ final class CarPartnerController extends Controller
             'terms' => ['accepted'],
         ]);
         unset($data['terms']);
-        $enquiry = PartnerEnquiry::create([...$data, 'type' => 'driver', 'ip_address' => $request->ip(), 'user_agent' => mb_substr((string) $request->userAgent(), 0, 500)]);
-        $logger->record('car', 'partner_enquiry', null, ['city' => $enquiry->city, 'vehicle_type' => $enquiry->vehicle_type], ['reference' => $enquiry->id]);
+        $enquiry = DB::transaction(function () use ($data, $request, $logger): PartnerEnquiry {
+            $enquiry = PartnerEnquiry::create([...$data, 'type' => 'driver', 'ip_address' => $request->ip(), 'user_agent' => mb_substr((string) $request->userAgent(), 0, 500)]);
+            $logger->record('car', 'partner_enquiry', null, [], ['reference' => $enquiry->id]);
+            return $enquiry;
+        });
+        $mail->deliver($enquiry);
 
-        return response()->json(['message' => 'Thank you. Our partnership team will contact you shortly.', 'reference' => $enquiry->id], 201);
+        $message = 'Thank you. Our partnership team will contact you shortly.';
+        return $request->expectsJson() ? response()->json(['message' => $message, 'reference' => $enquiry->id], 201)
+            : redirect()->route('cars.partners')->with('partner_enquiry_received', $message.' Reference: '.$enquiry->id);
     }
 }

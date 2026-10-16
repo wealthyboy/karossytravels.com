@@ -49,6 +49,8 @@ use App\Http\Controllers\Web\ManageBookingController;
 use App\Http\Controllers\Web\PaystackWebhookController;
 use App\Http\Controllers\Web\VisaServiceController;
 use App\Http\Controllers\Web\ServiceEnquiryController;
+use App\Http\Controllers\Web\PublicEnquiryController;
+use App\Support\EnquiryForms;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
@@ -56,6 +58,16 @@ use Illuminate\Validation\Rule;
 Route::get('/', HomeController::class)->name('home');
 Route::get('/book-flights', fn () => redirect()->to(route('home', ['service' => 'flights']).'#travel-search', 301))->name('book-flights');
 Route::get('/book-hotels', fn () => redirect()->to(route('home', ['service' => 'hotels']).'#travel-search', 301))->name('book-hotels');
+Route::view('/about-karossy', 'pages.about')->name('about');
+
+foreach (EnquiryForms::pages() as $type => $page) {
+    if ($type !== 'study_abroad') {
+        Route::view($page['path'], 'pages.enquiry', [...$page, 'enquiryType' => $type])->name($page['route']);
+    }
+    Route::post($page['path'], [PublicEnquiryController::class, 'store'])->defaults('enquiry_type', $type)
+        ->middleware('throttle:8,1')->name($page['route'].'.store');
+}
+
 Route::get('/visas', [VisaServiceController::class, 'index'])->name('visas.index');
 Route::get('/visa-enquiry', [ServiceEnquiryController::class, 'visa'])->name('visas.enquiry');
 Route::post('/visa-enquiry', [ServiceEnquiryController::class, 'storeVisa'])->middleware('throttle:8,1')->name('visas.enquiry.store');
@@ -187,8 +199,10 @@ Route::prefix('admin')->name('admin.')->middleware('admin.hidden')->group(functi
     Route::get('/service-enquiries', [AdminServiceEnquiryController::class, 'index'])->middleware('permission:services.view')->name('service-enquiries.index');
     Route::get('/service-enquiries/{serviceEnquiry}', [AdminServiceEnquiryController::class, 'show'])->whereUuid('serviceEnquiry')->middleware('permission:services.view')->name('service-enquiries.show');
     Route::put('/service-enquiries/{serviceEnquiry}', [AdminServiceEnquiryController::class, 'update'])->whereUuid('serviceEnquiry')->middleware('permission:services.manage')->name('service-enquiries.update');
+    Route::post('/service-enquiries/{serviceEnquiry}/retry-email', [AdminServiceEnquiryController::class, 'retryEmail'])->whereUuid('serviceEnquiry')->middleware(['permission:services.manage', 'throttle:5,1'])->name('service-enquiries.retry-email');
     Route::get('/partner-enquiries/{partnerEnquiry}', [PartnerEnquiryController::class, 'show'])->middleware('permission:services.view')->name('partner-enquiries.show');
     Route::put('/partner-enquiries/{partnerEnquiry}', [PartnerEnquiryController::class, 'update'])->middleware('permission:services.manage')->name('partner-enquiries.update');
+    Route::post('/partner-enquiries/{partnerEnquiry}/retry-email', [PartnerEnquiryController::class, 'retryEmail'])->middleware(['permission:services.manage', 'throttle:5,1'])->name('partner-enquiries.retry-email');
     Route::resource('analytics/events', AnalyticsEventController::class)
         ->only(['index', 'show', 'destroy'])
         ->names(['index' => 'analytics.events.index', 'show' => 'analytics.events.show', 'destroy' => 'analytics.events.destroy'])

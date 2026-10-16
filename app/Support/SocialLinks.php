@@ -4,6 +4,8 @@ namespace App\Support;
 
 final class SocialLinks
 {
+    private const DEFAULT_FOOTER_PLATFORMS = ['facebook', 'instagram', 'linkedin', 'youtube'];
+
     public static function platforms(): array
     {
         return [
@@ -36,8 +38,10 @@ final class SocialLinks
         $result = [];
         foreach (self::platforms() as $key => $platform) {
             $url = $links[$key] ?? null;
-            if (self::isSafeUrl($url)) {
-                $result[] = ['key' => $key, 'url' => $url, 'label' => $platform['label'], 'icon' => $platform['icon']];
+            $safeUrl = self::isSafeUrl($url) ? $url : null;
+            // Preserve the original footer icons even before profile URLs are configured.
+            if ($safeUrl !== null || in_array($key, self::DEFAULT_FOOTER_PLATFORMS, true)) {
+                $result[] = ['key' => $key, 'url' => $safeUrl, 'label' => $platform['label'], 'icon' => $platform['icon']];
             }
         }
 

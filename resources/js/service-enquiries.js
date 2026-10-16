@@ -32,7 +32,7 @@ document.querySelectorAll('[data-service-enquiry]').forEach(form => {
         };
         ['hire_type', 'pickup_date', 'return_end_date', 'return_end_time'].forEach(name => field(name).addEventListener('change', updateReturn));
         updateReturn();
-    } else {
+    } else if (form.dataset.serviceEnquiry === 'visa_enquiry') {
         const options = JSON.parse(form.querySelector('[data-visa-enquiry-options]').textContent);
         const updatePurpose = () => {
             const purpose = field('purpose_of_travel').value;

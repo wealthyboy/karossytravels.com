@@ -6,6 +6,7 @@ use App\Models\ServiceEnquiry;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
+use App\Models\GeneralSetting;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -19,7 +20,7 @@ final class VisaEnquiryConfirmation extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            bcc: [new Address('willie.samson@karossytravels.com')],
+            replyTo: [new Address(GeneralSetting::current()->contact_email)],
             subject: "Visa enquiry received — {$this->enquiry->reference}",
         );
     }
@@ -29,6 +30,7 @@ final class VisaEnquiryConfirmation extends Mailable
         return new Content(
             view: 'mail.visa-enquiry-confirmation',
             text: 'mail.visa-enquiry-confirmation-text',
+            with: ['supportEmail' => GeneralSetting::current()->contact_email],
         );
     }
 }

@@ -10,4 +10,9 @@ final class PartnerEnquiry extends Model
     use HasUuids;
 
     protected $guarded = [];
+
+    protected function casts(): array
+    {
+        return ['email_delivery' => 'array'];
+    }
 }

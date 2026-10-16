@@ -8,7 +8,7 @@ Your request reference: {!! $enquiry->reference !!}
 
 This email acknowledges receipt of your request; your vehicle and booking are not yet confirmed.
 
-If you need to update your request, contact {!! config('travel.support.email') !!} and quote the reference above.
+If you need to update your request, contact {!! $supportEmail !!} and quote the reference above.
 
 Warm regards,
 The Karossy Car Hire Team

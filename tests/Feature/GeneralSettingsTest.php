@@ -54,15 +54,23 @@ final class GeneralSettingsTest extends TestCase
             $this->assertStringContainsString('href="https://www.instagram.com/karossy-example/"', $footer);
             $this->assertStringContainsString('aria-label="Karossy on Instagram"', $footer);
             $this->assertStringContainsString('rel="noopener noreferrer"', $footer);
-            $this->assertStringNotContainsString('title="YouTube"', $footer);
-            // This pass intentionally does not replace existing public contact/name displays.
-            $this->assertStringNotContainsString('hello@example.test', $footer);
+            $this->assertStringContainsString('role="img" aria-label="YouTube"', $footer);
+            $this->assertStringNotContainsString('aria-label="Karossy on YouTube"', $footer);
+            $this->assertStringContainsString('mailto:hello@example.test', $footer);
         }
     }
 
-    public function test_empty_social_settings_do_not_render_dead_placeholder_icons_or_write_a_row(): void
+    public function test_original_social_icons_remain_visible_before_settings_are_saved_without_fake_links_or_database_writes(): void
     {
-        $this->get(route('home'))->assertOk()->assertDontSee('class="public-footer-social"', false);
+        $html = $this->get(route('home'))->assertOk()->assertSee('class="public-footer-social"', false)->getContent();
+        preg_match('/<nav class="public-footer-social".*?<\/nav>/s', $html, $matches);
+        $this->assertArrayHasKey(0, $matches);
+        foreach (['Facebook', 'Instagram', 'LinkedIn', 'YouTube'] as $platform) {
+            $this->assertStringContainsString('role="img" aria-label="'.$platform.'"', $matches[0]);
+        }
+        $this->assertSame(4, substr_count($matches[0], '<span '));
+        $this->assertStringNotContainsString('<a ', $matches[0]);
+        $this->assertStringNotContainsString('href="#"', $matches[0]);
         $this->assertDatabaseCount('general_settings', 0);
     }
 
@@ -74,7 +82,8 @@ final class GeneralSettingsTest extends TestCase
         $values['social_links']['instagram'] = '';
         $this->put(route('admin.settings.general.update'), $values)->assertSessionHas('success');
         $this->get(route('home'))->assertOk()->assertDontSee('https://www.instagram.com/karossy-example/')
-            ->assertSee('https://www.facebook.com/karossy-example');
+            ->assertSee('https://www.facebook.com/karossy-example')
+            ->assertSee('role="img" aria-label="Instagram"', false);
         $this->assertDatabaseCount('general_settings', 1);
     }
 
@@ -86,7 +95,11 @@ final class GeneralSettingsTest extends TestCase
         $values['phone_numbers'] = '';
         $values['whatsapp_number'] = '';
         $this->put(route('admin.settings.general.update'), $values)->assertSessionHas('success');
-        $this->get(route('home'))->assertDontSee('class="public-footer-social"', false);
+        $this->get(route('home'))->assertSee('class="public-footer-social"', false)
+            ->assertSee('role="img" aria-label="Facebook"', false)
+            ->assertSee('role="img" aria-label="Instagram"', false)
+            ->assertSee('role="img" aria-label="LinkedIn"', false)
+            ->assertSee('role="img" aria-label="YouTube"', false);
         $this->assertSame([], GeneralSetting::current()->social_links);
         $this->assertSame([], GeneralSetting::current()->phone_numbers);
         $this->assertNull(GeneralSetting::current()->whatsapp_number);
@@ -135,7 +148,8 @@ final class GeneralSettingsTest extends TestCase
         $this->assertSame('sqlite', config('database.default'));
         $this->assertSame(':memory:', config('database.connections.sqlite.database'));
         Schema::drop('general_settings');
-        $this->get(route('home'))->assertOk()->assertDontSee('class="public-footer-social"', false);
+        $this->get(route('home'))->assertOk()->assertSee('class="public-footer-social"', false)
+            ->assertSee('role="img" aria-label="Facebook"', false);
     }
 
     public function test_footer_ignores_unsafe_or_unknown_links_even_if_written_directly_to_storage(): void
@@ -149,6 +163,22 @@ final class GeneralSettingsTest extends TestCase
         $this->assertCount(11, SocialLinks::platforms());
     }
 
+    public function test_additional_social_platforms_appear_only_when_linked_and_can_be_removed(): void
+    {
+        $this->assertSame(['facebook', 'instagram', 'linkedin', 'youtube'], array_column(SocialLinks::forFooter([]), 'key'));
+        $values = $this->values();
+        $values['social_links']['tiktok'] = 'https://www.tiktok.com/@karossy-example';
+        $this->actingAs($this->administrator())->put(route('admin.settings.general.update'), $values)->assertSessionHas('success');
+        $this->get(route('home'))->assertOk()->assertSee('href="https://www.tiktok.com/@karossy-example"', false)
+            ->assertSee('aria-label="Karossy on TikTok"', false);
+
+        $values['social_links']['tiktok'] = '';
+        $this->put(route('admin.settings.general.update'), $values)->assertSessionHas('success');
+        $this->get(route('home'))->assertOk()->assertDontSee('https://www.tiktok.com/@karossy-example')
+            ->assertDontSee('title="TikTok"', false)
+            ->assertSee('role="img" aria-label="YouTube"', false);
+    }
+
     private function administrator(): User
     {
         $user = User::factory()->create(['account_type' => 'admin']);
@@ -157,6 +187,49 @@ final class GeneralSettingsTest extends TestCase
         $user->roles()->attach($role);
 
         return $user;
+    }
+
+    public function test_notification_recipient_lists_are_validated_and_saved_from_admin(): void
+    {
+        $this->actingAs($this->administrator())->put(route('admin.settings.general.update'), [...$this->values(),
+            'enquiry_emails' => "Requests@example.test\nrequests@example.test; second@example.test",
+            'enquiry_cc_emails' => 'copy@example.test', 'enquiry_bcc_emails' => 'private@example.test',
+        ])->assertSessionHas('success');
+        $settings = GeneralSetting::current();
+        $this->assertSame(['requests@example.test', 'second@example.test'], $settings->enquiry_emails);
+        $this->assertSame(['copy@example.test'], $settings->enquiry_cc_emails);
+        $this->assertSame(['private@example.test'], $settings->enquiry_bcc_emails);
+        $this->get(route('admin.settings.general.edit'))->assertOk()->assertSee('Enquiry email delivery')->assertSee('private@example.test');
+        $this->get(route('home'))->assertDontSee('private@example.test')->assertDontSee('copy@example.test');
+        $this->put(route('admin.settings.general.update'), [...$this->values(), 'enquiry_emails' => 'invalid email', 'enquiry_bcc_emails' => ["bad\r\nBcc: victim@example.test"]])
+            ->assertSessionHasErrors(['enquiry_emails.0', 'enquiry_bcc_emails.0']);
+    }
+
+    public function test_copy_lists_can_be_cleared_and_recipients_are_deduplicated_across_headers(): void
+    {
+        $this->actingAs($this->administrator())->put(route('admin.settings.general.update'), [...$this->values(),
+            'enquiry_emails' => 'primary@example.test', 'enquiry_cc_emails' => 'primary@example.test; copy@example.test',
+            'enquiry_bcc_emails' => 'copy@example.test; private@example.test',
+        ])->assertSessionHas('success');
+        $this->assertSame(['to' => ['primary@example.test'], 'cc' => ['copy@example.test'], 'bcc' => ['private@example.test']], GeneralSetting::current()->enquiryRecipients());
+        $this->put(route('admin.settings.general.update'), [...$this->values(), 'enquiry_emails' => '', 'enquiry_cc_emails' => '', 'enquiry_bcc_emails' => ''])->assertSessionHas('success');
+        $this->assertSame(['to' => ['hello@example.test'], 'cc' => [], 'bcc' => []], GeneralSetting::current()->enquiryRecipients());
+    }
+
+    public function test_saved_whatsapp_number_overrides_environment_and_clearing_it_hides_the_button(): void
+    {
+        config(['travel.support.whatsapp' => '+2348000000000']);
+        $this->actingAs($this->administrator())->put(route('admin.settings.general.update'), $this->values())->assertSessionHas('success');
+        foreach (['home', 'contact', 'cars.hire', 'visas.enquiry', 'study-program'] as $page) {
+            $this->get(route($page))->assertOk()->assertSee('class="public-whatsapp-float"', false)
+                ->assertSee('https://wa.me/2347001234567', false)->assertDontSee('https://wa.me/2348000000000', false);
+        }
+        $this->put(route('admin.settings.general.update'), [...$this->values(), 'whatsapp_number' => ''])->assertSessionHas('success');
+        $this->get(route('home'))->assertDontSee('class="public-whatsapp-float"', false);
+        foreach (['123', '+000000000000000000', 'https://wa.me/2347001234567'] as $invalid) {
+            $this->put(route('admin.settings.general.update'), [...$this->values(), 'whatsapp_number' => $invalid])->assertSessionHasErrors('whatsapp_number');
+        }
+        $this->assertStringContainsString('right: calc(1.25rem + env(safe-area-inset-right', file_get_contents(resource_path('css/app.css')));
     }
 
     private function values(): array

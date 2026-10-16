@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Mail\CarHireRequestConfirmation;
 use App\Mail\VisaEnquiryConfirmation;
+use App\Mail\EnquiryTeamNotification;
 use App\Models\ServiceEnquiry;
 use App\Models\TravelLog;
 use App\Support\ServiceEnquirySubmission;
@@ -17,7 +18,7 @@ final class CarHireRequestConfirmationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_website_car_hire_submission_sends_one_confirmation_to_the_customer_with_the_requested_bcc(): void
+    public function test_website_car_hire_sends_a_private_confirmation_and_copies_the_team_notification(): void
     {
         Mail::fake();
 
@@ -26,13 +27,14 @@ final class CarHireRequestConfirmationTest extends TestCase
 
         Mail::assertSent(CarHireRequestConfirmation::class, function (CarHireRequestConfirmation $mail) use ($response, $enquiry): bool {
             return $mail->hasTo('customer@example.test')
-                && $mail->hasBcc('willie.samson@karossytravels.com')
+                && ! $mail->hasBcc('willie.samson@karossytravels.com')
                 && ! $mail->hasCc('willie.samson@karossytravels.com')
                 && $mail->enquiry->is($enquiry)
                 && $mail->enquiry->reference === $response->json('reference');
         });
-        Mail::assertSentCount(1);
+        Mail::assertSentCount(2);
         Mail::assertNothingQueued();
+        Mail::assertSent(EnquiryTeamNotification::class, fn ($mail) => $mail->hasBcc('willie.samson@karossytravels.com'));
     }
 
     public function test_non_javascript_form_submission_also_sends_a_confirmation(): void
@@ -43,8 +45,8 @@ final class CarHireRequestConfirmationTest extends TestCase
             ->assertRedirect(route('cars.hire'))->assertSessionHas('enquiry_received.reference');
 
         Mail::assertSent(CarHireRequestConfirmation::class, fn ($mail): bool => $mail->hasTo('customer@example.test')
-            && $mail->hasBcc('willie.samson@karossytravels.com'));
-        Mail::assertSentCount(1);
+            && ! $mail->hasBcc('willie.samson@karossytravels.com'));
+        Mail::assertSentCount(2);
     }
 
     public function test_mobile_car_hire_submission_uses_the_same_confirmation_without_changing_the_api_response(): void
@@ -54,9 +56,9 @@ final class CarHireRequestConfirmationTest extends TestCase
         $response = $this->postJson('/api/v1/enquiries/car-hire', $this->carData())->assertCreated();
 
         Mail::assertSent(CarHireRequestConfirmation::class, fn ($mail): bool => $mail->hasTo('customer@example.test')
-            && $mail->hasBcc('willie.samson@karossytravels.com')
+            && ! $mail->hasBcc('willie.samson@karossytravels.com')
             && $mail->enquiry->reference === $response->json('data.reference'));
-        Mail::assertSentCount(1);
+        Mail::assertSentCount(2);
         $this->assertSame(['reference', 'message'], array_keys($response->json('data')));
     }
 
@@ -94,17 +96,18 @@ final class CarHireRequestConfirmationTest extends TestCase
     public function test_a_mail_failure_does_not_lose_the_saved_request_or_log_customer_details(): void
     {
         Log::spy();
-        Mail::shouldReceive('to')->once()->with('customer@example.test', 'Test Customer')
+        Mail::shouldReceive('to')->twice()
             ->andThrow(new \RuntimeException('Provider response with customer@example.test'));
 
         $response = $this->postJson(route('cars.hire.store'), $this->carData())->assertCreated();
 
         $this->assertDatabaseCount('service_enquiries', 1);
         $this->assertDatabaseHas('service_enquiries', ['reference' => $response->json('reference'), 'status' => 'new']);
-        Log::shouldHaveReceived('warning')->once()->with('Car hire request confirmation email could not be sent.', [
-            'reference' => $response->json('reference'),
-            'exception_type' => \RuntimeException::class,
-        ]);
+        foreach (['customer', 'team'] as $channel) {
+            Log::shouldHaveReceived('warning')->with('Enquiry email delivery failed.', [
+                'reference' => $response->json('reference'), 'channel' => $channel, 'exception_type' => \RuntimeException::class,
+            ]);
+        }
     }
 
     public function test_confirmation_has_html_and_plain_text_content_and_keeps_bcc_private(): void
@@ -138,14 +141,16 @@ final class CarHireRequestConfirmationTest extends TestCase
 
         $this->postJson(route('cars.hire.store'), $this->carData())->assertCreated();
 
-        Http::assertSentCount(1);
+        Http::assertSentCount(2);
         Http::assertSent(fn ($request): bool => $request->url() === 'https://mail.example.test/email'
             && data_get($request->data(), 'to.0.email_address.address') === 'customer@example.test'
             && data_get($request->data(), 'to.0.email_address.name') === 'Test Customer'
-            && data_get($request->data(), 'bcc.0.email_address.address') === 'willie.samson@karossytravels.com'
+            && $request['bcc'] === []
             && $request['cc'] === []
             && str_contains($request['htmlbody'], 'We have received your request')
             && str_contains($request['textbody'], 'We have received your request'));
+        Http::assertSent(fn ($request) => data_get($request->data(), 'bcc.0.email_address.address') === 'willie.samson@karossytravels.com'
+            && data_get($request->data(), 'to.0.email_address.address') === config('travel.support.email'));
     }
 
     public function test_visa_enquiries_do_not_send_the_car_hire_email(): void
@@ -161,7 +166,7 @@ final class CarHireRequestConfirmationTest extends TestCase
         $this->assertDatabaseHas('service_enquiries', ['type' => 'visa_enquiry']);
         Mail::assertNotSent(CarHireRequestConfirmation::class);
         Mail::assertSent(VisaEnquiryConfirmation::class);
-        Mail::assertSentCount(1);
+        Mail::assertSentCount(2);
     }
 
     private function carData(): array

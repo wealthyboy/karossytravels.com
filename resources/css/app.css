@@ -2203,7 +2203,8 @@ main .h5 {
 .public-footer-contact a { align-items: center; color: rgba(255,255,255,.72); display: inline-flex; font-size: var(--small-font-size, .78rem); gap: .5rem; text-decoration: none; width: max-content; }
 .public-footer-contact a:hover { color: #fff; }
 .public-footer .public-footer-social { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: 1.25rem; }
-.public-footer .public-footer-social a { align-items: center; background: rgba(255,255,255,.08); border-radius: 50%; color: rgba(255,255,255,.75); display: inline-flex; flex: 0 0 2.35rem; height: 2.35rem; justify-content: center; text-decoration: none; width: 2.35rem; }
+.public-footer .public-footer-social > a,
+.public-footer .public-footer-social > span { align-items: center; background: rgba(255,255,255,.08); border-radius: 50%; color: rgba(255,255,255,.75); display: inline-flex; flex: 0 0 2.35rem; height: 2.35rem; justify-content: center; text-decoration: none; width: 2.35rem; }
 .public-footer .public-footer-social a:hover { background: rgba(255,255,255,.16); color: #fff; transform: none; }
 .public-footer .public-footer-social a:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 .public-footer h2 { color: #fff; font-size: .86rem; font-weight: 750; margin: .25rem 0 1.2rem; }
@@ -2213,7 +2214,7 @@ main .h5 {
 .public-footer-bottom { border-top: 1px solid rgba(255,255,255,.12); display: flex; font-size: var(--small-font-size, .78rem); justify-content: space-between; margin-top: 3.25rem; padding-top: 1.2rem; }
 .public-admin-float { align-items: center; background: var(--karossy-red); border-radius: .85rem 0 0 .85rem; box-shadow: 0 .7rem 1.8rem rgba(94,5,12,.25); color: #fff; display: inline-flex; font-size: var(--small-font-size, .78rem); font-weight: 700; gap: .5rem; padding: .8rem .9rem; position: fixed; right: 0; text-decoration: none; top: 48%; transform: translateY(-50%); transition: background-color .18s ease, padding-right .18s ease; z-index: 40; }
 .public-admin-float:hover { background: var(--karossy-red-dark); color: #fff; padding-right: 1.15rem; }
-.public-whatsapp-float { align-items: center; background: #25d366; border: 2px solid #fff; border-radius: 50%; bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)); box-shadow: 0 .8rem 2rem rgba(0,0,0,.2); color: #fff; display: flex; font-size: 1.55rem; height: 3.7rem; justify-content: center; left: calc(1.25rem + env(safe-area-inset-left, 0px)); position: fixed; text-decoration: none; transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease; width: 3.7rem; z-index: 60; }
+.public-whatsapp-float { align-items: center; background: #25d366; border: 2px solid #fff; border-radius: 50%; bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)); box-shadow: 0 .8rem 2rem rgba(0,0,0,.2); color: #fff; display: flex; font-size: 1.55rem; height: 3.7rem; justify-content: center; right: calc(1.25rem + env(safe-area-inset-right, 0px)); position: fixed; text-decoration: none; transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease; width: 3.7rem; z-index: 60; }
 .public-whatsapp-float:hover { background: #1fbd5a; box-shadow: 0 1rem 2.4rem rgba(0,0,0,.24); color: #fff; transform: translateY(-2px); }
 .public-whatsapp-float:focus-visible { outline: 3px solid rgba(37,211,102,.3); outline-offset: 3px; }
 

@@ -11,7 +11,7 @@
             <h1>Your education journey, carefully planned.</h1>
             <p>From choosing the right programme to visas, flights and arrival support, Karossy helps students and families coordinate every important step.</p>
             <div class="study-program-actions">
-                <a class="btn btn-karossy" href="mailto:{{ config('travel.support.email') }}?subject=Student%20Study%20Program%20Enquiry">Start an enquiry</a>
+                <a class="btn btn-karossy" href="#study-enquiry">Start an enquiry</a>
                 <a class="btn btn-outline-dark" href="mailto:{{ config('travel.support.email') }}?subject=Student%20Study%20Program%20Consultation">Speak to an adviser</a>
             </div>
         </div>
@@ -45,6 +45,12 @@
         <div><span>1</span><strong>Tell us your goal</strong><small>Share your preferred country, course, budget and timeline.</small></div>
         <div><span>2</span><strong>Receive a clear plan</strong><small>We outline the next steps, required documents and travel considerations.</small></div>
         <div><span>3</span><strong>Prepare and travel</strong><small>Our team supports the journey from preparation through arrival.</small></div>
+    </div>
+</section>
+
+<section class="enquiry-section pt-5" id="study-enquiry" aria-label="Study abroad enquiry">
+    <div class="container enquiry-container">
+        @include('partials.public-enquiry-form', ['formId' => 'study-enquiry-form', 'formTitle' => 'Study abroad enquiry', 'enquiryType' => 'study_abroad'])
     </div>
 </section>
 @endsection

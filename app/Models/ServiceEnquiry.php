@@ -9,10 +9,10 @@ final class ServiceEnquiry extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['reference', 'type', 'status', 'name', 'email', 'phone', 'details'];
+    protected $fillable = ['reference', 'type', 'status', 'name', 'email', 'phone', 'details', 'email_delivery'];
 
     protected function casts(): array
     {
-        return ['details' => 'encrypted:array'];
+        return ['details' => 'encrypted:array', 'email_delivery' => 'array'];
     }
 }

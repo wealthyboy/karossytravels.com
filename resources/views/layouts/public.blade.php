@@ -32,13 +32,7 @@
     $displayCurrency = app(\App\Travel\Pricing\DisplayCurrencyResolver::class)->resolve(request());
     $supportedCurrencies = config('travel.currency.public_supported', ['NGN', 'USD', 'GBP', 'EUR']);
     $serviceUrl = fn (string $service) => route($service === 'flights' ? 'book-flights' : ($service === 'hotels' ? 'book-hotels' : 'home'), $service === 'flights' || $service === 'hotels' ? [] : ['service' => $service]).'#travel-search';
-    $whatsappPhone = preg_replace('/\D+/', '', (string) config('travel.support.whatsapp'));
-    if ($whatsappPhone !== '' && str_starts_with($whatsappPhone, '0')) {
-        $whatsappPhone = '234'.substr($whatsappPhone, 1);
-    }
-    $whatsappUrl = $whatsappPhone !== ''
-        ? 'https://wa.me/'.$whatsappPhone.'?text='.rawurlencode('Hello Karossy Travels, I need help planning my trip.')
-        : null;
+    $whatsappUrl = $generalSettings->whatsappUrl();
 @endphp
 <header class="public-header">
     <nav class="navbar" aria-label="Main navigation">
@@ -147,12 +141,12 @@
             <div class="public-footer-brand-column">
                 <a class="public-footer-brand" href="{{ route('home') }}"><img class="public-footer-logo" src="{{ asset('karossy-logo-white.svg') }}" alt="Karossy Travels and Tours Limited" width="372" height="86"></a>
                 <p>Your trusted travel partner for flights, hotels, student travel, visas and carefully coordinated journeys.</p>
-                <div class="public-footer-contact"><a href="mailto:{{ config('travel.support.email') }}"><i class="bi bi-envelope"></i>{{ config('travel.support.email') }}</a>@if(config('travel.support.phone'))<a href="tel:{{ preg_replace('/\s+/', '', config('travel.support.phone')) }}"><i class="bi bi-telephone"></i>{{ config('travel.support.phone') }}</a>@endif</div>
+                <div class="public-footer-contact"><a href="mailto:{{ $generalSettings->contact_email }}"><i class="bi bi-envelope"></i>{{ $generalSettings->contact_email }}</a>@foreach($generalSettings->phone_numbers ?? [] as $phone)<a href="tel:{{ preg_replace('/[^+0-9]/', '', $phone) }}"><i class="bi bi-telephone"></i>{{ $phone }}</a>@endforeach</div>
                 @include('partials.footer-social-links')
             </div>
             <div><h2>Products</h2><nav><a href="{{ $serviceUrl('flights') }}">Flights</a><a href="{{ $serviceUrl('hotels') }}">Hotels</a><a href="{{ route('holidays.index') }}">Holiday packages</a><a href="{{ route('cars.hire') }}">Car hire</a><a href="{{ route('cars.partners') }}">Driver partners</a><a href="{{ route('visas.enquiry') }}">Visa enquiries</a><a href="{{ $serviceUrl('charter') }}">Charter flights</a><a href="{{ route('study-program') }}">Student Study Program</a></nav></div>
-            <div><h2>Support</h2><nav><a href="mailto:{{ config('travel.support.email') }}?subject=Karossy%20Help%20Request">Help centre</a><a href="mailto:{{ config('travel.support.email') }}?subject=Karossy%20Travel%20Enquiry">Contact us</a><a href="{{ route('manage-booking.index') }}">Manage booking</a>@auth<a href="{{ route('account.bookings.index') }}">My bookings</a>@endauth<a href="mailto:{{ config('travel.support.email') }}?subject=Cancellation%20Policy%20Enquiry">Cancellation support</a></nav></div>
-            <div><h2>Company</h2><nav><a href="{{ route('home') }}#about-karossy">About Karossy</a><a href="mailto:{{ config('travel.support.email') }}?subject=Business%20Travel%20Enquiry">Business travel</a><a href="mailto:{{ config('travel.support.email') }}?subject=Karossy%20Partnership%20Enquiry">Partner with us</a><a href="{{ route('study-program') }}">Study abroad</a><a href="mailto:{{ config('travel.support.email') }}?subject=Careers%20at%20Karossy">Careers</a></nav></div>
+            <div><h2>Support</h2><nav><a href="{{ route('help-centre') }}">Help centre</a><a href="{{ route('contact') }}">Contact us</a><a href="{{ route('manage-booking.index') }}">Manage booking</a>@auth<a href="{{ route('account.bookings.index') }}">My bookings</a>@endauth<a href="{{ route('cancellation-support') }}">Cancellation support</a></nav></div>
+            <div><h2>Company</h2><nav><a href="{{ route('about') }}">About Karossy</a><a href="{{ route('business-travel') }}">Business travel</a><a href="{{ route('partners') }}">Partner with us</a><a href="{{ route('study-program') }}#study-enquiry">Study abroad</a><a href="{{ route('careers') }}">Careers</a></nav></div>
         </div>
         <div class="public-footer-bottom"><span>© {{ date('Y') }} Karossy Travels and Tours Limited. All rights reserved.</span><span>IATA certified · Travel better. Travel confidently.</span></div>
     </div>

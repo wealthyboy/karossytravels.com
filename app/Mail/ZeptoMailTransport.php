@@ -57,10 +57,9 @@ final class ZeptoMailTransport extends AbstractTransport
         if ($response->failed()) {
             Log::error('ZeptoMail send failed.', [
                 'status'   => $response->status(),
-                'response' => $response->body(),
             ]);
 
-            throw new \RuntimeException('ZeptoMail API error ('.$response->status().'): '.$response->body());
+            throw new \RuntimeException('ZeptoMail API error ('.$response->status().').');
         }
     }
 

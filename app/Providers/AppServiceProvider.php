@@ -84,7 +84,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         View::composer('layouts.public', function (\Illuminate\View\View $view): void {
-            $view->with('footerSocialLinks', SocialLinks::forFooter(GeneralSetting::current()->social_links ?? []));
+            $settings = GeneralSetting::current();
+            $view->with('generalSettings', $settings)->with('footerSocialLinks', SocialLinks::forFooter($settings->social_links ?? []));
         });
         RateLimiter::for('login', fn (Request $request) => Limit::perMinute(5)->by(strtolower((string) $request->input('email')).'|'.$request->ip()));
         RateLimiter::for('registration', fn (Request $request) => Limit::perMinute(3)->by($request->ip()));

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\PartnerEnquiry;
 use App\Support\AuditLogger;
+use App\Support\EnquiryMailDelivery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -35,5 +36,13 @@ final class PartnerEnquiryController extends Controller
         $audit->record('partner_enquiry.updated', "Updated partner enquiry {$partnerEnquiry->id}.", $partnerEnquiry, $before, $partnerEnquiry->fresh()->toArray());
 
         return back()->with('success', 'Partner enquiry updated.');
+    }
+
+    public function retryEmail(PartnerEnquiry $partnerEnquiry, EnquiryMailDelivery $delivery, AuditLogger $audit): RedirectResponse
+    {
+        abort_unless(collect($partnerEnquiry->email_delivery ?? [])->contains(fn ($entry) => data_get($entry, 'state') === 'failed'), 422);
+        $delivery->deliver($partnerEnquiry);
+        $audit->record('partner_enquiry.email_retried', 'Retried failed driver enquiry email delivery.', $partnerEnquiry);
+        return back()->with('success', 'Failed email delivery retried. Check the delivery statuses below.');
     }
 }

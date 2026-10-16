@@ -8,7 +8,7 @@ Your enquiry reference: {!! $enquiry->reference !!}
 
 This email acknowledges receipt of your enquiry only; it is not a visa approval or confirmation that an application has been submitted.
 
-If you need to update your enquiry, contact {!! config('travel.support.email') !!} and quote the reference above.
+If you need to update your enquiry, contact {!! $supportEmail !!} and quote the reference above.
 
 Warm regards,
 The Karossy Visa Team
