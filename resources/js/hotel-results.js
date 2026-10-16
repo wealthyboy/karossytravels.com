@@ -11,8 +11,28 @@ if (page) {
     const modalElement = document.querySelector('#publicHotelSearchModal');
     const modal = Modal.getOrCreateInstance(modalElement);
     const status = modalElement.querySelector('[data-public-hotel-search-status]');
+    const progress = modalElement.querySelector('[data-public-hotel-progress]');
+    const phase = modalElement.querySelector('[data-public-search-phase]');
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
     let statusTimer = null;
+
+    const setSearchState = (state) => {
+        modalElement.classList.toggle('is-complete', state === 'complete');
+        modalElement.classList.toggle('is-error', state === 'error');
+        progress.removeAttribute('aria-valuenow');
+        progress.setAttribute('aria-valuetext', state === 'complete' ? 'Search complete' : (state === 'error' ? 'Search unavailable' : 'Searching live hotel availability'));
+        if (state === 'complete') progress.setAttribute('aria-valuenow', '100');
+        phase.textContent = state === 'complete' ? 'Search complete' : (state === 'error' ? 'Search unavailable' : 'Search in progress');
+    };
+
+    const closeSearchModal = async (startedAt) => {
+        if (statusTimer) window.clearInterval(statusTimer);
+        statusTimer = null;
+        // Let the opening transition finish even when a response is immediate.
+        const remaining = Math.max(0, 700 - (Date.now() - startedAt));
+        if (remaining) await new Promise(resolve => window.setTimeout(resolve, remaining));
+        modal.hide();
+    };
 
     const applyHotelFilters = () => {
         const shell = results.querySelector('[data-public-filter-shell]');
@@ -76,6 +96,7 @@ if (page) {
         results.classList.add('d-none');
         results.setAttribute('aria-busy', 'true');
         sort.classList.add('d-none');
+        setSearchState('loading');
         setLoadingCopy();
 
         try {
@@ -105,12 +126,14 @@ if (page) {
             sort.classList.toggle('d-none', propertyCount < 2);
             summary.textContent = `${propertyCount} live ${propertyCount === 1 ? 'property' : 'properties'} · ${offerCount} ${offerCount === 1 ? 'rate' : 'rates'} · Taxes and fees included`;
 
-            const minimumModalTime = Math.max(0, 700 - (Date.now() - startedAt));
-            if (minimumModalTime) await new Promise(resolve => window.setTimeout(resolve, minimumModalTime));
-            modal.hide();
+            setSearchState('complete');
+            status.textContent = 'Search complete. Your hotel options are ready.';
+            await closeSearchModal(startedAt);
             results.scrollIntoView({ behavior: 'smooth', block: 'start' });
         } catch (error) {
-            modal.hide();
+            setSearchState('error');
+            status.textContent = 'Search unavailable. Please try again.';
+            await closeSearchModal(startedAt);
             showError();
         } finally {
             if (statusTimer) window.clearInterval(statusTimer);
