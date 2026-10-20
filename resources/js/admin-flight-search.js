@@ -1,5 +1,6 @@
 import { Modal, Offcanvas } from 'bootstrap';
 import { majorAirports } from './airports';
+import { airlineLogoMarkup as renderAirlineLogo, handleAirlineLogoError } from './airline-logos';
 
 const page = document.querySelector('[data-admin-flight-search-page], [data-public-flight-results-page]');
 
@@ -60,8 +61,7 @@ if (page) {
     };
     const airportNames = Object.fromEntries(majorAirports.map(airport => [airport.code, `${airport.city}, ${airport.country}`]));
     const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[character]);
-    const airlineLogo = code => `https://pics.avs.io/80/80/${encodeURIComponent(String(code || '').toUpperCase())}.png`;
-    const airlineLogoMarkup = (code, compact = false) => `<span class="airline-logo-wrap ${compact ? 'compact' : ''}"><img src="${airlineLogo(code)}" alt="${escapeHtml(airlineNames[code] || code)} logo" loading="lazy" data-airline-logo><b>${escapeHtml(code || '—')}</b></span>`;
+    const airlineLogoMarkup = (code, compact = false) => renderAirlineLogo(code, airlineNames[String(code || '').toUpperCase()] || code, compact);
     const money = (minor, currency) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: currency || 'NGN', maximumFractionDigits: 0 }).format(Number(minor || 0) / 100);
     const time = (value) => new Intl.DateTimeFormat('en-NG', { hour: 'numeric', minute: '2-digit' }).format(new Date(value));
     const dateTime = (value) => new Intl.DateTimeFormat('en-NG', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(new Date(value));
@@ -435,7 +435,7 @@ if (page) {
             }
         });
         results.addEventListener('error', event => {
-            if (event.target.matches('[data-airline-logo]')) event.target.closest('.airline-logo-wrap')?.classList.add('is-missing');
+            handleAirlineLogoError(event.target);
         }, true);
         document.addEventListener('keydown', event => {
             if (event.key === 'Escape' && results.classList.contains('mobile-filters-open')) {
