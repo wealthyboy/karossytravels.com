@@ -10,6 +10,7 @@ test('leg labels are black and retain the requested compact font size', () => {
 });
 
 test('decorative airplane icons face opposite ways for departure and return', () => {
+    assert.match(css, /\.flight-leg-plane \{[^}]*color: #000;/);
     assert.ok(source.includes('bi bi-airplane-fill flight-leg-plane'));
     assert.ok(source.includes("${isReturn ? ' flight-leg-plane-return' : ''}"));
     assert.ok(source.includes('<small>${label}</small>'));

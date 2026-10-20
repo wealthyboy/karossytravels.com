@@ -43,12 +43,25 @@ test('a failed SVG retries the high-resolution PNG once, then shows the airline 
     handleAirlineLogoError({ matches: () => false });
 });
 
-test('logo sizing remains prominent and bounded, with a smaller filter-column variant', () => {
+test('logo sizing remains prominent and bounded, with a compact comparison variant', () => {
     const css = readFileSync(new URL('../../resources/css/app.css', import.meta.url), 'utf8');
     assert.match(css, /\.airline-logo-wrap \{[^}]*height: 3\.5rem;[^}]*width: 3\.5rem;/);
     assert.match(css, /\.airline-logo-wrap\.compact \{[^}]*height: 2\.5rem;[^}]*width: 3rem;/);
     assert.match(css, /\.airline-logo-wrap img \{[^}]*object-fit: contain;/);
-    assert.match(css, /\.flight-airline-filter-check \.airline-logo-wrap\.compact \{[^}]*width: 2rem;/);
+});
+
+test('airline filters show names without logos or a reserved logo column', () => {
+    const source = readFileSync(new URL('../../resources/js/admin-flight-search.js', import.meta.url), 'utf8');
+    const css = readFileSync(new URL('../../resources/css/app.css', import.meta.url), 'utf8');
+    const markup = source.match(/<label class="flight-filter-check flight-airline-filter-check">.*?<\/label>/)?.[0];
+    assert.ok(markup);
+    assert.ok(markup.includes('name="airlines"'));
+    assert.ok(markup.includes('escapeHtml(airlineNames[item.code] || item.code)'));
+    assert.ok(markup.includes('money(item.from, currency)'));
+    assert.ok(!markup.includes('airlineLogoMarkup'));
+    assert.ok(!markup.includes('<img'));
+    assert.ok(!css.includes('.flight-airline-filter-check {'));
+    assert.match(css, /\.flight-filter-check \{[^}]*grid-template-columns: 1rem minmax\(0,1fr\) auto;/);
 });
 
 test('Kenya Airways uses just its icon rather than the name-and-slogan wordmark', () => {
