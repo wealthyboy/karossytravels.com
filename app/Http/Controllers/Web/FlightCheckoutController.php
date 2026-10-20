@@ -21,6 +21,7 @@ use App\Travel\Exceptions\BookingCreationException;
 use App\Travel\Exceptions\CheckoutIdentityException;
 use App\Travel\FlightRevalidationService;
 use App\Travel\FlightTicketingService;
+use App\Travel\FlightPassportRequirements;
 use App\Travel\Pricing\DisplayCurrencyResolver;
 use App\Travel\Pricing\ExchangeRateService;
 use Illuminate\Http\JsonResponse;
@@ -69,6 +70,7 @@ final class FlightCheckoutController extends Controller
         return view('checkout.travellers', [
             ...$this->offerData($request, $offer->fresh(), $resolver, $rates),
             'types' => $this->passengerTypes($offer),
+            'requiresPassport' => app(FlightPassportRequirements::class)->requiredFor($offer),
             'customer' => $customer,
             'fareRules' => $rules,
             'addons' => $addons,

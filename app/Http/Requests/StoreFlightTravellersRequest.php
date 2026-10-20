@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\TravelOffer;
 use App\Support\PhoneCountryCodes;
+use App\Travel\FlightPassportRequirements;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -17,6 +19,9 @@ final class StoreFlightTravellersRequest extends FormRequest
 
     public function rules(): array
     {
+        $offer = $this->route('offer');
+        $requiresPassport = ! ($offer instanceof TravelOffer) || app(FlightPassportRequirements::class)->requiredFor($offer);
+
         return [
             'travellers' => ['required', 'array', 'min:1', 'max:9'],
             'travellers.*.type' => ['required', Rule::in(['ADT', 'CNN', 'INF'])],
@@ -27,9 +32,9 @@ final class StoreFlightTravellersRequest extends FormRequest
             'travellers.*.date_of_birth' => ['required', 'date', 'before:today'],
             'travellers.*.gender' => ['required', Rule::in(['male', 'female', 'unspecified'])],
             'travellers.*.nationality' => ['required', 'string', 'size:2'],
-            'travellers.*.passport_number' => ['required', 'alpha_num', 'min:5', 'max:30'],
-            'travellers.*.passport_country' => ['required', 'string', 'size:2'],
-            'travellers.*.passport_expiry' => ['required', 'date', 'after:today'],
+            'travellers.*.passport_number' => [Rule::excludeIf(! $requiresPassport), 'required', 'alpha_num', 'min:5', 'max:30'],
+            'travellers.*.passport_country' => [Rule::excludeIf(! $requiresPassport), 'required', 'string', 'size:2'],
+            'travellers.*.passport_expiry' => [Rule::excludeIf(! $requiresPassport), 'required', 'date', 'after:today'],
             'contact.email' => ['required', 'email:rfc', 'max:255'],
             'contact.phone_code' => ['required', 'string', 'regex:/^\+[0-9]{1,4}$/'],
             'contact.phone' => ['required', 'string', 'regex:/^[0-9 +()-]{7,24}$/'],

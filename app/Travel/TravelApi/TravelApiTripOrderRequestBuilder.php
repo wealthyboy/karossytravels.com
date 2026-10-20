@@ -41,7 +41,7 @@ final class TravelApiTripOrderRequestBuilder
                 'genderCode' => match ($traveller['gender']) { 'male' => 'M', 'female' => 'F', default => 'U' },
                 'givenName' => strtoupper(trim($traveller['first_name'].' '.($traveller['middle_name'] ?? ''))),
                 'surname' => strtoupper($traveller['last_name']),
-                'identityDocuments' => [[
+                ...(! empty($traveller['passport_number']) ? ['identityDocuments' => [[
                     'documentNumber' => strtoupper($traveller['passport_number']),
                     'documentTypeCode' => 'PT',
                     'issuingCountryCode' => strtoupper($traveller['passport_country']),
@@ -51,7 +51,7 @@ final class TravelApiTripOrderRequestBuilder
                     'surname' => strtoupper($traveller['last_name']),
                     'birthdate' => $traveller['date_of_birth'],
                     'genderCode' => match ($traveller['gender']) { 'male' => 'M', 'female' => 'F', default => 'U' },
-                ]],
+                ]]] : []),
             ])->all(),
         ];
     }

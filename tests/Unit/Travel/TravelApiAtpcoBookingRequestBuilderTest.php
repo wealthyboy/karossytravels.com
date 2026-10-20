@@ -64,5 +64,6 @@ final class TravelApiAtpcoBookingRequestBuilderTest extends TestCase
         $payload = (new TravelApiAtpcoBookingRequestBuilder)->build($offer, $customer, $travellers);
 
         $this->assertSame('730', $payload['flightDetails']['flights'][0]['flightNumber']);
+        $this->assertArrayNotHasKey('identityDocuments', $payload['travelers'][0]);
     }
 }

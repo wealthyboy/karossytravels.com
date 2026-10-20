@@ -8,5 +8,7 @@
             @endforeach
         </select>
     </label>
-    <input type="hidden" name="travellers[{{ $index }}][passport_country]" value="{{ old("travellers.$index.passport_country", old("travellers.$index.nationality", 'NG')) }}" data-passport-country="{{ $index }}">
+    @if($requiresPassport ?? true)
+        <input type="hidden" name="travellers[{{ $index }}][passport_country]" value="{{ old("travellers.$index.passport_country", old("travellers.$index.nationality", 'NG')) }}" data-passport-country="{{ $index }}">
+    @endif
 </div>

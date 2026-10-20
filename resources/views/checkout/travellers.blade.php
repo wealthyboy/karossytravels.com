@@ -10,7 +10,7 @@
 <section class="booking-page" data-flight-checkout-page data-demo-payment="{{ $demoPaymentEnabled ? 'true' : 'false' }}"><div class="container public-container">
     <a href="{{ route('flights.review', $offer) }}" class="checkout-mobile-back checkout-mobile-back-top d-lg-none"><i class="bi bi-arrow-left"></i> Back</a>
     @include('checkout._progress', ['step' => 1])
-    <div class="booking-heading"><span class="public-eyebrow">Complete your booking</span><h1>Traveller details and payment</h1><p>Enter every name exactly as it appears on the passport, review the total and pay securely on this page.</p></div>
+    <div class="booking-heading"><span class="public-eyebrow">Complete your booking</span><h1>Traveller details and payment</h1><p>Enter every name exactly as it appears on {{ $requiresPassport ? 'the passport' : 'your travel identification' }}, review the total and pay securely on this page.</p></div>
 
     @guest
         <div class="checkout-signin-prompt"><span><i class="bi bi-person-check"></i></span><div><strong>Sign in or create an account for a better travel experience</strong><p>Save your details, find this trip easily in My bookings and receive important travel updates. You can still continue as a guest.</p></div><button class="btn btn-outline-dark" type="button" data-bs-toggle="modal" data-bs-target="#checkoutSignInModal">Sign in or sign up</button></div>
@@ -27,6 +27,7 @@
                 @php($typeLabel = $type === 'ADT' ? 'Adult' : ($type === 'CNN' ? 'Child' : 'Infant'))
                 <div class="booking-card traveller-card @if(!$loop->first) mt-1 @endif">
                     <div class="booking-card-title"><div><span class="traveller-number">{{ $index + 1 }}</span><div><h2>{{ $typeLabel }} traveller</h2><p>{{ $loop->first ? 'Primary passenger' : 'Passenger '.($index + 1) }}</p></div></div></div>
+                    @if($requiresPassport)
                     <div class="passport-scanner" data-passport-scanner>
                         <input class="visually-hidden" type="file" accept="image/*" data-passport-image>
                         <div class="passport-upload-icon" aria-hidden="true"><i class="bi bi-passport"></i></div>
@@ -39,17 +40,20 @@
                             <i class="bi bi-plus-lg"></i><span>Upload</span><span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
                         </button>
                     </div>
+                    @endif
                     <input type="hidden" name="travellers[{{ $index }}][type]" value="{{ $type }}">
                     <div class="row g-3">
                         <div class="col-md-2"><label class="form-label">Title</label><select name="travellers[{{ $index }}][title]" class="form-select @error("travellers.$index.title") is-invalid @enderror"><option value="">Select title</option>@foreach(['Mr','Mrs','Ms','Miss','Dr'] as $title)<option value="{{ $title }}" @selected(old("travellers.$index.title") === $title)>{{ $title }}</option>@endforeach</select></div>
-                        <div class="col-md-3"><label class="form-label">First name</label><input name="travellers[{{ $index }}][first_name]" value="{{ old("travellers.$index.first_name") }}" class="form-control @error("travellers.$index.first_name") is-invalid @enderror" autocomplete="given-name" placeholder="As on passport"></div>
-                        <div class="col-md-3"><label class="form-label">Middle name <span class="text-muted fw-normal">(optional)</span></label><input name="travellers[{{ $index }}][middle_name]" value="{{ old("travellers.$index.middle_name") }}" class="form-control @error("travellers.$index.middle_name") is-invalid @enderror" autocomplete="additional-name" placeholder="As on passport"></div>
-                        <div class="col-md-4"><label class="form-label">Last name</label><input name="travellers[{{ $index }}][last_name]" value="{{ old("travellers.$index.last_name") }}" class="form-control @error("travellers.$index.last_name") is-invalid @enderror" autocomplete="family-name" placeholder="As on passport"></div>
+                        <div class="col-md-3"><label class="form-label">First name</label><input name="travellers[{{ $index }}][first_name]" value="{{ old("travellers.$index.first_name") }}" class="form-control @error("travellers.$index.first_name") is-invalid @enderror" autocomplete="given-name" placeholder="{{ $requiresPassport ? 'As on passport' : 'As on identification' }}"></div>
+                        <div class="col-md-3"><label class="form-label">Middle name <span class="text-muted fw-normal">(optional)</span></label><input name="travellers[{{ $index }}][middle_name]" value="{{ old("travellers.$index.middle_name") }}" class="form-control @error("travellers.$index.middle_name") is-invalid @enderror" autocomplete="additional-name" placeholder="{{ $requiresPassport ? 'As on passport' : 'As on identification' }}"></div>
+                        <div class="col-md-4"><label class="form-label">Last name</label><input name="travellers[{{ $index }}][last_name]" value="{{ old("travellers.$index.last_name") }}" class="form-control @error("travellers.$index.last_name") is-invalid @enderror" autocomplete="family-name" placeholder="{{ $requiresPassport ? 'As on passport' : 'As on identification' }}"></div>
                         <div class="col-md-4"><label class="form-label">Date of birth</label><input name="travellers[{{ $index }}][date_of_birth]" value="{{ old("travellers.$index.date_of_birth") }}" class="form-control @error("travellers.$index.date_of_birth") is-invalid @enderror" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" data-checkout-date-of-birth data-traveller-type="{{ $type }}" data-max-date="{{ $type === 'ADT' ? now()->subYears(18)->toDateString() : now()->subDay()->toDateString() }}"></div>
                         <div class="col-md-4"><label class="form-label">Gender</label><select name="travellers[{{ $index }}][gender]" class="form-select @error("travellers.$index.gender") is-invalid @enderror"><option value="">Select</option>@foreach(['male'=>'Male','female'=>'Female','unspecified'=>'Unspecified'] as $value=>$label)<option value="{{ $value }}" @selected(old("travellers.$index.gender") === $value)>{{ $label }}</option>@endforeach</select></div>
                         @include('checkout._nationality')
+                        @if($requiresPassport)
                         <div class="col-md-4"><label class="form-label">Passport number</label><input name="travellers[{{ $index }}][passport_number]" value="{{ old("travellers.$index.passport_number") }}" class="form-control text-uppercase @error("travellers.$index.passport_number") is-invalid @enderror" autocomplete="off" placeholder="A00000000"></div>
                         <div class="col-md-4"><label class="form-label">Passport expiry</label><input name="travellers[{{ $index }}][passport_expiry]" value="{{ old("travellers.$index.passport_expiry") }}" class="form-control @error("travellers.$index.passport_expiry") is-invalid @enderror" type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/yyyy" data-checkout-passport-expiry></div>
+                        @endif
                     </div>
                 </div>
             @endforeach
@@ -145,6 +149,7 @@
 @unless($demoPaymentEnabled)<script src="https://js.paystack.co/v2/inline.js"></script>@endunless
 <script>
 (() => {
+    const requiresPassport = @json($requiresPassport);
     const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content || '';
     const clearErrors = form => {
         form.querySelectorAll('.is-invalid').forEach(field => field.classList.remove('is-invalid'));
@@ -170,9 +175,9 @@
         const field = travellerMatch?.[2] || name;
         const labels = {
             title: 'Select a title',
-            first_name: 'Enter the first name exactly as shown on the passport',
+            first_name: `Enter the first name exactly as shown on ${requiresPassport ? 'the passport' : 'your identification'}`,
             middle_name: 'Enter the middle name using letters, spaces, apostrophes or hyphens only',
-            last_name: 'Enter the last name exactly as shown on the passport',
+            last_name: `Enter the last name exactly as shown on ${requiresPassport ? 'the passport' : 'your identification'}`,
             date_of_birth: 'Enter a valid date of birth',
             gender: 'Select a gender',
             nationality: 'Select a nationality',
@@ -216,15 +221,15 @@
             const value = field => String(form.elements.namedItem(`travellers[${index}][${field}]`)?.value || '').trim();
             if (!value('title')) errors[`travellers.${index}.title`] = [`Select a title for traveller ${index + 1}.`];
             ['first_name', 'last_name'].forEach(field => {
-                if (!namePattern.test(value(field))) errors[`travellers.${index}.${field}`] = ['Use letters, spaces, apostrophes or hyphens exactly as shown on the passport.'];
+                if (!namePattern.test(value(field))) errors[`travellers.${index}.${field}`] = [`Use letters, spaces, apostrophes or hyphens exactly as shown on ${requiresPassport ? 'the passport' : 'your identification'}.`];
             });
-            if (value('middle_name') && !namePattern.test(value('middle_name'))) errors[`travellers.${index}.middle_name`] = ['Use letters, spaces, apostrophes or hyphens exactly as shown on the passport.'];
-            ['gender', 'nationality', 'passport_number', 'passport_country'].forEach(field => {
+            if (value('middle_name') && !namePattern.test(value('middle_name'))) errors[`travellers.${index}.middle_name`] = [`Use letters, spaces, apostrophes or hyphens exactly as shown on ${requiresPassport ? 'the passport' : 'your identification'}.`];
+            ['gender', 'nationality', ...(requiresPassport ? ['passport_number', 'passport_country'] : [])].forEach(field => {
                 if (!value(field)) errors[`travellers.${index}.${field}`] = ['This field is required.'];
             });
             if (!value('date_of_birth') || value('date_of_birth') >= today) errors[`travellers.${index}.date_of_birth`] = ['Enter a valid date of birth before today.'];
             else if (value('type') === 'ADT' && value('date_of_birth') > adultCutoffValue) errors[`travellers.${index}.date_of_birth`] = ['Adult travellers must be at least 18 years old on the booking date.'];
-            if (!value('passport_expiry') || value('passport_expiry') <= today) errors[`travellers.${index}.passport_expiry`] = ['Passport expiry must be after today.'];
+            if (requiresPassport && (!value('passport_expiry') || value('passport_expiry') <= today)) errors[`travellers.${index}.passport_expiry`] = ['Passport expiry must be after today.'];
         });
         const email = String(form.elements.namedItem('contact[email]')?.value || '').trim();
         const phone = String(form.elements.namedItem('contact[phone]')?.value || '').trim();
