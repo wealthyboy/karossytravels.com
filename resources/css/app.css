@@ -1329,15 +1329,14 @@ main .h5 {
 .flight-compact-card .flight-card-airline > span:last-child { flex: 1; }
 .flight-compact-card .flight-card-airline strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .flight-compact-itinerary { border-left: 1px solid #e4e9f1; display: grid; gap: .35rem; padding-left: .75rem; }
-.flight-compact-leg { align-items: center; display: grid; gap: .75rem; grid-template-columns: 4.5rem minmax(10rem, 1.2fr) minmax(8rem, .85fr); }
-.flight-compact-leg > small { align-items: center; color: #000; display: inline-flex; font-size: var(--small-font-size, .7rem); font-weight: 800; gap: .3rem; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
-.flight-leg-plane { display: inline-block; flex: 0 0 auto; font-size: .85rem; line-height: 1; transform: rotate(90deg); }
-.flight-leg-plane-return { transform: rotate(-90deg); }
+.flight-compact-leg { align-items: center; display: grid; gap: .75rem; grid-template-columns: 3.2rem minmax(10rem, 1.2fr) minmax(8rem, .85fr); }
+.flight-compact-leg > small { color: #000; font-size: var(--small-font-size, .7rem); font-weight: 800; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.flight-leg-plane { align-items: center; background: #fff; color: var(--karossy-red); display: inline-flex; font-size: .85rem; height: 1.25rem; justify-content: center; left: 50%; line-height: 1; position: absolute; top: 50%; transform: translate(-50%, -50%) rotate(90deg); width: 1.25rem; }
+.flight-leg-plane-return { transform: translate(-50%, -50%) rotate(-90deg); }
 .flight-compact-times { align-items: center; display: grid; gap: .5rem; grid-template-columns: auto minmax(2.5rem, 1fr) auto; }
 .flight-compact-times strong { color: #101828; font-size: .85rem; white-space: nowrap; }
-.flight-compact-times i { border-top: 2px solid #9fb0c6; position: relative; }
-.flight-compact-times i::after { background: #fff; border: 2px solid var(--karossy-navy); border-radius: 50%; content: ''; height: .42rem; position: absolute; right: -.05rem; top: -.28rem; width: .42rem; }
-.flight-compact-times i.has-stop::before { background: var(--karossy-red); border: 2px solid #fff; border-radius: 50%; content: ''; height: .46rem; left: 50%; position: absolute; top: -.3rem; width: .46rem; }
+.flight-compact-line { background: #9fb0c6; height: 2px; position: relative; }
+.flight-compact-line::after { background: #fff; border: 2px solid var(--karossy-navy); border-radius: 50%; content: ''; height: .42rem; position: absolute; right: -.05rem; top: 50%; transform: translateY(-50%); width: .42rem; }
 .flight-compact-route span, .flight-compact-route em { display: block; line-height: 1.3; }
 .flight-compact-route span { color: #53657d; font-size: var(--small-font-size, .78rem); font-weight: 700; }
 .flight-compact-route em { color: #147a45; font-size: var(--small-font-size, .7rem); font-style: normal; margin-top: .12rem; }
@@ -1715,7 +1714,7 @@ main .h5 {
     .flight-compact-footer { display: contents; }
     .flight-compact-card .flight-card-airline { align-items: center; flex-direction: row; gap: .6rem; order: 1; padding: .5rem .75rem 0; }
     .flight-compact-itinerary { border-left: 0; border-top: 1px solid #e4e9f1; margin: .4rem .75rem 0; order: 2; padding: .5rem 0 0; }
-    .flight-compact-leg { grid-template-columns: 4.5rem minmax(8rem, 1fr); }
+    .flight-compact-leg { grid-template-columns: 3.2rem minmax(8rem, 1fr); }
     .flight-compact-route { grid-column: 2; }
     .flight-compact-footer .flight-card-benefits { background: #f8fafc; border-top: 1px solid #e6ebf2; margin-top: .85rem; order: 3; padding: .85rem 1rem; }
     .flight-compact-card .flight-card-price { grid-column: auto; margin: 0 1rem .85rem; order: 4; }

@@ -12,15 +12,18 @@ test('leg labels are black and retain the requested compact font size', () => {
 test('decorative airplane icons face opposite ways for departure and return', () => {
     assert.ok(source.includes('bi bi-airplane-fill flight-leg-plane'));
     assert.ok(source.includes("${isReturn ? ' flight-leg-plane-return' : ''}"));
-    assert.ok(source.includes('aria-hidden="true"></i><span>${label}</span>'));
-    assert.match(css, /\.flight-leg-plane \{[^}]*transform: rotate\(90deg\);/);
-    assert.match(css, /\.flight-leg-plane-return \{[^}]*transform: rotate\(-90deg\);/);
+    assert.ok(source.includes('<small>${label}</small>'));
+    assert.ok(source.includes('<span class="flight-compact-line" aria-hidden="true"><i class="bi bi-airplane-fill flight-leg-plane'));
+    assert.match(css, /\.flight-leg-plane \{[^}]*transform: translate\(-50%, -50%\) rotate\(90deg\);/);
+    assert.match(css, /\.flight-leg-plane-return \{[^}]*transform: translate\(-50%, -50%\) rotate\(-90deg\);/);
     assert.ok(source.includes("const isReturn = criteria.trip_type === 'round_trip' && index === 1;"));
 });
 
-test('both desktop and mobile reserve room for icon and label together', () => {
+test('airplanes are centered on the timeline, not beside the compact labels', () => {
     const columns = [...css.matchAll(/\.flight-compact-leg \{[^}]*grid-template-columns: ([^;]+);/g)];
     assert.ok(columns.length >= 2);
-    for (const [, value] of columns) assert.ok(value.startsWith('4.5rem '));
-    assert.match(css, /\.flight-compact-leg > small \{[^}]*display: inline-flex;[^}]*white-space: nowrap;/);
+    for (const [, value] of columns) assert.ok(value.startsWith('3.2rem '));
+    assert.match(css, /\.flight-leg-plane \{[^}]*left: 50%;[^}]*position: absolute;[^}]*top: 50%;/);
+    assert.match(css, /\.flight-compact-line \{[^}]*position: relative;/);
+    assert.ok(!css.includes('.flight-compact-times i.has-stop::before'));
 });
