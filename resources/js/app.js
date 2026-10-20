@@ -2,7 +2,10 @@ import './bootstrap';
 import * as bootstrap from 'bootstrap';
 import flatpickr from 'flatpickr';
 import { searchAirports } from './airports';
+import { createNavigationSubmitState } from './navigation-submit-state';
 import './admin-flight-search';
+
+const navigationSubmitState = createNavigationSubmitState(window);
 
 document.addEventListener('click', event => {
     const openButton = event.target.closest('[data-open-public-filters]');
@@ -544,8 +547,7 @@ document.querySelectorAll('[data-hotel-search]').forEach((hotelSearch) => {
             return;
         }
         const submit = hotelSearch.querySelector('.hotel-search-submit');
-        submit.disabled = true;
-        submit.querySelector('.spinner-border')?.classList.remove('d-none');
+        navigationSubmitState.start(submit);
     });
 });
 
@@ -926,8 +928,7 @@ document.querySelectorAll('[data-flight-search]').forEach((searchRoot) => {
             }
 
             const submit = form.querySelector('.flight-search-submit');
-            submit.disabled = true;
-            submit.querySelector('.spinner-border')?.classList.remove('d-none');
+            navigationSubmitState.start(submit);
             const target = new URL(form.getAttribute('action'), window.location.origin);
             target.search = new URLSearchParams(new FormData(form)).toString();
             window.location.assign(target.toString());
