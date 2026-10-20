@@ -201,7 +201,9 @@ if (page) {
         const legRows = legs.map((leg, index) => {
             const details = legSummary(leg);
             const connectionAirports = leg.slice(0, -1).map(segment => segment.destination).filter(Boolean);
-            return `<div class="flight-compact-leg"><small>${index === 0 ? 'Depart' : index === 1 ? 'Return' : `Leg ${index + 1}`}</small><div class="flight-compact-times"><strong>${time(details.first.departure_at)}</strong><i class="${details.stops ? 'has-stop' : ''}"></i><strong>${time(details.last.arrival_at)}</strong></div><div class="flight-compact-route"><span>${escapeHtml(details.first.origin)} → ${escapeHtml(details.last.destination)}</span><em>${duration(details.elapsed)} · ${stopLabel(details.stops)}${connectionAirports.length ? ` via ${escapeHtml(connectionAirports.join(', '))}` : ''}</em></div></div>`;
+            const isReturn = criteria.trip_type === 'round_trip' && index === 1;
+            const label = index === 0 ? 'Depart' : isReturn ? 'Return' : `Leg ${index + 1}`;
+            return `<div class="flight-compact-leg"><small><i class="bi bi-airplane-fill flight-leg-plane${isReturn ? ' flight-leg-plane-return' : ''}" aria-hidden="true"></i><span>${label}</span></small><div class="flight-compact-times"><strong>${time(details.first.departure_at)}</strong><i class="${details.stops ? 'has-stop' : ''}"></i><strong>${time(details.last.arrival_at)}</strong></div><div class="flight-compact-route"><span>${escapeHtml(details.first.origin)} → ${escapeHtml(details.last.destination)}</span><em>${duration(details.elapsed)} · ${stopLabel(details.stops)}${connectionAirports.length ? ` via ${escapeHtml(connectionAirports.join(', '))}` : ''}</em></div></div>`;
         }).join('');
         const baggage = segments.map(segment => segment.checked_baggage_pieces).find(value => value !== null && value !== undefined);
         const cabin = String(first.cabin || criteria.cabin || 'Economy').replaceAll('_', ' ');
