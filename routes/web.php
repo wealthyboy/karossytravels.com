@@ -50,6 +50,10 @@ use App\Http\Controllers\Web\PaystackWebhookController;
 use App\Http\Controllers\Web\VisaServiceController;
 use App\Http\Controllers\Web\ServiceEnquiryController;
 use App\Http\Controllers\Web\PublicEnquiryController;
+use App\Http\Controllers\Crm\BookingController as CrmBookingController;
+use App\Http\Controllers\Crm\CustomerController as CrmCustomerController;
+use App\Http\Controllers\Crm\DashboardController as CrmDashboardController;
+use App\Http\Controllers\Crm\WorkspaceController as CrmWorkspaceController;
 use App\Support\EnquiryForms;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -127,6 +131,17 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/reset-password', [NewPasswordController::class, 'store'])->middleware('throttle:5,1')->name('password.update');
 });
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth')->name('logout');
+
+Route::prefix('crm')->as('crm.')->middleware('admin.hidden')->group(function (): void {
+    Route::get('/', CrmDashboardController::class)->middleware('permission:dashboard.view')->name('dashboard');
+    Route::get('/bookings', [CrmBookingController::class, 'index'])->middleware('permission:bookings.view')->name('bookings.index');
+    Route::get('/customers', [CrmCustomerController::class, 'index'])->middleware('permission:customers.view')->name('customers.index');
+    Route::get('/{module}', [CrmWorkspaceController::class, 'show'])
+        ->whereIn('module', ['sales', 'activities', 'notifications', 'promotions', 'calls', 'analytics', 'hr', 'settings'])
+        ->middleware('permission:dashboard.view')
+        ->name('workspace');
+});
+
 Route::post('/currency', function (Request $request) {
     $supported = array_map('strtoupper', config('travel.currency.supported', ['NGN', 'USD']));
     $validated = $request->validate(['currency' => ['required', Rule::in($supported)]]);
