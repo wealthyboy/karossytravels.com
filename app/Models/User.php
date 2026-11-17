@@ -6,6 +6,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
@@ -19,6 +20,16 @@ class User extends Authenticatable implements CanResetPasswordContract
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class);
+    }
+
+    public function createdCrmActivities(): HasMany
+    {
+        return $this->hasMany(CrmActivity::class, 'actor_user_id');
+    }
+
+    public function assignedCrmTasks(): HasMany
+    {
+        return $this->hasMany(CrmTask::class, 'assigned_user_id');
     }
 
     public function hasPermission(string $permission): bool

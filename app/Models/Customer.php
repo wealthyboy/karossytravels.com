@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -38,6 +39,26 @@ final class Customer extends Model
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(CustomerContact::class);
+    }
+
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(CustomerTag::class, 'customer_tag');
+    }
+
+    public function activities(): HasMany
+    {
+        return $this->hasMany(CrmActivity::class)->latest('occurred_at');
+    }
+
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(CrmTask::class)->orderByRaw('due_at is null, due_at');
     }
 
     public function getFullNameAttribute(): string

@@ -45,4 +45,14 @@ final class Booking extends Model
             ->withPivot(['quantity', 'price_cents', 'currency'])
             ->withTimestamps();
     }
+
+    public function activities(): HasMany
+    {
+        return $this->hasMany(CrmActivity::class)->latest('occurred_at');
+    }
+
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(CrmTask::class);
+    }
 }
