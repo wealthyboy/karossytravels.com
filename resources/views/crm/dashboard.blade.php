@@ -1,7 +1,10 @@
 @extends('layouts.crm')
 @section('title', 'Overview')
+@section('topbar-title', 'Dashboard')
 @section('content')
-<div class="crm-page-heading"><div><p class="crm-eyebrow">Monday, {{ now()->format('F j') }}</p><h1>Good morning, {{ explode(' ', auth()->user()?->name ?? 'Team')[0] }}.</h1><p>Here is what needs your attention across Karossy today.</p></div><div class="crm-heading-actions"><a href="{{ route('crm.bookings.index') }}" class="crm-button crm-button-quiet"><i class="bi bi-calendar-plus"></i>View bookings</a><a href="{{ route('crm.workspace', 'sales') }}" class="crm-button"><i class="bi bi-plus-lg"></i>New deal</a></div></div>
+<div class="crm-page-heading"><div><p class="crm-eyebrow">{{ now()->format('l, F j') }}</p><h1>Good morning, {{ explode(' ', auth()->user()?->name ?? 'Team')[0] }}.</h1><p>Your Karossy operations at a glance.</p></div><div class="crm-heading-actions"><a href="{{ route('crm.bookings.index') }}" class="crm-button crm-button-quiet"><i class="bi bi-calendar-plus"></i>View bookings</a><a href="{{ route('crm.workspace', 'sales') }}" class="crm-button"><i class="bi bi-plus-lg"></i>New deal</a></div></div>
+
+<section class="crm-progress-panel" aria-label="CRM setup progress"><div class="crm-progress-steps"><div class="is-complete"><span><i class="bi bi-check-lg"></i></span><strong>CRM access</strong><small>Your team workspace is ready</small></div><div class="is-complete"><span><i class="bi bi-check-lg"></i></span><strong>Customer desk</strong><small>Profiles, notes and tasks</small></div><div class="is-active"><span>3</span><strong>Bookings</strong><small>Connect live booking sources</small></div><div><span>4</span><strong>Call centre</strong><small>Bring in calls and outcomes</small></div></div></section>
 
 <section class="crm-stat-grid">
     <article class="crm-stat-card"><div class="crm-stat-icon indigo"><i class="bi bi-calendar2-week"></i></div><div><span>Today’s bookings</span><strong>{{ number_format($todayBookings) }}</strong><small><i class="bi bi-arrow-up-right"></i> Live booking activity</small></div></article>
