@@ -11,6 +11,10 @@ final class WorkspaceController extends Controller
     {
         abort_unless(array_key_exists($module, config('crm.modules')), 404);
 
+        if ($module === 'calls') {
+            return view('crm.calls.index', ['module' => config('crm.modules.calls')]);
+        }
+
         return view('crm.workspace', ['module' => config("crm.modules.{$module}")]);
     }
 }

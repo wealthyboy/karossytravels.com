@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'CRM') · Karossy Travels</title>
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
-    @vite(['resources/css/app.css', 'resources/css/crm.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/css/crm.css', 'resources/css/crm-calls.css', 'resources/js/app.js'])
 </head>
 <body class="crm-body">
 @php
@@ -50,5 +50,6 @@
     </main>
 </div>
 <script>document.querySelector('[data-crm-menu]')?.addEventListener('click',()=>document.body.classList.toggle('crm-menu-open'));</script>
+@stack('scripts')
 </body>
 </html>

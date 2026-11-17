@@ -27,5 +27,6 @@ final class CrmWorkspaceTest extends TestCase
 
         $this->actingAs($user)->get('/crm')->assertOk()->assertSee('Travel CRM');
         $this->actingAs($user)->get('/crm/sales')->assertOk()->assertSee('Sales is being moved into this workspace');
+        $this->actingAs($user)->get('/crm/calls')->assertOk()->assertSee('Dial a customer');
     }
 }
