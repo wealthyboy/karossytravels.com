@@ -132,7 +132,7 @@ Route::middleware('guest')->group(function (): void {
 });
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth')->name('logout');
 
-Route::prefix('crm')->as('crm.')->middleware('auth')->group(function (): void {
+$registerCrmRoutes = function (): void {
     Route::get('/', CrmDashboardController::class)->middleware('permission:dashboard.view')->name('dashboard');
     Route::get('/bookings', [CrmBookingController::class, 'index'])->middleware('permission:bookings.view')->name('bookings.index');
     Route::get('/customers', [CrmCustomerController::class, 'index'])->middleware('permission:customers.view')->name('customers.index');
@@ -140,7 +140,15 @@ Route::prefix('crm')->as('crm.')->middleware('auth')->group(function (): void {
         ->whereIn('module', ['sales', 'activities', 'notifications', 'promotions', 'calls', 'analytics', 'hr', 'settings'])
         ->middleware('permission:dashboard.view')
         ->name('workspace');
-});
+};
+
+// Local development uses /crm. Production sets CRM_DOMAIN so the same
+// workspace opens directly at the dedicated CRM hostname.
+if ($crmDomain = config('crm.domain')) {
+    Route::domain($crmDomain)->as('crm.')->middleware('auth')->group($registerCrmRoutes);
+} else {
+    Route::prefix('crm')->as('crm.')->middleware('auth')->group($registerCrmRoutes);
+}
 
 Route::post('/currency', function (Request $request) {
     $supported = array_map('strtoupper', config('travel.currency.supported', ['NGN', 'USD']));
