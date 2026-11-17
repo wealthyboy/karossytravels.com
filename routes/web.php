@@ -132,7 +132,7 @@ Route::middleware('guest')->group(function (): void {
 });
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth')->name('logout');
 
-Route::prefix('crm')->as('crm.')->middleware('admin.hidden')->group(function (): void {
+Route::prefix('crm')->as('crm.')->middleware('auth')->group(function (): void {
     Route::get('/', CrmDashboardController::class)->middleware('permission:dashboard.view')->name('dashboard');
     Route::get('/bookings', [CrmBookingController::class, 'index'])->middleware('permission:bookings.view')->name('bookings.index');
     Route::get('/customers', [CrmCustomerController::class, 'index'])->middleware('permission:customers.view')->name('customers.index');

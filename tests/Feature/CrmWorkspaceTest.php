@@ -12,9 +12,9 @@ final class CrmWorkspaceTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_crm_is_hidden_from_guests(): void
+    public function test_crm_redirects_guests_to_sign_in(): void
     {
-        $this->get('/crm')->assertNotFound();
+        $this->get('/crm')->assertRedirect(route('login'));
     }
 
     public function test_authorized_team_member_can_open_the_crm_dashboard_and_workspace(): void
