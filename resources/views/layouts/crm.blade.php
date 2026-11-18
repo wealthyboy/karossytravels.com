@@ -12,17 +12,27 @@
 @php
     $route = request()->route()?->getName() ?? '';
     $workspace = request()->route('module');
-    $navigation = [
-        ['label' => 'Overview', 'icon' => 'bi-grid-1x2', 'route' => 'crm.dashboard'],
-        ['label' => 'Bookings', 'icon' => 'bi-calendar2-check', 'route' => 'crm.bookings.index'],
-        ['label' => 'Sales', 'icon' => 'bi-kanban', 'module' => 'sales'],
-        ['label' => 'Customers', 'icon' => 'bi-people', 'route' => 'crm.customers.index'],
-        ['label' => 'Activities', 'icon' => 'bi-check2-square', 'module' => 'activities'],
-        ['label' => 'Notifications', 'icon' => 'bi-bell', 'module' => 'notifications'],
-        ['label' => 'Promotions', 'icon' => 'bi-megaphone', 'module' => 'promotions'],
-        ['label' => 'Calls', 'icon' => 'bi-telephone', 'module' => 'calls'],
-        ['label' => 'Analytics', 'icon' => 'bi-graph-up-arrow', 'module' => 'analytics'],
-        ['label' => 'HR', 'icon' => 'bi-person-workspace', 'module' => 'hr'],
+    $navigationGroups = [
+        ['label' => 'Operations', 'icon' => 'bi-calendar2-check', 'items' => [
+            ['label' => 'Bookings', 'icon' => 'bi-calendar2-check', 'route' => 'crm.bookings.index'],
+        ]],
+        ['label' => 'Customer & Sales', 'icon' => 'bi-people', 'items' => [
+            ['label' => 'Customers', 'icon' => 'bi-people', 'route' => 'crm.customers.index'],
+            ['label' => 'Sales', 'icon' => 'bi-kanban', 'module' => 'sales'],
+            ['label' => 'Activities', 'icon' => 'bi-check2-square', 'module' => 'activities'],
+        ]],
+        ['label' => 'Communications', 'icon' => 'bi-chat-dots', 'items' => [
+            ['label' => 'Calls', 'icon' => 'bi-telephone', 'module' => 'calls'],
+            ['label' => 'Notifications', 'icon' => 'bi-bell', 'module' => 'notifications'],
+            ['label' => 'Promotions', 'icon' => 'bi-megaphone', 'module' => 'promotions'],
+        ]],
+        ['label' => 'Intelligence', 'icon' => 'bi-bar-chart-line', 'items' => [
+            ['label' => 'Analytics', 'icon' => 'bi-graph-up-arrow', 'module' => 'analytics'],
+        ]],
+        ['label' => 'People & System', 'icon' => 'bi-gear', 'items' => [
+            ['label' => 'HR', 'icon' => 'bi-person-workspace', 'module' => 'hr'],
+            ['label' => 'Settings', 'icon' => 'bi-sliders', 'module' => 'settings'],
+        ]],
     ];
 @endphp
 <div class="crm-shell">
@@ -31,12 +41,19 @@
         <div class="crm-workspace-pill"><span class="crm-pulse"></span><span><small>Active workspace</small><strong>Karossy Operations</strong></span><i class="bi bi-chevron-down"></i></div>
         <nav class="crm-nav" aria-label="CRM navigation">
             <span class="crm-nav-label">Workspace</span>
-            @foreach($navigation as $item)
-                @php($active = isset($item['route']) ? $route === $item['route'] : $workspace === $item['module'])
-                <a class="{{ $active ? 'is-active' : '' }}" href="{{ isset($item['route']) ? route($item['route']) : route('crm.workspace', $item['module']) }}"><i class="bi {{ $item['icon'] }}"></i><span>{{ $item['label'] }}</span>@if($item['label'] === 'Activities')<b>New</b>@endif</a>
+            <a class="{{ $route === 'crm.dashboard' ? 'is-active' : '' }}" href="{{ route('crm.dashboard') }}"><i class="bi bi-grid-1x2"></i><span>Overview</span></a>
+            @foreach($navigationGroups as $group)
+                @php($groupActive = collect($group['items'])->contains(fn (array $item): bool => isset($item['route']) ? $route === $item['route'] : $workspace === $item['module']))
+                <section class="crm-nav-group {{ $groupActive ? 'is-open' : '' }}" data-crm-nav-group>
+                    <button type="button" class="crm-nav-group-toggle" data-crm-nav-toggle aria-expanded="{{ $groupActive ? 'true' : 'false' }}"><i class="bi {{ $group['icon'] }}"></i><span>{{ $group['label'] }}</span><i class="bi bi-chevron-down crm-nav-chevron"></i></button>
+                    <div class="crm-nav-group-items">
+                        @foreach($group['items'] as $item)
+                            @php($active = isset($item['route']) ? $route === $item['route'] : $workspace === $item['module'])
+                            <a class="{{ $active ? 'is-active' : '' }}" href="{{ isset($item['route']) ? route($item['route']) : route('crm.workspace', $item['module']) }}"><i class="bi {{ $item['icon'] }}"></i><span>{{ $item['label'] }}</span>@if($item['label'] === 'Activities')<b>New</b>@endif</a>
+                        @endforeach
+                    </div>
+                </section>
             @endforeach
-            <span class="crm-nav-label crm-nav-label-bottom">System</span>
-            <a class="{{ $workspace === 'settings' ? 'is-active' : '' }}" href="{{ route('crm.workspace', 'settings') }}"><i class="bi bi-sliders"></i><span>Settings</span></a>
         </nav>
         <div class="crm-sidebar-footer"><div class="crm-avatar">{{ strtoupper(substr(auth()->user()?->name ?? 'A', 0, 1)) }}</div><div><strong>{{ auth()->user()?->name ?? 'Administrator' }}</strong><small>{{ auth()->user()?->isOwner() ? 'Owner access' : 'Team member' }}</small></div><form action="{{ route('logout') }}" method="post">@csrf<button title="Sign out" aria-label="Sign out"><i class="bi bi-box-arrow-right"></i></button></form></div>
     </aside>
@@ -49,7 +66,7 @@
         </div>
     </main>
 </div>
-<script>document.querySelector('[data-crm-menu]')?.addEventListener('click',()=>document.body.classList.toggle('crm-menu-open'));</script>
+<script>document.querySelector('[data-crm-menu]')?.addEventListener('click',()=>document.body.classList.toggle('crm-menu-open'));document.querySelectorAll('[data-crm-nav-toggle]').forEach((toggle)=>toggle.addEventListener('click',()=>{const group=toggle.closest('[data-crm-nav-group]');const open=group.classList.toggle('is-open');toggle.setAttribute('aria-expanded',open?'true':'false')}));</script>
 @stack('scripts')
 </body>
 </html>
