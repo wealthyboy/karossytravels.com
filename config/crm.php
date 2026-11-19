@@ -3,7 +3,7 @@
 return [
     // Leave empty locally to use /crm. Set this in production to serve the
     // workspace from its own hostname, e.g. crm.karossytravels.online.
-    'domain' => env('CRM_DOMAIN'),
+    'domain' => env('CRM_DOMAIN', env('CRM_HOST')),
 
     'modules' => [
         'sales' => ['label' => 'Sales', 'eyebrow' => 'Revenue workspace', 'icon' => 'bi-kanban', 'description' => 'Manage leads, deal stages, quotes, invoices, payments and commissions in one pipeline.'],

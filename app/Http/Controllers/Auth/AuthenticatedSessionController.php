@@ -12,8 +12,12 @@ use Illuminate\View\View;
 
 final class AuthenticatedSessionController extends Controller
 {
-    public function create(): View
+    public function create(Request $request): View
     {
+        if (config('crm.domain') && $request->getHost() === config('crm.domain')) {
+            return view('crm.auth.login');
+        }
+
         return view('auth.login');
     }
 
