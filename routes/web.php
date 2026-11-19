@@ -51,6 +51,7 @@ use App\Http\Controllers\Web\VisaServiceController;
 use App\Http\Controllers\Web\ServiceEnquiryController;
 use App\Http\Controllers\Web\PublicEnquiryController;
 use App\Http\Controllers\Crm\BookingController as CrmBookingController;
+use App\Http\Controllers\Crm\CallCenterController as CrmCallCenterController;
 use App\Http\Controllers\Crm\CustomerController as CrmCustomerController;
 use App\Http\Controllers\Crm\DashboardController as CrmDashboardController;
 use App\Http\Controllers\Crm\WorkspaceController as CrmWorkspaceController;
@@ -134,13 +135,19 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->midd
 
 $registerCrmRoutes = function (): void {
     Route::get('/', CrmDashboardController::class)->middleware('permission:dashboard.view')->name('dashboard');
+    Route::get('/bookings/create', [CrmBookingController::class, 'create'])->middleware('permission:bookings.manage')->name('bookings.create');
     Route::get('/bookings', [CrmBookingController::class, 'index'])->middleware('permission:bookings.view')->name('bookings.index');
+    Route::get('/bookings/{booking}', [CrmBookingController::class, 'show'])->middleware('permission:bookings.view')->name('bookings.show');
+    Route::put('/bookings/{booking}/assignment', [CrmBookingController::class, 'assign'])->middleware('permission:bookings.manage')->name('bookings.assign');
+    Route::get('/calls', [CrmCallCenterController::class, 'index'])->middleware('permission:dashboard.view')->name('calls.index');
+    Route::put('/calls/availability', [CrmCallCenterController::class, 'updateStatus'])->middleware('permission:dashboard.view')->name('calls.availability');
+    Route::post('/calls/log', [CrmCallCenterController::class, 'store'])->middleware('permission:dashboard.view')->name('calls.store');
     Route::get('/customers', [CrmCustomerController::class, 'index'])->middleware('permission:customers.view')->name('customers.index');
     Route::get('/customers/{customer}', [CrmCustomerController::class, 'show'])->middleware('permission:customers.view')->name('customers.show');
     Route::post('/customers/{customer}/activities', [CrmCustomerController::class, 'storeActivity'])->middleware('permission:customers.manage')->name('customers.activities.store');
     Route::post('/customers/{customer}/tasks', [CrmCustomerController::class, 'storeTask'])->middleware('permission:customers.manage')->name('customers.tasks.store');
     Route::get('/{module}', [CrmWorkspaceController::class, 'show'])
-        ->whereIn('module', ['sales', 'activities', 'notifications', 'promotions', 'calls', 'analytics', 'hr', 'settings'])
+        ->whereIn('module', ['sales', 'activities', 'notifications', 'promotions', 'analytics', 'hr', 'settings'])
         ->middleware('permission:dashboard.view')
         ->name('workspace');
 };

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Models\CrmActivity;
+use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -16,7 +18,7 @@ final class BookingController extends Controller
             'q' => ['nullable', 'string', 'max:120'],
             'status' => ['nullable', 'in:new,pending,confirmed,completed,cancelled,failed,refunded'],
         ]);
-        $query = Booking::query()->with('order.customerProfile');
+        $query = Booking::query()->with(['order.customerProfile', 'assignedAgent']);
         $search = trim((string) ($filters['q'] ?? ''));
 
         $bookings = $query
@@ -43,5 +45,46 @@ final class BookingController extends Controller
                 'cancelled' => Booking::query()->where('status', 'cancelled')->count(),
             ],
         ]);
+    }
+
+    public function create(): View
+    {
+        return view('crm.bookings.create');
+    }
+
+    public function show(Booking $booking): View
+    {
+        return view('crm.bookings.show', [
+            'booking' => $booking->load(['order.customerProfile', 'assignedAgent', 'activities.actor', 'tasks.assignee']),
+            'agents' => $this->agents(),
+        ]);
+    }
+
+    public function assign(Request $request, Booking $booking)
+    {
+        $agentIds = $this->agents()->pluck('id');
+        $validated = $request->validate(['assigned_user_id' => ['required', 'integer', 'in:'.$agentIds->implode(',')]]);
+        $booking->update(['assigned_user_id' => $validated['assigned_user_id'], 'assigned_at' => now()]);
+        CrmActivity::create([
+            'customer_id' => $booking->order?->customer_id,
+            'booking_id' => $booking->id,
+            'actor_user_id' => $request->user()->id,
+            'assigned_user_id' => $validated['assigned_user_id'],
+            'type' => 'note',
+            'subject' => 'Booking reassigned',
+            'body' => 'A customer agent was assigned to this booking.',
+            'occurred_at' => now(),
+        ]);
+
+        return back()->with('success', 'Booking ownership updated.');
+    }
+
+    private function agents()
+    {
+        return User::query()
+            ->where(fn (Builder $query) => $query->whereNull('status')->orWhere('status', 'active'))
+            ->whereHas('roles', fn (Builder $query) => $query->whereIn('name', ['customer-agent', 'operations', 'b2b-agent', 'super-admin']))
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
     }
 }

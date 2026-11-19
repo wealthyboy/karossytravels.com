@@ -32,6 +32,16 @@ class User extends Authenticatable implements CanResetPasswordContract
         return $this->hasMany(CrmTask::class, 'assigned_user_id');
     }
 
+    public function assignedBookings(): HasMany
+    {
+        return $this->hasMany(Booking::class, 'assigned_user_id');
+    }
+
+    public function callCenterQueues(): BelongsToMany
+    {
+        return $this->belongsToMany(CallCenterQueue::class, 'call_center_queue_user')->withPivot(['priority', 'is_active']);
+    }
+
     public function hasPermission(string $permission): bool
     {
         return $this->roles()

@@ -6,6 +6,8 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Customer;
+use App\Models\Order;
+use App\Models\Booking;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -53,5 +55,31 @@ final class CrmWorkspaceTest extends TestCase
         ])->assertRedirect();
 
         $this->assertDatabaseHas('crm_activities', ['customer_id' => $customer->id, 'subject' => 'Welcome call']);
+    }
+
+    public function test_new_booking_is_automatically_owned_by_an_eligible_customer_agent(): void
+    {
+        $agent = User::factory()->create(['account_type' => 'admin', 'status' => 'active']);
+        $role = Role::create(['name' => 'customer-agent', 'label' => 'Customer Agent']);
+        $agent->roles()->attach($role);
+        $customer = Customer::create(['first_name' => 'Bola', 'last_name' => 'Adebayo', 'email' => 'bola@example.test', 'status' => 'active']);
+        $order = Order::create([
+            'reference' => 'KAR-TEST-001',
+            'customer_id' => $customer->id,
+            'channel' => 'consumer',
+            'status' => 'confirmed',
+            'currency' => 'NGN',
+            'total_minor' => 500000,
+        ]);
+
+        $booking = Booking::create([
+            'order_id' => $order->id,
+            'product_type' => 'hotel',
+            'provider' => 'test-provider',
+            'status' => 'pending',
+        ]);
+
+        $this->assertSame($agent->id, $booking->fresh()->assigned_user_id);
+        $this->assertNotNull($booking->fresh()->assigned_at);
     }
 }

@@ -22,7 +22,7 @@
             ['label' => 'Activities', 'icon' => 'bi-check2-square', 'module' => 'activities'],
         ]],
         ['label' => 'Communications', 'icon' => 'bi-chat-dots', 'items' => [
-            ['label' => 'Calls', 'icon' => 'bi-telephone', 'module' => 'calls'],
+            ['label' => 'Calls', 'icon' => 'bi-telephone', 'route' => 'crm.calls.index'],
             ['label' => 'Notifications', 'icon' => 'bi-bell', 'module' => 'notifications'],
             ['label' => 'Promotions', 'icon' => 'bi-megaphone', 'module' => 'promotions'],
         ]],
