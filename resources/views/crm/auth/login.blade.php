@@ -13,7 +13,8 @@
         .crm-login::before { background: radial-gradient(circle, rgba(225, 42, 52, .13) 0, rgba(225, 42, 52, 0) 67%); content: ''; height: 34rem; left: -12rem; position: fixed; top: -15rem; width: 34rem; }
         .crm-login__card { background: #fff; border: 1px solid #e2e8f0; border-radius: 1.25rem; box-shadow: 0 1.25rem 3.5rem rgba(23, 35, 63, .10); max-width: 29rem; padding: 2.4rem; position: relative; width: 100%; }
         .crm-login__brand { align-items: center; display: flex; gap: .8rem; margin-bottom: 2.25rem; }
-        .crm-login__mark { align-items: center; background: #182343; border-radius: .8rem; color: #fff; display: flex; font-size: 1rem; font-weight: 800; height: 2.75rem; justify-content: center; letter-spacing: -.04em; width: 2.75rem; }
+        .crm-login__mark { align-items: center; background: #fff; border: 1px solid #e0e6ef; border-radius: .8rem; display: flex; height: 3.35rem; justify-content: center; overflow: hidden; padding: .28rem; width: 3.35rem; }
+        .crm-login__mark img { display: block; height: 100%; object-fit: contain; width: 100%; }
         .crm-login__eyebrow { color: #8995aa; font-size: .7rem; font-weight: 800; letter-spacing: .12em; margin: 0 0 .15rem; text-transform: uppercase; }
         .crm-login__name { color: #17233f; font-size: 1.1rem; font-weight: 800; margin: 0; }
         .crm-login h1 { font-size: 1.8rem; font-weight: 800; letter-spacing: -.045em; margin: 0; }
@@ -38,7 +39,9 @@
     <main class="crm-login">
         <section class="crm-login__card" aria-labelledby="crm-login-title">
             <div class="crm-login__brand">
-                <span class="crm-login__mark" aria-hidden="true">K</span>
+                <span class="crm-login__mark">
+                    <img src="{{ asset('karossy-bird-mark.png') }}" alt="Karossy Travels">
+                </span>
                 <div>
                     <p class="crm-login__eyebrow">Karossy Travels</p>
                     <p class="crm-login__name">CRM Workspace</p>
