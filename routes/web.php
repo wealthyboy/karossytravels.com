@@ -60,6 +60,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
 
+// Register the CRM root before the public homepage. A domain-constrained route
+// must win this match when crm.karossytravels.online receives a request for /.
+if ($crmDomain = config('crm.domain')) {
+    Route::domain($crmDomain)
+        ->middleware(['auth', 'permission:dashboard.view'])
+        ->get('/', CrmDashboardController::class)
+        ->name('crm.dashboard');
+}
+
 Route::get('/', HomeController::class)->name('home');
 Route::get('/book-flights', fn () => redirect()->to(route('home', ['service' => 'flights']).'#travel-search', 301))->name('book-flights');
 Route::get('/book-hotels', fn () => redirect()->to(route('home', ['service' => 'hotels']).'#travel-search', 301))->name('book-hotels');
@@ -133,8 +142,11 @@ Route::middleware('guest')->group(function (): void {
 });
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->middleware('auth')->name('logout');
 
-$registerCrmRoutes = function (): void {
-    Route::get('/', CrmDashboardController::class)->middleware('permission:dashboard.view')->name('dashboard');
+$registerCrmRoutes = function (bool $includeDashboard = true): void {
+    if ($includeDashboard) {
+        Route::get('/', CrmDashboardController::class)->middleware('permission:dashboard.view')->name('dashboard');
+    }
+
     Route::get('/bookings/create', [CrmBookingController::class, 'create'])->middleware('permission:bookings.manage')->name('bookings.create');
     Route::get('/bookings', [CrmBookingController::class, 'index'])->middleware('permission:bookings.view')->name('bookings.index');
     Route::get('/bookings/{booking}', [CrmBookingController::class, 'show'])->middleware('permission:bookings.view')->name('bookings.show');
@@ -155,9 +167,9 @@ $registerCrmRoutes = function (): void {
 // Local development uses /crm. Production sets CRM_DOMAIN so the same
 // workspace opens directly at the dedicated CRM hostname.
 if ($crmDomain = config('crm.domain')) {
-    Route::domain($crmDomain)->as('crm.')->middleware('auth')->group($registerCrmRoutes);
+    Route::domain($crmDomain)->as('crm.')->middleware('auth')->group(fn () => $registerCrmRoutes(false));
 } else {
-    Route::prefix('crm')->as('crm.')->middleware('auth')->group($registerCrmRoutes);
+    Route::prefix('crm')->as('crm.')->middleware('auth')->group(fn () => $registerCrmRoutes());
 }
 
 Route::post('/currency', function (Request $request) {

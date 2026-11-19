@@ -14,7 +14,7 @@ final class AuthenticatedSessionController extends Controller
 {
     public function create(Request $request): View
     {
-        if (config('crm.domain') && $request->getHost() === config('crm.domain')) {
+        if ($this->isCrmRequest($request)) {
             return view('crm.auth.login');
         }
 
@@ -49,7 +49,9 @@ final class AuthenticatedSessionController extends Controller
             ]);
         }
 
-        return redirect()->intended(route('home'));
+        return $this->isCrmRequest($request)
+            ? redirect()->route('crm.dashboard')
+            : redirect()->intended(route('home'));
     }
 
     public function destroy(Request $request): RedirectResponse
@@ -59,5 +61,10 @@ final class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('home');
+    }
+
+    private function isCrmRequest(Request $request): bool
+    {
+        return filled(config('crm.domain')) && $request->getHost() === config('crm.domain');
     }
 }
