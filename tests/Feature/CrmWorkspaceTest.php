@@ -10,6 +10,7 @@ use App\Models\Order;
 use App\Models\Booking;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 final class CrmWorkspaceTest extends TestCase
@@ -126,5 +127,10 @@ final class CrmWorkspaceTest extends TestCase
         $this->assertDatabaseHas('bookings', ['travel_offer_id' => $offerId, 'status' => 'pending', 'provider_locator' => null]);
         $this->assertDatabaseHas('payments', ['gateway' => 'invoice', 'status' => 'pending']);
         $this->assertDatabaseHas('crm_tasks', ['customer_id' => $customer->id, 'title' => 'Follow up payment for '.Order::latest('created_at')->value('reference')]);
+
+        $order = Order::query()->latest('created_at')->firstOrFail();
+        $this->get(URL::temporarySignedRoute('crm.invoice.pay', now()->addHour(), ['order' => $order]))
+            ->assertOk()
+            ->assertSee('Review and pay');
     }
 }

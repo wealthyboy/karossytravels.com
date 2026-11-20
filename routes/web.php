@@ -36,6 +36,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Web\AccountBookingController;
 use App\Http\Controllers\Web\CarPartnerController;
 use App\Http\Controllers\Web\FlightCheckoutController;
+use App\Http\Controllers\Web\CrmInvoicePaymentController;
 use App\Http\Controllers\Web\FlightResultsController;
 use App\Http\Controllers\Web\FlightRevalidationController as WebFlightRevalidationController;
 use App\Http\Controllers\Web\FlightReviewController;
@@ -128,6 +129,10 @@ Route::get('/checkout/complete/{order}', [FlightCheckoutController::class, 'comp
 Route::get('/booking-hold/{order}/pay', [FlightCheckoutController::class, 'holdPayment'])->middleware('signed')->name('checkout.hold.pay');
 Route::post('/booking-hold/{order}/pay/initialize', [FlightCheckoutController::class, 'holdPaymentInitialize'])->middleware(['signed:relative', 'throttle:8,1'])->name('checkout.hold.pay.initialize');
 Route::post('/booking-hold/{order}/pay/verify', [FlightCheckoutController::class, 'holdPaymentVerify'])->middleware(['signed:relative', 'throttle:20,1'])->name('checkout.hold.pay.verify');
+Route::get('/invoice/{order}/pay', [CrmInvoicePaymentController::class, 'show'])->middleware('signed')->name('crm.invoice.pay');
+Route::post('/invoice/{order}/pay/initialize', [CrmInvoicePaymentController::class, 'initialize'])->middleware(['signed:relative', 'throttle:8,1'])->name('crm.invoice.pay.initialize');
+Route::post('/invoice/{order}/pay/verify', [CrmInvoicePaymentController::class, 'verify'])->middleware(['signed:relative', 'throttle:20,1'])->name('crm.invoice.pay.verify');
+Route::get('/invoice/{order}/paid', [CrmInvoicePaymentController::class, 'paid'])->name('crm.invoice.paid');
 Route::post('/webhooks/paystack', PaystackWebhookController::class)->name('webhooks.paystack');
 Route::middleware('auth')->group(function (): void {
     Route::get('/account/bookings', [AccountBookingController::class, 'index'])->name('account.bookings.index');

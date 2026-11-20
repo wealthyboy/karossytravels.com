@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Crm;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CreateFlightOrderRequest;
 use App\Http\Responses\ApiResponse;
+use App\Mail\CrmPendingInvoice;
 use App\Models\Booking;
 use App\Models\CrmActivity;
 use App\Models\CrmTask;
@@ -17,6 +18,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -133,7 +136,17 @@ final class FlightQuoteController extends Controller
             'metadata' => ['kind' => 'payment_follow_up'],
         ]);
 
+        $order = $booking->order;
+        if (filter_var($customer->email, FILTER_VALIDATE_EMAIL)) {
+            try {
+                $paymentUrl = URL::temporarySignedRoute('crm.invoice.pay', $dueAt, ['order' => $order]);
+                Mail::to($customer->email)->send(new CrmPendingInvoice($order, $booking, $paymentUrl));
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        }
+
         return redirect()->route('crm.bookings.show', $booking)
-            ->with('success', 'Pending invoice prepared and assigned. No supplier PNR or ticket has been created.');
+            ->with('success', 'Pending invoice prepared and assigned. The customer payment request was sent when a valid email is available. No supplier PNR or ticket has been created.');
     }
 }
