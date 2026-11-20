@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'CRM') · Karossy Travels</title>
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
-    @vite(['resources/css/app.css', 'resources/css/crm.css', 'resources/css/crm-calls.css', 'resources/css/crm-customer.css', 'resources/css/crm-operations.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/css/crm.css', 'resources/css/crm-calls.css', 'resources/css/crm-customer.css', 'resources/css/crm-operations.css', 'resources/css/crm-travel.css', 'resources/js/app.js'])
 </head>
 <body class="crm-body">
 @php
@@ -15,6 +15,8 @@
     $navigationGroups = [
         ['label' => 'Operations', 'icon' => 'bi-calendar2-check', 'items' => [
             ['label' => 'Bookings', 'icon' => 'bi-calendar2-check', 'route' => 'crm.bookings.index'],
+            ['label' => 'Flight desk', 'icon' => 'bi-airplane', 'route' => 'crm.travel.flights.index'],
+            ['label' => 'Hotel desk', 'icon' => 'bi-buildings', 'route' => 'crm.travel.hotels.index'],
         ]],
         ['label' => 'Customer & Sales', 'icon' => 'bi-people', 'items' => [
             ['label' => 'Customers', 'icon' => 'bi-people', 'route' => 'crm.customers.index'],
@@ -22,6 +24,7 @@
             ['label' => 'Activities', 'icon' => 'bi-check2-square', 'module' => 'activities'],
         ]],
         ['label' => 'Communications', 'icon' => 'bi-chat-dots', 'items' => [
+            ['label' => 'Inbox', 'icon' => 'bi-inboxes', 'route' => 'crm.inbox.index'],
             ['label' => 'Calls', 'icon' => 'bi-telephone', 'route' => 'crm.calls.index'],
             ['label' => 'Notifications', 'icon' => 'bi-bell', 'module' => 'notifications'],
             ['label' => 'Promotions', 'icon' => 'bi-megaphone', 'module' => 'promotions'],
