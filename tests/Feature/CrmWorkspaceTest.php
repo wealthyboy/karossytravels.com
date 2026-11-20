@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Booking;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 final class CrmWorkspaceTest extends TestCase
@@ -81,5 +82,49 @@ final class CrmWorkspaceTest extends TestCase
 
         $this->assertSame($agent->id, $booking->fresh()->assigned_user_id);
         $this->assertNotNull($booking->fresh()->assigned_at);
+    }
+
+    public function test_crm_agent_can_prepare_a_pending_flight_invoice_without_creating_a_supplier_pnr(): void
+    {
+        $agent = User::factory()->create(['account_type' => 'admin', 'status' => 'active']);
+        $role = Role::create(['name' => 'booking-agent', 'label' => 'Booking Agent']);
+        $permissions = collect(['dashboard.view', 'bookings.view', 'bookings.manage'])->map(
+            fn (string $name) => Permission::create(['name' => $name, 'label' => str($name)->headline()])
+        );
+        $role->permissions()->attach($permissions->pluck('id'));
+        $agent->roles()->attach($role);
+
+        $customer = Customer::create([
+            'first_name' => 'Ada', 'last_name' => 'Okafor', 'email' => 'ada@example.test',
+            'phone' => '+2348012345678', 'status' => 'active',
+        ]);
+
+        $search = $this->actingAs($agent)->postJson('/crm/travel/flights/search', [
+            'origin' => 'LOS', 'destination' => 'LHR',
+            'departure_date' => now()->addWeek()->toDateString(),
+            'trip_type' => 'one_way', 'cabin' => 'economy',
+            'adults' => 1, 'children' => 0, 'infants' => 0,
+            'currency' => 'NGN', 'session_id' => (string) Str::uuid(),
+        ])->assertOk();
+
+        $offerId = $search->json('data.offers.0.id');
+        $this->postJson("/crm/travel/flights/offers/{$offerId}/revalidate")
+            ->assertOk()
+            ->assertJsonPath('data.continue_url', route('crm.travel.flights.quote.create', $offerId));
+
+        $this->post("/crm/travel/flights/offers/{$offerId}/invoice", [
+            'customer_id' => $customer->id,
+            'travellers' => [[
+                'type' => 'ADT', 'title' => 'Ms', 'first_name' => 'Ada', 'last_name' => 'Okafor',
+                'date_of_birth' => '1990-05-12', 'gender' => 'female', 'nationality' => 'NG',
+                'passport_number' => 'A12345678', 'passport_country' => 'NG',
+                'passport_expiry' => now()->addYears(3)->toDateString(),
+            ]],
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('orders', ['customer_id' => $customer->id, 'channel' => 'crm', 'status' => 'pending_payment']);
+        $this->assertDatabaseHas('bookings', ['travel_offer_id' => $offerId, 'status' => 'pending', 'provider_locator' => null]);
+        $this->assertDatabaseHas('payments', ['gateway' => 'invoice', 'status' => 'pending']);
+        $this->assertDatabaseHas('crm_tasks', ['customer_id' => $customer->id, 'title' => 'Follow up payment for '.Order::latest('created_at')->value('reference')]);
     }
 }

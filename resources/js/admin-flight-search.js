@@ -2,10 +2,11 @@ import { Modal, Offcanvas } from 'bootstrap';
 import { majorAirports } from './airports';
 import { airlineLogoMarkup as renderAirlineLogo, handleAirlineLogoError } from './airline-logos';
 
-const page = document.querySelector('[data-admin-flight-search-page], [data-public-flight-results-page]');
+const page = document.querySelector('[data-admin-flight-search-page], [data-public-flight-results-page], [data-crm-flight-search-page]');
 
 if (page) {
     const isPublicResults = page.matches('[data-public-flight-results-page]');
+    const isCrmResults = page.matches('[data-crm-flight-search-page]');
     const searchRoot = page.querySelector('[data-flight-search]')
         || (isPublicResults ? document.querySelector('.results-inline-search [data-flight-search]') : null);
     const form = searchRoot?.querySelector('form') || null;
@@ -286,7 +287,7 @@ if (page) {
         revalidationController = new AbortController();
 
         try {
-            const endpoint = isPublicResults ? revalidateUrlTemplate.replace('__OFFER__', encodeURIComponent(offer.id)) : `/admin/flights/offers/${encodeURIComponent(offer.id)}/revalidate`;
+            const endpoint = (isPublicResults || isCrmResults) ? revalidateUrlTemplate.replace('__OFFER__', encodeURIComponent(offer.id)) : `/admin/flights/offers/${encodeURIComponent(offer.id)}/revalidate`;
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },

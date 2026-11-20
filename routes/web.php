@@ -54,6 +54,7 @@ use App\Http\Controllers\Crm\BookingController as CrmBookingController;
 use App\Http\Controllers\Crm\CallCenterController as CrmCallCenterController;
 use App\Http\Controllers\Crm\CustomerController as CrmCustomerController;
 use App\Http\Controllers\Crm\DashboardController as CrmDashboardController;
+use App\Http\Controllers\Crm\FlightQuoteController as CrmFlightQuoteController;
 use App\Http\Controllers\Crm\InboxController as CrmInboxController;
 use App\Http\Controllers\Crm\TravelDeskController as CrmTravelDeskController;
 use App\Http\Controllers\Crm\WorkspaceController as CrmWorkspaceController;
@@ -159,6 +160,9 @@ $registerCrmRoutes = function (bool $includeDashboard = true): void {
     Route::get('/inbox', [CrmInboxController::class, 'index'])->middleware('permission:dashboard.view')->name('inbox.index');
     Route::get('/travel/flights', [CrmTravelDeskController::class, 'flights'])->middleware('permission:bookings.view')->name('travel.flights.index');
     Route::post('/travel/flights/search', [CrmTravelDeskController::class, 'searchFlights'])->middleware(['permission:bookings.view', 'throttle:30,1'])->name('travel.flights.search');
+    Route::post('/travel/flights/offers/{offer}/revalidate', [CrmFlightQuoteController::class, 'revalidate'])->middleware(['permission:bookings.manage', 'throttle:20,1'])->name('travel.flights.revalidate');
+    Route::get('/travel/flights/offers/{offer}/invoice', [CrmFlightQuoteController::class, 'create'])->middleware('permission:bookings.manage')->name('travel.flights.quote.create');
+    Route::post('/travel/flights/offers/{offer}/invoice', [CrmFlightQuoteController::class, 'store'])->middleware(['permission:bookings.manage', 'throttle:10,1'])->name('travel.flights.quote.store');
     Route::get('/travel/hotels', [CrmTravelDeskController::class, 'hotels'])->middleware('permission:bookings.view')->name('travel.hotels.index');
     Route::get('/travel/hotels/results', [CrmTravelDeskController::class, 'searchHotels'])->middleware(['permission:bookings.view', 'throttle:30,1'])->name('travel.hotels.results');
     Route::get('/customers', [CrmCustomerController::class, 'index'])->middleware('permission:customers.view')->name('customers.index');

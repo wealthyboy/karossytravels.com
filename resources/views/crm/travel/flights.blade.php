@@ -6,7 +6,7 @@
 @section('content')
 <div class="crm-page-heading"><div><p class="crm-eyebrow">Operations · Live supplier search</p><h1>Flight desk</h1><p>Search live airline availability and prepare a customer booking without leaving the CRM.</p></div><a class="crm-button crm-button-quiet" href="{{ route('crm.bookings.create') }}"><i class="bi bi-arrow-left"></i> Booking launcher</a></div>
 
-<section class="crm-card crm-travel-search-card" data-admin-flight-search-page data-search-url="{{ route('crm.travel.flights.search') }}">
+<section class="crm-card crm-travel-search-card" data-crm-flight-search-page data-search-url="{{ route('crm.travel.flights.search') }}" data-revalidate-url-template="{{ route('crm.travel.flights.revalidate', ['offer' => '__OFFER__']) }}">
     <x-flight-search-form :departure-date="$defaultDepartureDate" :return-date="$defaultReturnDate" />
 </section>
 

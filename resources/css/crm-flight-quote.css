@@ -1,0 +1,17 @@
+.crm-flight-quote-form { display: grid; gap: 16px; max-width: 1080px; }
+.crm-quote-summary { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px; border-left: 4px solid #176ffa; }
+.crm-quote-summary h2 { margin: 5px 0; color: var(--crm-ink); font-size: 21px; }
+.crm-quote-summary p { margin: 0; color: var(--crm-muted); }
+.crm-quote-summary > strong { color: var(--crm-ink); font-size: 23px; white-space: nowrap; }
+.crm-quote-panel { padding: 24px; }
+.crm-quote-panel h2 { margin: 0 0 6px; color: var(--crm-ink); font-size: 18px; }
+.crm-quote-panel > p { margin: 0 0 18px; color: var(--crm-muted); line-height: 1.5; }
+.crm-quote-panel label { display: grid; gap: 7px; color: #536277; font-size: 13px; font-weight: 700; }
+.crm-quote-panel input, .crm-quote-panel select { width: 100%; min-height: 42px; border: 1px solid #dce3ee; border-radius: 8px; padding: 9px 11px; color: var(--crm-ink); background: #fff; font: inherit; font-weight: 500; }
+.crm-quote-panel input:focus, .crm-quote-panel select:focus { outline: 3px solid rgba(23,111,250,.15); border-color: #176ffa; }
+.crm-passenger-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.crm-passenger-grid fieldset { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; margin: 0; padding: 17px; border: 1px solid #e1e7f0; border-radius: 10px; }
+.crm-passenger-grid legend { float: none; width: auto; margin: 0 0 7px; padding: 0 6px; color: var(--crm-ink); font-size: 14px; font-weight: 800; }
+.crm-field-error { margin: 8px 0 0; color: #c93643; font-size: 13px; }
+@media (max-width: 780px) { .crm-quote-summary { display: grid; gap: 8px; } .crm-passenger-grid { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .crm-passenger-grid fieldset { grid-template-columns: 1fr; } }
