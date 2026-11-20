@@ -37,6 +37,11 @@ final class CrmWorkspaceTest extends TestCase
         $this->actingAs($user)->get('/crm')->assertOk()->assertSee('Travel CRM');
         $this->actingAs($user)->get('/crm/sales')->assertOk()->assertSee('Sales is being moved into this workspace');
         $this->actingAs($user)->get('/crm/calls')->assertOk()->assertSee('Dial a customer');
+        $this->actingAs($user)->get(route('crm.customers.create'))->assertOk()->assertSee('Add customer');
+        $this->actingAs($user)->post(route('crm.customers.store'), [
+            'first_name' => 'Tomi', 'last_name' => 'Adebayo', 'email' => 'tomi@example.test', 'status' => 'active',
+        ])->assertRedirect();
+        $this->assertDatabaseHas('customers', ['email' => 'tomi@example.test']);
 
         $customer = Customer::create([
             'first_name' => 'Amina',

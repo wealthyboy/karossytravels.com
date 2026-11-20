@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreCustomerRequest;
 use App\Models\CrmActivity;
 use App\Models\CrmTask;
 use App\Models\Customer;
+use App\Support\AuditLogger;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 final class CustomerController extends Controller
@@ -26,6 +29,22 @@ final class CustomerController extends Controller
             ->withQueryString();
 
         return view('crm.customers.index', compact('customers'));
+    }
+
+    public function create(): View
+    {
+        return view('crm.customers.create');
+    }
+
+    public function store(StoreCustomerRequest $request, AuditLogger $audit): RedirectResponse
+    {
+        $customer = Customer::create($request->validated());
+        $audit->record('customer.created', "Created customer {$customer->email} from CRM.", $customer, after: $customer->only([
+            'title', 'first_name', 'middle_name', 'last_name', 'email', 'phone', 'status',
+        ]));
+
+        return redirect()->route('crm.customers.show', $customer)
+            ->with('success', 'Customer profile created in CRM.');
     }
 
     public function show(Customer $customer): View

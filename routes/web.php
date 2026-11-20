@@ -171,6 +171,8 @@ $registerCrmRoutes = function (bool $includeDashboard = true): void {
     Route::get('/travel/hotels', [CrmTravelDeskController::class, 'hotels'])->middleware('permission:bookings.view')->name('travel.hotels.index');
     Route::get('/travel/hotels/results', [CrmTravelDeskController::class, 'searchHotels'])->middleware(['permission:bookings.view', 'throttle:30,1'])->name('travel.hotels.results');
     Route::get('/customers', [CrmCustomerController::class, 'index'])->middleware('permission:customers.view')->name('customers.index');
+    Route::get('/customers/create', [CrmCustomerController::class, 'create'])->middleware('permission:customers.manage')->name('customers.create');
+    Route::post('/customers', [CrmCustomerController::class, 'store'])->middleware('permission:customers.manage')->name('customers.store');
     Route::get('/customers/{customer}', [CrmCustomerController::class, 'show'])->middleware('permission:customers.view')->name('customers.show');
     Route::post('/customers/{customer}/activities', [CrmCustomerController::class, 'storeActivity'])->middleware('permission:customers.manage')->name('customers.activities.store');
     Route::post('/customers/{customer}/tasks', [CrmCustomerController::class, 'storeTask'])->middleware('permission:customers.manage')->name('customers.tasks.store');
